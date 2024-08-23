@@ -7,8 +7,9 @@ from langgraph.graph import END
 from typing import List
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
 from em_research_agentic.utils.prompts import PLAN_PROMPT, RESEARCH_PLAN_PROMPT, WRITER_PROMPT, REFLECTION_PROMPT, RESEARCH_CRITIQUE_PROMPT
-from em_research_agentic.utils.tools import tavily
+from em_research_agentic.utils.tools import tavily_client
 from em_research_agentic.utils.article_summarizer import generate_summaries
+import concurrent.futures
 
 
 class Queries(BaseModel):
@@ -35,6 +36,13 @@ def _get_model(model_name: str):
         raise ValueError(f"Unsupported model type: {model_name}")
 
     return model
+
+
+def _search_and_summarize(query, max_results):
+    response = tavily_client.search(query=query, max_results=max_results)
+    article_urls = [r['url'] for r in response['results']][:1]
+    summaries = generate_summaries(article_urls)
+    return [(r, summary) for r, summary in zip(response['results'], summaries)]
 
 
 def plan_node(state: AgentState, config):
@@ -64,16 +72,18 @@ def research_plan_node(state: AgentState, config):
 
     content = state['content'] or []
     max_results = config.get('configurable', {}).get('max_results_tavily', 1)
-    for q in queries.queries:
-        response = tavily.search(query=q, max_results=max_results)
-        # TODO: Change this to better handle large articles
-        article_urls = [r['url'] for r in response['results']][:1]
-        summaries = generate_summaries(article_urls)
-        for r, summary in zip(response['results'], summaries):
-            response_obj = SearchResponse(
-                content=summary, url=r['url'], title=r['title'])
-            content.append(response_obj.to_string())
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(
+            _search_and_summarize, q, max_results) for q in queries.queries]
+        for future in concurrent.futures.as_completed(futures):
+            for r, summary in future.result():
+                response_obj = SearchResponse(
+                    content=summary, url=r['url'], title=r['title'])
+                content.append(response_obj.to_string())
+
     return {"content": content}
+
 
 # Node for Writing
 
@@ -123,15 +133,15 @@ def research_critique_node(state: AgentState, config):
 
     max_results = config.get('configurable', {}).get('max_results_tavily', 1)
 
-    for q in queries.queries:
-        response = tavily.search(query=q, max_results=max_results)
-        # TODO: Change this to better handle large articles
-        article_urls = [r['url'] for r in response['results']][:1]
-        summaries = generate_summaries(article_urls)
-        for r, summary in zip(response['results'], summaries):
-            response_obj = SearchResponse(
-                content=summary, url=r['url'], title=r['title'])
-            content.append(response_obj.to_string())
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(
+            _search_and_summarize, q, max_results) for q in queries.queries]
+        for future in concurrent.futures.as_completed(futures):
+            for r, summary in future.result():
+                response_obj = SearchResponse(
+                    content=summary, url=r['url'], title=r['title'])
+                content.append(response_obj.to_string())
+
     return {"content": content}
 
 # Edge

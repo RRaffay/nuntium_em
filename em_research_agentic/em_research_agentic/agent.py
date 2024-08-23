@@ -1,7 +1,8 @@
-from langgraph.graph import StateGraph, END
-from typing import TypedDict, Literal
-from em_research_agentic.utils.state import AgentState
+# Load .env file
 from em_research_agentic.utils.nodes import plan_node, generation_node, reflection_node, research_plan_node, research_critique_node, should_continue
+from em_research_agentic.utils.state import AgentState
+from typing import TypedDict, Literal
+from langgraph.graph import StateGraph, END
 
 
 class GraphConfig(TypedDict):
