@@ -1,70 +1,80 @@
-# File: backend/app/main.py
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
+from typing import List, Dict
+import json
+from pathlib import Path
 
 app = FastAPI()
 
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Allow React app
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Models
+
+
+class ArticleInfo(BaseModel):
+    summary: str
+    url: str
+
+
 class Event(BaseModel):
-    id: int
-    country: str
-    title: str
-    description: str
-    date: datetime
+    id: str
+    cluster_summary: str
+    articles: List[ArticleInfo]
 
-class Report(BaseModel):
-    country: str
-    content: str
-    generated_at: datetime
 
-# Dummy data
-events = [
-    Event(id=1, country="USA", title="Economic Policy Change", description="New fiscal policy announced", date=datetime.now()),
-    Event(id=2, country="China", title="Trade Agreement", description="New trade deal with EU", date=datetime.now()),
-    Event(id=3, country="Japan", title="Bank of Japan Decision", description="Interest rates remain unchanged", date=datetime.now()),
-]
+class CountryData(BaseModel):
+    country: str
+    events: List[Event]
+
+
+# Load data
+data_dir = Path("em_news_analysis/exported_data")
+country_data: Dict[str, CountryData] = {}
+
+for file in data_dir.glob("*.json"):
+    with open(file, "r") as f:
+        data = json.load(f)
+        country = data["metadata"]["country"]
+        events = []
+        for event_id, event_data in data.items():
+            if event_id != "metadata":
+                articles = [
+                    ArticleInfo(summary=summary, url=url)
+                    for summary, url in zip(event_data["article_summaries"], event_data["article_urls"])
+                ]
+                events.append(Event(
+                    id=event_id,
+                    cluster_summary=event_data["cluster_summary"],
+                    articles=articles
+                ))
+        country_data[country] = CountryData(country=country, events=events)
 
 # Routes
+
+
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the EM Investor API"}
 
+
 @app.get("/countries")
 async def get_countries():
-    return list(set(event.country for event in events))
+    return list(country_data.keys())
 
-@app.get("/countries/{country}/events", response_model=List[Event])
-async def get_country_events(country: str):
-    country_events = [event for event in events if event.country.lower() == country.lower()]
-    if not country_events:
-        raise HTTPException(status_code=404, detail="Country not found")
-    return country_events
 
-@app.post("/countries/{country}/generate-report", response_model=Report)
-async def generate_report(country: str):
-    country_events = [event for event in events if event.country.lower() == country.lower()]
-    if not country_events:
+@app.get("/countries/{country}", response_model=CountryData)
+async def get_country_data(country: str):
+    if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
-    
-    # This is where you'd use your NLP package to generate a report
-    report_content = f"Economic Report for {country}:\n\n"
-    for event in country_events:
-        report_content += f"- {event.title}: {event.description}\n"
-    
-    return Report(country=country, content=report_content, generated_at=datetime.now())
+    return country_data[country]
 
 if __name__ == "__main__":
     import uvicorn

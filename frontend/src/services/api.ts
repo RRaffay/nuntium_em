@@ -1,16 +1,19 @@
 const API_BASE_URL = 'http://localhost:8000';
 
-export interface Event {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
+export interface ArticleInfo {
+  summary: string;
+  url: string;
 }
 
-export interface Report {
+export interface Event {
+  id: string;
+  cluster_summary: string;
+  articles: ArticleInfo[];
+}
+
+export interface CountryData {
   country: string;
-  content: string;
-  generated_at: string;
+  events: Event[];
 }
 
 export const api = {
@@ -22,20 +25,10 @@ export const api = {
     return response.json();
   },
 
-  async getCountryEvents(country: string): Promise<Event[]> {
-    const response = await fetch(`${API_BASE_URL}/countries/${country}/events`);
+  async getCountryData(country: string): Promise<CountryData> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch events for ${country}`);
-    }
-    return response.json();
-  },
-
-  async generateReport(country: string): Promise<Report> {
-    const response = await fetch(`${API_BASE_URL}/countries/${country}/generate-report`, {
-      method: 'POST',
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to generate report for ${country}`);
+      throw new Error(`Failed to fetch data for ${country}`);
     }
     return response.json();
   },

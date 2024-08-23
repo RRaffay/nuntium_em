@@ -9,40 +9,52 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { api, Event, Report } from '../services/api';
+import { api, CountryData, Event, ArticleInfo } from '../services/api';
+
+const ArticleDialog: React.FC<{ event: Event }> = ({ event }) => (
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button variant="outline">View Articles</Button>
+    </DialogTrigger>
+    <DialogContent className="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle>Articles for Event</DialogTitle>
+      </DialogHeader>
+      <div className="mt-4 max-h-[60vh] overflow-y-auto">
+        {event.articles.map((article, index) => (
+          <div key={index} className="mb-4 p-4 border rounded">
+            <p className="font-semibold mb-2">Summary:</p>
+            <p>{article.summary}</p>
+            <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              Read full article
+            </a>
+          </div>
+        ))}
+      </div>
+    </DialogContent>
+  </Dialog>
+);
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
   const navigate = useNavigate();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [report, setReport] = useState<Report | null>(null);
+  const [countryData, setCountryData] = useState<CountryData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchCountryData = async () => {
       if (!country) return;
       try {
-        const data = await api.getCountryEvents(country);
-        setEvents(data);
+        const data = await api.getCountryData(country);
+        setCountryData(data);
       } catch (err) {
-        setError('Failed to fetch events. Please try again later.');
-        console.error('Error fetching events:', err);
+        setError('Failed to fetch country data. Please try again later.');
+        console.error('Error fetching country data:', err);
       }
     };
 
-    fetchEvents();
+    fetchCountryData();
   }, [country]);
-
-  const generateReport = async () => {
-    if (!country) return;
-    try {
-      const data = await api.generateReport(country);
-      setReport(data);
-    } catch (err) {
-      setError('Failed to generate report. Please try again later.');
-      console.error('Error generating report:', err);
-    }
-  };
 
   const handleBackToDashboard = () => {
     navigate('/');
@@ -52,45 +64,29 @@ const CountryPage: React.FC = () => {
     return <div className="text-red-500">{error}</div>;
   }
 
+  if (!countryData) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Events in {country}</h2>
+        <h2 className="text-2xl font-bold">Events in {countryData.country}</h2>
         <Button onClick={handleBackToDashboard} variant="outline">Back to Dashboard</Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        {events.map((event) => (
+        {countryData.events.map((event) => (
           <Card key={event.id}>
             <CardHeader>
-              <CardTitle>{event.title}</CardTitle>
+              <CardTitle>Event {event.id}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>{event.description}</p>
-              <p className="text-sm text-gray-500 mt-2">{new Date(event.date).toLocaleString()}</p>
+              <p className="mb-4">{event.cluster_summary}</p>
+              <ArticleDialog event={event} />
             </CardContent>
           </Card>
         ))}
       </div>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button onClick={generateReport}>Generate Report</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Economic Report for {country}</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            {report ? (
-              <div>
-                <p className="whitespace-pre-wrap">{report.content}</p>
-                <p className="text-sm text-gray-500 mt-2">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
-              </div>
-            ) : (
-              <p>Loading report...</p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
