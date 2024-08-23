@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "em_news_analysis"
+version = "0.1.0"
+description = "A package for analyzing news events using GDELT data and natural language processing"
+authors = ["Raffay Rana <ranaraffay@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.2.2"
+scikit-learn = "^1.5.1"
+openai = "^1.40.0"
+google-cloud-bigquery = {extras = ["storage"], version ="^3.25.0"}
+python-dotenv = "^1.0.1"
+langchain = "^0.2.12"
+langchain-openai = "^0.1.20"
+langchain-community = "^0.2.11"
+db-dtypes = "^1.2.0"
+google-cloud-bigquery-storage = "^2.25.0"
+tqdm = "^4.66.5"
+beautifulsoup4 = "^4.12.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

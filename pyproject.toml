@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "nuntium-em-research"
+version = "0.1.0"
+description = "Emerging Markets Research"
+authors = [
+    "RRaffay"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+em_news_analysis = {path = "./em_news_analysis"}
+em_research_agentic = {path = "./em_research_agentic"}
+fastapi = "^0.112.1"
+uvicorn = "^0.30.6"
+gunicorn = "^23.0.0"
+sqlalchemy = "^2.0.32"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+ipykernel = "^6.29.5"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
