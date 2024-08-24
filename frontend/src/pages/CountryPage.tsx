@@ -14,6 +14,18 @@ import {
 } from "@/components/ui/dialog"
 import { api, CountryData, Event, ArticleInfo, Report } from '../services/api';
 
+const downloadReport = (content: string, filename: string) => {
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => (
   <ReactMarkdown 
     remarkPlugins={[remarkGfm]}
@@ -87,6 +99,7 @@ const ReportDialog: React.FC<{
             <>
               <MarkdownContent content={report.content} />
               <p className="text-sm text-gray-500 mt-4">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
+              <Button onClick={() => downloadReport(report.content, `${title}.md`)} className="mt-2">Download Report</Button>
             </>
           ) : (
             <p>No report generated. Please try again.</p>

@@ -12,10 +12,12 @@ def main():
     try:
         results = pipeline.run_pipeline(
             input_sentence="Political Changes",
-            country="IN",  # 3166-1 alpha-2 codes for country names
+            country="PK",  # 3166-1 alpha-2 codes for country names
             hours=3,
-            article_summarizer_objective="Analyze the impact of the event being discussed on the financial markets",
-            cluster_summarizer_objective="Below are article summaries for a particular event. Summarize the main points and potential impacts for someone interested in financial markets"
+            article_summarizer_objective="",
+            # article_summarizer_objective="Analyze the impact of the event being discussed on the financial markets",
+            cluster_summarizer_objective="Below are article summaries for a particular event. Summarize the main points"
+            # cluster_summarizer_objective="Below are article summaries for a particular event. Summarize the main points and potential impacts for someone interested in financial markets"
         )
         if results:
             print("Pipeline results:")

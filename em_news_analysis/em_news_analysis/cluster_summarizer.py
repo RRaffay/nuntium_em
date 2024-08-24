@@ -37,13 +37,13 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
     if model == 3:
         open_ai_llm = ChatOpenAI(
             temperature=0,
-            model_name="gpt-3.5-turbo-1106",
+            model_name="gpt-4o-mini",
         )
 
     else:
         open_ai_llm = ChatOpenAI(
             temperature=0,
-            model_name="gpt-4-1106-preview",
+            model_name="gpt-4o",
         )
 
     prompt = ChatPromptTemplate.from_messages([
