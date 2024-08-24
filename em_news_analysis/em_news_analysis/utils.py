@@ -4,9 +4,11 @@ import pycountry
 
 def sample_articles(urls: List[str], max_articles: int) -> List[str]:
     """
-    Sample representative articles from the given URLs.
+    Sample representative articles from the given URLs, ensuring no duplicates.
     """
-    return urls[:max_articles]
+    unique_urls = list(dict.fromkeys(
+        urls))  # Remove duplicates while maintaining order
+    return unique_urls[:max_articles]
 
 
 def get_country_name(country_code: str) -> str:
