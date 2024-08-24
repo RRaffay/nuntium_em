@@ -59,8 +59,9 @@ const ReportDialog: React.FC<{
   report: Report | null, 
   isLoading: boolean, 
   onGenerate: () => Promise<void>,
-  error: string | null
-}> = ({ report, isLoading, onGenerate, error }) => {
+  error: string | null,
+  title: string
+}> = ({ report, isLoading, onGenerate, error, title }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleGenerate = async () => {
@@ -71,11 +72,11 @@ const ReportDialog: React.FC<{
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button onClick={handleGenerate}>Generate Report</Button>
+        <Button onClick={handleGenerate}>{title}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Economic Report</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="mt-4 max-h-[70vh] overflow-y-auto">
           {isLoading ? (
@@ -100,10 +101,13 @@ const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
   const navigate = useNavigate();
   const [countryData, setCountryData] = useState<CountryData | null>(null);
-  const [report, setReport] = useState<Report | null>(null);
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [countryReport, setCountryReport] = useState<Report | null>(null);
+  const [eventReports, setEventReports] = useState<{ [key: string]: Report | null }>({});
+  const [isGeneratingCountryReport, setIsGeneratingCountryReport] = useState(false);
+  const [isGeneratingEventReport, setIsGeneratingEventReport] = useState<{ [key: string]: boolean }>({});
   const [error, setError] = useState<string | null>(null);
-  const [reportError, setReportError] = useState<string | null>(null);
+  const [countryReportError, setCountryReportError] = useState<string | null>(null);
+  const [eventReportErrors, setEventReportErrors] = useState<{ [key: string]: string | null }>({});
 
   useEffect(() => {
     const fetchCountryData = async () => {
@@ -120,19 +124,35 @@ const CountryPage: React.FC = () => {
     fetchCountryData();
   }, [country]);
 
-  const handleGenerateReport = async () => {
+  const handleGenerateCountryReport = async () => {
     if (!country) return;
-    setIsGeneratingReport(true);
-    setReportError(null);
+    setIsGeneratingCountryReport(true);
+    setCountryReportError(null);
     try {
-      const generatedReport = await api.generateReport(country);
-      setReport(generatedReport);
+      const generatedReport = await api.generateCountryReport(country);
+      setCountryReport(generatedReport);
     } catch (err) {
-      console.error('Error generating report:', err);
-      setReportError('Failed to generate report. Please try again.');
-      setReport(null);
+      console.error('Error generating country report:', err);
+      setCountryReportError('Failed to generate country report. Please try again.');
+      setCountryReport(null);
     } finally {
-      setIsGeneratingReport(false);
+      setIsGeneratingCountryReport(false);
+    }
+  };
+
+  const handleGenerateEventReport = async (eventId: string) => {
+    if (!country) return;
+    setIsGeneratingEventReport(prev => ({ ...prev, [eventId]: true }));
+    setEventReportErrors(prev => ({ ...prev, [eventId]: null }));
+    try {
+      const generatedReport = await api.generateEventReport(country, eventId);
+      setEventReports(prev => ({ ...prev, [eventId]: generatedReport }));
+    } catch (err) {
+      console.error('Error generating event report:', err);
+      setEventReportErrors(prev => ({ ...prev, [eventId]: 'Failed to generate event report. Please try again.' }));
+      setEventReports(prev => ({ ...prev, [eventId]: null }));
+    } finally {
+      setIsGeneratingEventReport(prev => ({ ...prev, [eventId]: false }));
     }
   };
 
@@ -154,10 +174,11 @@ const CountryPage: React.FC = () => {
         <h2 className="text-2xl font-bold">Events in {countryData.country}</h2>
         <div>
           <ReportDialog 
-            report={report} 
-            isLoading={isGeneratingReport} 
-            onGenerate={handleGenerateReport}
-            error={reportError}
+            report={countryReport} 
+            isLoading={isGeneratingCountryReport} 
+            onGenerate={handleGenerateCountryReport}
+            error={countryReportError}
+            title="Generate Country Report"
           />
           <Button onClick={handleBackToDashboard} variant="outline" className="ml-2">Back to Dashboard</Button>
         </div>
@@ -170,7 +191,16 @@ const CountryPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <MarkdownContent content={event.cluster_summary} />
-              <ArticleDialog event={event} />
+              <div className="flex space-x-2 mt-2">
+                <ArticleDialog event={event} />
+                <ReportDialog 
+                  report={eventReports[event.id]} 
+                  isLoading={isGeneratingEventReport[event.id] || false} 
+                  onGenerate={() => handleGenerateEventReport(event.id)}
+                  error={eventReportErrors[event.id] || null}
+                  title="Generate Event Report"
+                />
+              </div>
             </CardContent>
           </Card>
         ))}

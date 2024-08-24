@@ -47,7 +47,7 @@ country_data: Dict[str, CountryData] = {}
 for file in data_dir.glob("*.json"):
     with open(file, "r") as f:
         data = json.load(f)
-        country = data["metadata"]["country"]
+        country = data["metadata"]["country_name"]
         events = []
         for event_id, event_data in data.items():
             if event_id != "metadata":
@@ -104,24 +104,42 @@ def economic_report(country: str):
     return s['generate']['draft']
 
 
+def economic_report_event(country: str, event_id: str):
+    thread = {"configurable": {"thread_id": "2"}}
+    event = next(
+        (e for e in country_data[country].events if e.id == event_id), None)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    for s in graph.stream({
+        'task': f"{event.cluster_summary}\n Generate an equity research report of the above event for an emerging markets investor. ",
+        "max_revisions": 1,
+        "revision_number": 1,
+    }, thread):
+        print(s)
+    print("\n\n\n\nDone\n\n\n\n")
+    print(s['generate']['draft'])
+    return s['generate']['draft']
+
+
 @app.post("/countries/{country}/generate-report", response_model=Report)
-async def generate_report(country: str):
+async def generate_country_report(country: str):
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
 
-    country_info = country_data[country]
-
-    # Generate a simple markdown report
     report_content = f"# Economic Report for {country}\n\n"
     report_content += economic_report(country) + "\n\n"
 
-    for event in country_info.events:
-        report_content += f"## Event {event.id}\n\n"
-        report_content += f"{event.cluster_summary}\n\n"
-        report_content += "### Related Articles:\n\n"
-        for article in event.articles:
-            report_content += f"- [{article.summary[:50]}...]({article.url})\n"
-        report_content += "\n"
+    return Report(content=report_content, generated_at=datetime.now().isoformat())
+
+
+@app.post("/countries/{country}/events/{event_id}/generate-report", response_model=Report)
+async def generate_event_report(country: str, event_id: str):
+    if country not in country_data:
+        raise HTTPException(status_code=404, detail="Country not found")
+
+    report_content = f"# Economic Report for Event {event_id} in {country}\n\n"
+    report_content += economic_report_event(country, event_id) + "\n\n"
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 

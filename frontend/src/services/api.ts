@@ -38,7 +38,7 @@ export const api = {
     return response.json();
   },
 
-  async generateReport(country: string): Promise<Report> {
+  async generateCountryReport(country: string): Promise<Report> {
     const response = await fetch(`${API_BASE_URL}/countries/${country}/generate-report`, {
       method: 'POST',
     });
@@ -48,4 +48,13 @@ export const api = {
     return response.json();
   },
 
+  async generateEventReport(country: string, eventId: string): Promise<Report> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}/events/${eventId}/generate-report`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to generate report for event ${eventId} in ${country}`);
+    }
+    return response.json();
+  },
 };

@@ -19,7 +19,7 @@ from .embeddings import get_embedding, generate_embeddings
 from .clustering import cluster_embeddings, match_clusters
 from .cluster_summarizer import generate_cluster_summary
 from .article_summarizer import generate_summaries
-from .utils import sample_articles
+from .utils import sample_articles, get_country_name
 
 
 class GDELTNewsPipeline:
@@ -134,6 +134,7 @@ class GDELTNewsPipeline:
                 'metadata': {
                     'input_sentence': input_sentence,
                     'country': country,
+                    'country_name': get_country_name(country),
                     'hours': hours,
                     'cluster_summarizer_objective': cluster_summarizer_objective,
                     'no_clusters': no_clusters,
