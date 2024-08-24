@@ -16,6 +16,11 @@ export interface CountryData {
   events: Event[];
 }
 
+export interface Report {
+  content: string;
+  generated_at: string;
+}
+
 export const api = {
   async getCountries(): Promise<string[]> {
     const response = await fetch(`${API_BASE_URL}/countries`);
@@ -32,4 +37,15 @@ export const api = {
     }
     return response.json();
   },
+
+  async generateReport(country: string): Promise<Report> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}/generate-report`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to generate report for ${country}`);
+    }
+    return response.json();
+  },
+
 };
