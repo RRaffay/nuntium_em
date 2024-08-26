@@ -33,7 +33,7 @@ class Event(BaseModel):
     id: str
     title: str = "N/A"  # Added default value
     relevant_for_financial_analysis: bool = False  # Added default value
-    cluster_summary: str
+    event_summary: str
     articles: List[ArticleInfo]
 
 
@@ -52,16 +52,16 @@ for file in data_dir.glob("*.json"):
         country = data["metadata"]["country_name"]
         events = []
         for event_id, event_data in data.items():
-            if event_id != "metadata" and event_data.get("cluster_relevant", False):
+            if event_id != "metadata" and event_data.get("event_relevant_for_financial_analysis", False):
                 articles = [
                     ArticleInfo(summary=summary, url=url)
                     for summary, url in zip(event_data["article_summaries"], event_data["article_urls"])
                 ]
                 events.append(Event(
                     id=event_id,
-                    title=event_data.get("cluster_title", "N/A"),
+                    title=event_data.get("event_title", "N/A"),
                     relevant_for_financial_analysis=True,
-                    cluster_summary=event_data.get("cluster_summary", ""),
+                    event_summary=event_data.get("event_summary", ""),
                     articles=articles
                 ))
         country_data[country] = CountryData(country=country, events=events)
@@ -115,7 +115,7 @@ def economic_report_event(country: str, event_id: str):
         raise HTTPException(status_code=404, detail="Event not found")
 
     for s in graph.stream({
-        'task': f"<Event>\n{event.cluster_summary}\n</Event>. \n\n <Task> Write a report that outlines lucrative financial investments for an emerging market investor in the equities markets based on the above event. \n Research the background of each investment and create comprehensive explanations justifying these investments. \n Avoid general superficial claims and ensure each highlighted investment is analyzed in depth. \n The current date is {datetime.now().strftime('%Y-%m-%d')}\n.</Task> ",
+        'task': f"<Event>\n{event.event_summary}\n</Event>. \n\n <Task> Write a report that outlines lucrative financial investments for an emerging market investor in the equities markets based on the above event. \n Research the background of each investment and create comprehensive explanations justifying these investments. \n Avoid general superficial claims and ensure each highlighted investment is analyzed in depth. \n The current date is {datetime.now().strftime('%Y-%m-%d')}\n.</Task> ",
         "max_revisions": 3,
         "revision_number": 1,
     }, thread):

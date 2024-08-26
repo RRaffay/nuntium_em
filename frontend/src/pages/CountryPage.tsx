@@ -203,7 +203,7 @@ const CountryPage: React.FC = () => {
             <CardTitle>{event.title}</CardTitle> 
             </CardHeader>
             <CardContent>
-              <MarkdownContent content={event.cluster_summary} />
+              <MarkdownContent content={event.event_summary} />
               <div className="flex space-x-2 mt-2">
                 <ArticleDialog event={event} />
                 <ReportDialog 

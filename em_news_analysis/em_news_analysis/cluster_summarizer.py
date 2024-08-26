@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 class Event(BaseModel):
     title: str = Field(
-        default="", description="The title of the cluster (5-10 words)")
-    summary: str = Field(default="", description="The summary of the cluster")
+        default="", description="The title of the event (5-10 words)")
+    summary: str = Field(default="", description="The summary of the event")
     relevant_for_financial_analysis: bool = Field(
-        description="Whether the cluster is relevant for financial analysis")
+        description="Whether the event could be of interest to an investor.")
 
 
 def combined_summary(summaries_list: List[str], objective: str, model: int = 3) -> str:

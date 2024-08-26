@@ -170,9 +170,9 @@ class GDELTNewsPipeline:
                             cluster, event_obj, article_summaries, sampled_urls = result
                             cluster_summaries.append(event_obj.summary)
                             cluster_article_summaries[cluster] = {
-                                'cluster_title': event_obj.title,
-                                'cluster_relevant': event_obj.relevant_for_financial_analysis,
-                                'cluster_summary': event_obj.summary,
+                                'event_title': event_obj.title,
+                                'event_relevant_for_financial_analysis': event_obj.relevant_for_financial_analysis,
+                                'event_summary': event_obj.summary,
                                 'article_summaries': article_summaries,
                                 'article_urls': sampled_urls
                             }
