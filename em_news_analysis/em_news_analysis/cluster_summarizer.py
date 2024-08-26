@@ -59,7 +59,7 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
         Event, method="json_mode")
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a world class news analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether is relevant for financial analysis. Respond in JSON with title, summary and relevant_for_financial_analysis as keys."),
+        ("system", "You are a world class news analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest for an investor. Respond in JSON with title, summary and relevant_for_financial_analysis as keys."),
         ("user", "{input}")
     ])
 

@@ -7,7 +7,7 @@ export interface ArticleInfo {
 
 export interface Event {
   id: string;
-  cluster_title: string;  
+  title: string;  
   cluster_summary: string;
   articles: ArticleInfo[];
 }

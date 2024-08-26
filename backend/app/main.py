@@ -31,8 +31,8 @@ class ArticleInfo(BaseModel):
 
 class Event(BaseModel):
     id: str
-    cluster_title: str = "N/A"  # Added default value
-    cluster_relevant_for_financial_analysis: bool = False  # Added default value
+    title: str = "N/A"  # Added default value
+    relevant_for_financial_analysis: bool = False  # Added default value
     cluster_summary: str
     articles: List[ArticleInfo]
 
@@ -52,18 +52,15 @@ for file in data_dir.glob("*.json"):
         country = data["metadata"]["country_name"]
         events = []
         for event_id, event_data in data.items():
-            if event_id != "metadata":
+            if event_id != "metadata" and event_data.get("cluster_relevant", False):
                 articles = [
                     ArticleInfo(summary=summary, url=url)
                     for summary, url in zip(event_data["article_summaries"], event_data["article_urls"])
                 ]
                 events.append(Event(
                     id=event_id,
-                    cluster_title=event_data.get(
-                        "cluster_title", "N/A"),  # Added
-                    # Added
-                    cluster_relevant_for_financial_analysis=event_data.get(
-                        "cluster_relevant_for_financial_analysis", False),
+                    title=event_data.get("cluster_title", "N/A"),
+                    relevant_for_financial_analysis=True,
                     cluster_summary=event_data.get("cluster_summary", ""),
                     articles=articles
                 ))

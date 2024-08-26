@@ -50,7 +50,7 @@ const ArticleDialog: React.FC<{ event: Event }> = ({ event }) => (
     </DialogTrigger>
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
-        <DialogTitle>Articles for Event</DialogTitle>
+        <DialogTitle>Articles</DialogTitle>
       </DialogHeader>
       <div className="mt-4 max-h-[60vh] overflow-y-auto">
         {event.articles.map((article, index) => (
@@ -200,7 +200,7 @@ const CountryPage: React.FC = () => {
         {countryData.events.map((event) => (
           <Card key={event.id}>
             <CardHeader>
-            <CardTitle>{event.cluster_title}</CardTitle> 
+            <CardTitle>{event.title}</CardTitle> 
             </CardHeader>
             <CardContent>
               <MarkdownContent content={event.cluster_summary} />
