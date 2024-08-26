@@ -20,7 +20,7 @@ from langchain_core.output_parsers import StrOutputParser
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, model: int = 3) -> str:
+def article_summarizer(url: str, model: int = 3, max_length: int = 20000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -30,11 +30,11 @@ def article_summarizer(url: str, model: int = 3) -> str:
 
     Parameters:
     url (str): The URL of the online article to summarize.
-    objective(str): This provides an objective for the summary of the article, including the relevant meta-data
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
+    max_length (int, optional): The maximum length of the article content. Defaults to 20000 characters.
 
     Returns:
-    str: The summary of the article. If there was an error loading the article, returns "Error in loading doc".
+    str: The summary of the article. If there was an error loading the article or the article is too long, returns an appropriate message.
     """
 
     loader = WebBaseLoader(url)
@@ -43,17 +43,20 @@ def article_summarizer(url: str, model: int = 3) -> str:
     except Exception as e:
         return f"Error in loading doc {str(e)}"
 
+    # Check the length of the article content
+    article_content = ''.join([doc.page_content for doc in docs])
+    if len(article_content) > max_length:
+        return f"Article content exceeds the maximum length of {max_length} characters."
+
     if model == 3:
         open_ai_llm = ChatOpenAI(
             temperature=0,
             model_name="gpt-4o-mini",
         )
-
     else:
         open_ai_llm = ChatOpenAI(
             temperature=0,
             model_name="gpt-4o",
-            # openai_api_key=settings.OPENAI_API_KEY,
         )
 
     llm = open_ai_llm
