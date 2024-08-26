@@ -41,7 +41,6 @@ async def generate_event_report(country: str, event_id: str):
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
 
-    report_content = f"# Economic Report for Event {event_id} in {country}\n\n"
-    report_content += economic_report_event(country, event_id) + "\n\n"
+    report_content = await economic_report_event(country, event_id) + "\n\n"
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
