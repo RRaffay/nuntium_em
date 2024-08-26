@@ -200,7 +200,7 @@ const CountryPage: React.FC = () => {
         {countryData.events.map((event) => (
           <Card key={event.id}>
             <CardHeader>
-              <CardTitle>Event {event.id}</CardTitle>
+            <CardTitle>{event.cluster_title}</CardTitle> 
             </CardHeader>
             <CardContent>
               <MarkdownContent content={event.cluster_summary} />

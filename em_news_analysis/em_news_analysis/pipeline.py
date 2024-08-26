@@ -155,9 +155,9 @@ class GDELTNewsPipeline:
                     f"Generating summaries for {len(sampled_urls)} articles in cluster {cluster}...")
                 article_summaries = generate_summaries(
                     sampled_urls, article_summarizer_objective)
-                cluster_summary = generate_cluster_summary(
+                event_obj = generate_cluster_summary(
                     article_summaries, cluster_summarizer_objective)
-                return cluster, cluster_summary, article_summaries, sampled_urls
+                return cluster, event_obj, article_summaries, sampled_urls
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_cluster = {executor.submit(
@@ -167,10 +167,12 @@ class GDELTNewsPipeline:
                     try:
                         result = future.result()
                         if result:
-                            cluster, cluster_summary, article_summaries, sampled_urls = result
-                            cluster_summaries.append(cluster_summary)
+                            cluster, event_obj, article_summaries, sampled_urls = result
+                            cluster_summaries.append(event_obj.summary)
                             cluster_article_summaries[cluster] = {
-                                'cluster_summary': cluster_summary,
+                                'cluster_title': event_obj.title,
+                                'cluster_relevant': event_obj.relevant_for_financial_analysis,
+                                'cluster_summary': event_obj.summary,
                                 'article_summaries': article_summaries,
                                 'article_urls': sampled_urls
                             }
