@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException
 from core.reports import economic_report, economic_report_event
 from models import CountryData, Report
 from db.data import country_data
-import datetime
+from datetime import datetime
+
 
 router = APIRouter()
 
