@@ -20,7 +20,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 logger = logging.getLogger(__name__)
 
-# Should be consistent with backend and Frontend
+# Should be consistent with backend and Frontend. Add tests
 
 
 class Event(BaseModel):
