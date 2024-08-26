@@ -118,8 +118,8 @@ def economic_report_event(country: str, event_id: str):
         raise HTTPException(status_code=404, detail="Event not found")
 
     for s in graph.stream({
-        'task': f"{event.cluster_summary}\n Generate an equity research report of the above event for an emerging markets investor. ",
-        "max_revisions": 1,
+        'task': f"<Event>\n{event.cluster_summary}\n</Event>. \n\n <Task> Write a report that outlines lucrative financial investments for an emerging market investor in the equities markets based on the above event. \n Research the background of each investment and create comprehensive explanations justifying these investments. \n Avoid general superficial claims and ensure each highlighted investment is analyzed in depth. \n The current date is {datetime.now().strftime('%Y-%m-%d')}\n.</Task> ",
+        "max_revisions": 3,
         "revision_number": 1,
     }, thread):
         print(s)
