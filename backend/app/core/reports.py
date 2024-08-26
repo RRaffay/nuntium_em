@@ -1,6 +1,7 @@
 from datetime import datetime
 from em_research_agentic.agent import graph
 from db.data import country_data
+from fastapi import HTTPException
 
 
 def economic_report(country: str):
