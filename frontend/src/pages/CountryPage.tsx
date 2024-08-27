@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress'; 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -75,10 +75,18 @@ const ReportDialog: React.FC<{
   title: string
 }> = ({ report, isLoading, onGenerate, error, title }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleGenerate = async () => {
-    await onGenerate();
+    setProgress(0);
     setIsOpen(true);
+    const interval = setInterval(() => {
+      setProgress((prev) => Math.min(prev + 1, 100));
+    }, 1500); // 150 seconds / 100 steps = 1.5 seconds per step
+
+    await onGenerate();
+    clearInterval(interval);
+    setProgress(100);
   };
 
   return (
@@ -92,7 +100,10 @@ const ReportDialog: React.FC<{
         </DialogHeader>
         <div className="mt-4 max-h-[70vh] overflow-y-auto">
           {isLoading ? (
-            <p>Generating report...</p>
+            <>
+              <p>Generating report...</p>
+              <Progress value={progress} className="mt-2" /> 
+            </>
           ) : error ? (
             <p className="text-red-500">{error}</p>
           ) : report ? (
