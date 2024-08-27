@@ -77,12 +77,23 @@ const ReportDialog: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const easeOutQuad = (t: number) => t * (2 - t);
+
   const handleGenerate = async () => {
     setProgress(0);
     setIsOpen(true);
+    const startTime = Date.now();
+    const duration = 180000; // 180 seconds
+
     const interval = setInterval(() => {
-      setProgress((prev) => Math.min(prev + 1, 100));
-    }, 1500); // 150 seconds / 100 steps = 1.5 seconds per step
+      const elapsed = Date.now() - startTime;
+      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
+      setProgress(progressValue);
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+      }
+    }, 100); // Update every 100ms
 
     await onGenerate();
     clearInterval(interval);
@@ -101,8 +112,8 @@ const ReportDialog: React.FC<{
         <div className="mt-4 max-h-[70vh] overflow-y-auto">
           {isLoading ? (
             <>
-              <p>Generating report...</p>
-              <Progress value={progress} className="mt-2" /> 
+              <p>Generating Report</p>
+              <Progress value={progress} className="mt-2" /> {/* Update progress value */}
             </>
           ) : error ? (
             <p className="text-red-500">{error}</p>
