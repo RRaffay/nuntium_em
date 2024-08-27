@@ -34,11 +34,6 @@ mongo_client = MongoClient(mongo_uri)
 mongo_db = mongo_client['gdelt_news']
 mongo_collection = mongo_db['news_summaries']
 
-# Load data from JSON files
-for file in data_dir.glob("*.json"):
-    with open(file, "r") as f:
-        data = json.load(f)
-        # ... existing code ...
 
 # Load data from MongoDB
 for document in mongo_collection.find():
