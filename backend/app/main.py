@@ -1,11 +1,33 @@
 from dotenv import load_dotenv  # noqa
 load_dotenv()  # noqa
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from api.routes import router as api_router
+# General fastapi
+from contextlib import asynccontextmanager
+from beanie import init_beanie
+from fastapi import Depends, FastAPI
 
-app = FastAPI()
+# Auth
+from auth.auth_db import User, db
+from auth.auth_routes import auth_router
+
+# Other
+from api.routes import router as api_router
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_beanie(
+        database=db,
+        document_models=[
+            User,
+        ],
+    )
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Enable CORS
 app.add_middleware(
@@ -15,6 +37,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include FastAPI Users routes
+app.include_router(auth_router)
 
 # Include API router
 app.include_router(api_router)
