@@ -20,13 +20,15 @@ from langchain_core.output_parsers import StrOutputParser
 
 logger = logging.getLogger(__name__)
 
+# Should be consistent with backend and Frontend. Add tests to ensure
+
 
 class Event(BaseModel):
     title: str = Field(
-        default="", description="The title of the cluster (5-10 words)")
-    summary: str = Field(default="", description="The summary of the cluster")
+        default="", description="The title of the event (5-10 words)")
+    summary: str = Field(default="", description="The summary of the event")
     relevant_for_financial_analysis: bool = Field(
-        description="Whether the cluster is relevant for financial analysis")
+        description="Whether the event could be of interest to an investor.")
 
 
 def combined_summary(summaries_list: List[str], objective: str, model: int = 3) -> str:
@@ -59,7 +61,7 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
         Event, method="json_mode")
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a world class news analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether is relevant for financial analysis. Respond in JSON with title, summary and relevant_for_financial_analysis as keys."),
+        ("system", "You are a world class news analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest for an investor. Respond in JSON with title, summary and relevant_for_financial_analysis as keys."),
         ("user", "{input}")
     ])
 

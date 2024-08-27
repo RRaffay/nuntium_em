@@ -18,8 +18,24 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - mongodb
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/dbname
+      - GRAPH_SERVER_URL=http://graph_server:8001
+      - MONGO_URI=mongodb://mongodb:27017  # Updated URI
+    env_file:
+      - .env
+
+  graph_server:
+    build:
+      context: .
+      dockerfile: em_research_agentic/Dockerfile
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+    env_file:
+      - .env
 
   db:
     image: postgres:13
@@ -29,6 +45,15 @@ services:
       - POSTGRES_DB=dbname
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    # Removed authentication environment variables
 
 volumes:
   postgres_data:
+  mongodb_data:

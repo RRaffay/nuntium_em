@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress'; 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -50,7 +50,7 @@ const ArticleDialog: React.FC<{ event: Event }> = ({ event }) => (
     </DialogTrigger>
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
-        <DialogTitle>Articles for Event</DialogTitle>
+        <DialogTitle>Articles</DialogTitle>
       </DialogHeader>
       <div className="mt-4 max-h-[60vh] overflow-y-auto">
         {event.articles.map((article, index) => (
@@ -75,10 +75,29 @@ const ReportDialog: React.FC<{
   title: string
 }> = ({ report, isLoading, onGenerate, error, title }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const easeOutQuad = (t: number) => t * (2 - t);
 
   const handleGenerate = async () => {
-    await onGenerate();
+    setProgress(0);
     setIsOpen(true);
+    const startTime = Date.now();
+    const duration = 180000; // 180 seconds
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
+      setProgress(progressValue);
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+      }
+    }, 100); // Update every 100ms
+
+    await onGenerate();
+    clearInterval(interval);
+    setProgress(100);
   };
 
   return (
@@ -92,7 +111,10 @@ const ReportDialog: React.FC<{
         </DialogHeader>
         <div className="mt-4 max-h-[70vh] overflow-y-auto">
           {isLoading ? (
-            <p>Generating report...</p>
+            <>
+              <p>Generating Report</p>
+              <Progress value={progress} className="mt-2" /> {/* Update progress value */}
+            </>
           ) : error ? (
             <p className="text-red-500">{error}</p>
           ) : report ? (
@@ -200,10 +222,10 @@ const CountryPage: React.FC = () => {
         {countryData.events.map((event) => (
           <Card key={event.id}>
             <CardHeader>
-            <CardTitle>{event.cluster_title}</CardTitle> 
+            <CardTitle>{event.title}</CardTitle> 
             </CardHeader>
             <CardContent>
-              <MarkdownContent content={event.cluster_summary} />
+              <MarkdownContent content={event.event_summary} />
               <div className="flex space-x-2 mt-2">
                 <ArticleDialog event={event} />
                 <ReportDialog 

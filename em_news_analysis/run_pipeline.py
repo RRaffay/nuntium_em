@@ -12,8 +12,8 @@ def main():
     try:
         results = pipeline.run_pipeline(
             input_sentence="Political Changes",
-            country="AR",  # 3166-1 alpha-2 codes for country names
-            hours=2,
+            country="AF",  # 3166-1 alpha-2 codes for country names
+            hours=3,
             article_summarizer_objective="",
             # article_summarizer_objective="Analyze the impact of the event being discussed on the financial markets",
             cluster_summarizer_objective="Below are article summaries for a particular event."

@@ -10,6 +10,7 @@ import pandas as pd
 import json
 from tqdm import tqdm
 import concurrent.futures
+from pymongo import MongoClient
 
 
 from .config import Config
@@ -41,6 +42,11 @@ class GDELTNewsPipeline:
         # Add a directory for exporting CSV files
         self.export_dir = os.path.join(os.getcwd(), 'exported_data')
         os.makedirs(self.export_dir, exist_ok=True)
+
+        # Set up MongoDB connection
+        mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017')
+        self.mongo_client = MongoClient(mongo_uri)
+        self.mongo_db = self.mongo_client['gdelt_news']
 
         # Set up logging
         logging.basicConfig(level=logging.INFO)
@@ -170,9 +176,9 @@ class GDELTNewsPipeline:
                             cluster, event_obj, article_summaries, sampled_urls = result
                             cluster_summaries.append(event_obj.summary)
                             cluster_article_summaries[cluster] = {
-                                'cluster_title': event_obj.title,
-                                'cluster_relevant': event_obj.relevant_for_financial_analysis,
-                                'cluster_summary': event_obj.summary,
+                                'event_title': event_obj.title,
+                                'event_relevant_for_financial_analysis': event_obj.relevant_for_financial_analysis,
+                                'event_summary': event_obj.summary,
                                 'article_summaries': article_summaries,
                                 'article_urls': sampled_urls
                             }
@@ -210,17 +216,7 @@ class GDELTNewsPipeline:
 
     def export_data(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int) -> Tuple[str, str]:
         """
-        Export the processed DataFrame to a CSV file and summaries to a JSON file.
-
-        Args:
-        - df: The DataFrame to export
-        - summaries: Dictionary containing cluster and article summaries
-        - input_sentence: The input sentence used for the query
-        - country: The country filter used
-        - hours: The number of hours of data fetched
-
-        Returns:
-        - Tuple containing the paths to the exported CSV and JSON files
+        Export the processed DataFrame to a CSV file, summaries to a JSON file, and save to MongoDB if available.
         """
         # Create filenames based on the input parameters
         timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
@@ -237,4 +233,31 @@ class GDELTNewsPipeline:
         with open(json_filepath, 'w', encoding='utf-8') as f:
             json.dump(summaries, f, ensure_ascii=False, indent=4)
 
+        # Try to save to MongoDB if available
+        try:
+            mongo_collection = self.mongo_db['news_summaries']
+            mongo_data = {
+                'timestamp': timestamp,
+                'input_sentence': input_sentence,
+                'country': country,
+                'hours': hours,
+                'summaries': self._convert_keys_to_strings(summaries)
+            }
+            mongo_collection.insert_one(mongo_data)
+            self.logger.info(f"Data saved to MongoDB: {mongo_data['_id']}")
+        except Exception as e:
+            self.logger.warning(f"Failed to save data to MongoDB: {str(e)}")
+            self.logger.info("Data was still saved to JSON file.")
+
         return csv_filepath, json_filepath
+
+    def _convert_keys_to_strings(self, obj):
+        """
+        Recursively convert all keys in a dictionary to strings.
+        """
+        if isinstance(obj, dict):
+            return {str(key): self._convert_keys_to_strings(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_keys_to_strings(item) for item in obj]
+        else:
+            return obj
