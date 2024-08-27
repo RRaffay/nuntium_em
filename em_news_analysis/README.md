@@ -43,7 +43,6 @@ poetry shell
 python run_pipeline.py
 ```
 
-
 This script demonstrates how to use the `GDELTNewsPipeline` class with sample parameters.
 
 ## Configuration
@@ -82,3 +81,5 @@ This project is licensed under the MIT License (Non-Commercial Use). See the LIC
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+
