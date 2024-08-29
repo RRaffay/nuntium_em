@@ -30,6 +30,6 @@ auth_router.include_router(
 )
 
 
-@auth_router.get("/authenticated-route")
+@auth_router.get("/dashboard-header")
 async def authenticated_route(user: User = Depends(current_active_user)):
-    return {"message": f"Hello {user.email}!"}
+    return {"message": f"Welcome, {user.first_name}!"}

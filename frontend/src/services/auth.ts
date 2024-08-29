@@ -6,6 +6,8 @@ interface LoginCredentials {
 }
 
 interface RegisterCredentials {
+  first_name: string;
+  last_name: string;
   email: string;
   password: string;
 }
@@ -39,19 +41,40 @@ export const auth = {
         localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
     },
 
-  async register(credentials: RegisterCredentials): Promise<void> {
-    const response = await fetch(`${api.API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
+    async register(credentials: RegisterCredentials): Promise<void> {
+      const response = await fetch(`${api.API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Registration failed');
+      }
+    },
 
-    if (!response.ok) {
-      throw new Error('Registration failed');
-    }
-  },
+    async getDashboardHeader(): Promise<string> {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+  
+      const response = await fetch(`${api.API_BASE_URL}/dashboard-header`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard header');
+      }
+  
+      const data = await response.json();
+      return data.message;
+    },
 
   logout(): void {
     localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -64,4 +87,6 @@ export const auth = {
   isAuthenticated(): boolean {
     return !!this.getToken();
   },
+  
+
 };

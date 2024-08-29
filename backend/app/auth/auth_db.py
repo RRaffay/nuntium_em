@@ -9,7 +9,8 @@ db = client[settings.MONGO_DB_NAME]
 
 
 class User(BeanieBaseUser, Document):
-    pass
+    first_name: str
+    last_name: str
 
 
 async def get_user_db():
