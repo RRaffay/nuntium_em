@@ -1,3 +1,5 @@
+import { auth } from '@/services/auth';
+
 const API_BASE_URL = 'http://localhost:8000';
 
 export interface ArticleInfo {
@@ -22,9 +24,18 @@ export interface Report {
   generated_at: string;
 }
 
+const getAuthHeaders = (): HeadersInit => {
+  const token = auth.getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const api = {
+  API_BASE_URL,
+
   async getCountries(): Promise<string[]> {
-    const response = await fetch(`${API_BASE_URL}/countries`);
+    const response = await fetch(`${API_BASE_URL}/countries`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch countries');
     }
@@ -32,7 +43,9 @@ export const api = {
   },
 
   async getCountryData(country: string): Promise<CountryData> {
-    const response = await fetch(`${API_BASE_URL}/countries/${country}`);
+    const response = await fetch(`${API_BASE_URL}/countries/${country}`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch data for ${country}`);
     }
@@ -42,6 +55,7 @@ export const api = {
   async generateCountryReport(country: string): Promise<Report> {
     const response = await fetch(`${API_BASE_URL}/countries/${country}/generate-report`, {
       method: 'POST',
+      headers: getAuthHeaders(),
     });
     if (!response.ok) {
       throw new Error(`Failed to generate report for ${country}`);
@@ -52,6 +66,7 @@ export const api = {
   async generateEventReport(country: string, eventId: string): Promise<Report> {
     const response = await fetch(`${API_BASE_URL}/countries/${country}/events/${eventId}/generate-report`, {
       method: 'POST',
+      headers: getAuthHeaders(),
     });
     if (!response.ok) {
       throw new Error(`Failed to generate report for event ${eventId} in ${country}`);
