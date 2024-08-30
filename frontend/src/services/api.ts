@@ -32,6 +32,16 @@ const getAuthHeaders = (): HeadersInit => {
 export const api = {
   API_BASE_URL,
 
+  async getAddableCountries(): Promise<string[]> {
+    const response = await fetch(`${API_BASE_URL}/addable-countries`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch addable countries');
+    }
+    return response.json();
+  },
+
   async getCountries(): Promise<string[]> {
     const response = await fetch(`${API_BASE_URL}/countries`, {
       headers: getAuthHeaders(),
@@ -72,5 +82,19 @@ export const api = {
       throw new Error(`Failed to generate report for event ${eventId} in ${country}`);
     }
     return response.json();
+  },
+
+  async runCountryPipeline(country: string, hours: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/run-country-pipeline`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ country, hours }),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to run pipeline for ${country}`);
+    }
   },
 };

@@ -4,6 +4,10 @@
 start_graph_server:
 	poetry run python em_research_agentic/graph_server.py
 
+# Target to start the news pipeline server
+start_news_pipeline_server:
+	poetry run python em_news_analysis/news_pipeline_server.py
+
 # Target to start the backend
 start_backend:
 	poetry run python backend/app/main.py

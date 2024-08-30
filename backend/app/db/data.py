@@ -54,3 +54,27 @@ for document in mongo_collection.find():
                 articles=articles
             ))
     country_data[country] = CountryData(country=country, events=events)
+
+
+# Dictionary with names of emerging market country names and their Codes Alpha-2 codes
+addable_countries = {
+    "Argentina": "AR",
+    "Brazil": "BR",
+    "Chile": "CL",
+    "China": "CN",
+    "Colombia": "CO",
+    "Egypt": "EG",
+    "India": "IN",
+    "Indonesia": "ID",
+    "Mexico": "MX",
+    "Morocco": "MA",
+    "Nigeria": "NG",
+    "Pakistan": "PK",
+    "Philippines": "PH",
+    "South Africa": "ZA",
+    "Thailand": "TH",
+    "Turkey": "TR",
+    "Ukraine": "UA",
+    "United Kingdom": "GB",
+    "Vietnam": "VN",
+}
