@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from core.reports import economic_report, economic_report_event
 from core.pipeline import run_pipeline, CountryPipelineInputApp
 from models import CountryData, Report
-from db.data import fetch_country_data, addable_countries
+from db.data import fetch_country_data, addable_countries, delete_country_data
 from datetime import datetime
 
 
@@ -78,3 +78,17 @@ async def generate_event_report(country: str, event_id: str):
     report_content = await economic_report_event(country, event_id) + "\n\n"
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
+
+
+@router.delete("/countries/{country}")
+async def delete_country(country: str):
+    country_data = await fetch_country_data()
+    if country not in country_data:
+        raise HTTPException(status_code=404, detail="Country not found")
+
+    success = await delete_country_data(country)
+    if success:
+        return {"message": f"Country data for {country} has been deleted"}
+    else:
+        raise HTTPException(
+            status_code=500, detail="Failed to delete country data")

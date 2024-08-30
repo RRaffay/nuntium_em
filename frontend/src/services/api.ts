@@ -104,4 +104,14 @@ export const api = {
       throw new Error(`Failed to run pipeline for ${country}`);
     }
   },
+
+  async deleteCountry(country: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to delete ${country}`);
+    }
+  },
 };

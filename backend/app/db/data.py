@@ -93,3 +93,11 @@ addable_countries = {
     "United Kingdom": "GB",
     "Vietnam": "VN",
 }
+
+
+async def delete_country_data(country: str):
+    result = mongo_collection.delete_one(
+        {"summaries.metadata.country_name": country})
+    if result.deleted_count == 0:
+        return False
+    return True

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { api, CountryInfo } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
+import { Trash2 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [countries, setCountries] = useState<CountryInfo[]>([]);
@@ -89,6 +90,21 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteCountry = async (country: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete data for ${country}?`)) {
+      try {
+        await api.deleteCountry(country);
+        setCountries(countries.filter(c => c.name !== country));
+        setAddableCountries([...addableCountries, country]);
+      } catch (err) {
+        setError('Failed to delete country. Please try again.');
+        console.error('Error deleting country:', err);
+      }
+    }
+  };
+
   if (error) {
     return <div className="text-red-500">{error}</div>;
   }
@@ -115,26 +131,37 @@ const Dashboard: React.FC = () => {
                 <p className="text-green-600">{successMessage}</p>
               ) : (
                 <>
-                  <Select onValueChange={(value) => setSelectedCountry(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {addableCountries.map((country) => (
-                        <SelectItem key={country} value={country}>
-                          {country}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="number"
-                    placeholder="Time period (2-24 hours)"
-                    min={2}
-                    max={24}
-                    value={timePeriod}
-                    onChange={(e) => setTimePeriod(Number(e.target.value))}
-                  />
+                  <div className="space-y-2">
+                    <label htmlFor="country-select" className="text-sm font-medium">
+                      Country Name
+                    </label>
+                    <Select onValueChange={(value) => setSelectedCountry(value)}>
+                      <SelectTrigger id="country-select">
+                        <SelectValue placeholder="Select a country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addableCountries.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="time-period" className="text-sm font-medium">
+                      Hours
+                    </label>
+                    <Input
+                      id="time-period"
+                      type="number"
+                      placeholder="Time period (2-24 hours)"
+                      min={2}
+                      max={24}
+                      value={timePeriod}
+                      onChange={(e) => setTimePeriod(Number(e.target.value))}
+                    />
+                  </div>
                   <Button onClick={handleAddCountry}>Add Country</Button>
                 </>
               )}
@@ -145,17 +172,27 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {countries.map((country) => (
           <Link key={country.name} to={`/country/${country.name}`}>
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle>{country.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Last updated: {new Date(country.timestamp).toLocaleString()}</p>
-                <p>Hours of data: {country.hours}</p>
-                <p>Events Found: {country.no_matched_clusters}</p>
-              </CardContent>
-            </Card>
-          </Link>
+          <Card className="hover:shadow-lg transition-shadow duration-300 relative">
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                {country.name}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => handleDeleteCountry(country.name, e)}
+                  className="absolute top-2 right-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Last updated: {new Date(country.timestamp).toLocaleString()}</p>
+              <p>Hours of data: {country.hours}</p>
+              <p>Events Found: {country.no_matched_clusters}</p>
+            </CardContent>
+          </Card>
+        </Link>
         ))}
       </div>
     </div>
