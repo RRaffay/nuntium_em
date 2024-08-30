@@ -66,7 +66,8 @@ class GDELTNewsPipeline:
         cluster_summarizer_objective: str,
         process_all: bool = False,
         sample_size: int = 1500,
-        max_workers: int = 10
+        max_workers: int = 10,
+        export_to_local: bool = False
     ) -> List[str]:
         try:
             self.logger.info("Fetching GDELT data...")
@@ -193,12 +194,19 @@ class GDELTNewsPipeline:
             self.logger.info(
                 f"Generated {len(cluster_summaries)} cluster summaries.")
 
-            # Export the DataFrame and summaries to CSV and JSON
-            csv_path, json_path = self.export_data(
-                sampled_data, cluster_article_summaries, input_sentence, country, hours
-            )
-            self.logger.info(f"Exported processed data to {csv_path}")
-            self.logger.info(f"Exported summaries to {json_path}")
+            # Export the DataFrame and summaries
+            if export_to_local:
+                csv_path, json_path = self.export_data_local(
+                    sampled_data, cluster_article_summaries, input_sentence, country, hours
+                )
+                self.logger.info(f"Exported processed data to {csv_path}")
+                self.logger.info(f"Exported summaries to {json_path}")
+            else:
+                mongo_id = self.export_data_mongo(
+                    sampled_data, cluster_article_summaries, input_sentence, country, hours
+                )
+                self.logger.info(
+                    f"Exported data to MongoDB with ID: {mongo_id}")
 
             return cluster_summaries
 
@@ -218,11 +226,10 @@ class GDELTNewsPipeline:
     def get_embedding(self, text: str) -> List[float]:
         return get_embedding(text, self.config.embedding_model)
 
-    def export_data(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int) -> Tuple[str, str]:
+    def export_data_local(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int) -> Tuple[str, str]:
         """
-        Export the processed DataFrame to a CSV file, summaries to a JSON file, and save to MongoDB if available.
+        Export the processed DataFrame to a CSV file and summaries to a JSON file locally.
         """
-        # Create filenames based on the input parameters
         timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
         csv_filename = f"gdelt_data_{country}_{hours}h_{timestamp}.csv"
         json_filename = f"summaries_{country}_{hours}h_{timestamp}.json"
@@ -230,30 +237,32 @@ class GDELTNewsPipeline:
         csv_filepath = os.path.join(self.export_dir, csv_filename)
         json_filepath = os.path.join(self.export_dir, json_filename)
 
-        # Export the DataFrame to CSV
         df.to_csv(csv_filepath, index=False)
 
-        # Export the summaries to JSON
         with open(json_filepath, 'w', encoding='utf-8') as f:
             json.dump(summaries, f, ensure_ascii=False, indent=4)
 
-        # Try to save to MongoDB if available
+        return csv_filepath, json_filepath
+
+    def export_data_mongo(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int) -> str:
+        """
+        Export the processed DataFrame and summaries to MongoDB.
+        """
         try:
             mongo_collection = self.mongo_db['news_summaries']
+            timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
             mongo_data = {
                 'timestamp': timestamp,
                 'input_sentence': input_sentence,
                 'country': country,
                 'hours': hours,
-                'summaries': self._convert_keys_to_strings(summaries)
+                'summaries': self._convert_keys_to_strings(summaries),
             }
-            mongo_collection.insert_one(mongo_data)
-            self.logger.info(f"Data saved to MongoDB: {mongo_data['_id']}")
+            result = mongo_collection.insert_one(mongo_data)
+            return str(result.inserted_id)
         except Exception as e:
-            self.logger.warning(f"Failed to save data to MongoDB: {str(e)}")
-            self.logger.info("Data was still saved to JSON file.")
-
-        return csv_filepath, json_filepath
+            self.logger.error(f"Failed to save data to MongoDB: {str(e)}")
+            raise
 
     def _convert_keys_to_strings(self, obj):
         """
