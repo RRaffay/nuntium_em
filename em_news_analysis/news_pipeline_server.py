@@ -14,7 +14,7 @@ class PipelineInput(BaseModel):
     article_summarizer_objective: str = Field(
         default="")
     cluster_summarizer_objective: str = Field(
-        default="Below are article summaries for a particular event")
+        default="")
     process_all: bool = False
     sample_size: int = 1500
     max_workers: int = 10

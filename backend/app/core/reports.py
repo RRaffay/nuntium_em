@@ -1,6 +1,5 @@
 import httpx
 from datetime import datetime
-from em_research_agentic.agent import graph
 from models import Event
 from fastapi import HTTPException
 import os
@@ -8,19 +7,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def economic_report(country: str):
-    thread = {"configurable": {"thread_id": "2"}}
-    for s in graph.stream({
-        'task': f"Write an equity report for {country} based on the recent events.",
-        "max_revisions": 1,
-        "revision_number": 1,
-    }, thread):
-        print(s)
-    print("\n\n\n\nDone\n\n\n\n")
-    print(s['generate']['draft'])
-    return s['generate']['draft']
 
 
 async def economic_report_event(country: str, event: Event):
@@ -41,6 +27,35 @@ async def economic_report_event(country: str, event: Event):
             result = response.json()
 
             content = f"# Economic Report for: {event.title}\n\n"
+            content += result['draft']
+
+            return content
+        except httpx.HTTPStatusError as e:
+            logger.error(e)
+            raise HTTPException(
+                status_code=500, detail=f"Graph server error: {str(e)}")
+        except Exception as e:
+            logger.error(e)
+            raise HTTPException(
+                status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+async def economic_report(country: str):
+    async with httpx.AsyncClient(timeout=180.0) as client:
+        try:
+            report_server_url = os.environ.get(
+                'REPORT_SERVER_URL', 'http://0.0.0.0:8001')
+            logger.info(f"This is url {report_server_url}")
+            response = await client.post(
+                f"{report_server_url}/economic_report",
+                json={
+                    "country": country,
+                }
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            content = f"# Economic Report for: {country}\n\n"
             content += result['draft']
 
             return content
