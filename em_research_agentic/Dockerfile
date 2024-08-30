@@ -1,8 +1,12 @@
+# Dockerfile for backend
 FROM python:3.11
 WORKDIR /app
-COPY em_research_agentic/ ./em_research_agentic/
-COPY em_news_analysis/ ./em_news_analysis/
+
+# Copy pyproject.toml and install dependencies
 COPY pyproject.toml .
 RUN pip install poetry
-RUN poetry install 
-CMD ["poetry", "run", "python", "em_research_agentic/report_server.py"]
+RUN poetry install --no-root
+
+COPY . .
+
+CMD ["poetry", "run", "python", "report_server.py"]

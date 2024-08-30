@@ -18,6 +18,11 @@ class GraphInput(BaseModel):
     debug: bool = False
 
 
+class EconomicReportInput(BaseModel):
+    country: str
+    debug: bool = False
+
+
 @app.post("/run_graph")
 async def run_graph(input_data: GraphInput):
     try:
@@ -30,6 +35,21 @@ async def run_graph(input_data: GraphInput):
         return {"draft": s['draft']}
     except Exception as e:
         logging.error(f"Error in run_graph: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/economic_report")
+async def economic_report(input_data: EconomicReportInput):
+    try:
+        thread = {"configurable": {"thread_id": "2"}}
+        s = await graph.ainvoke({
+            'task': f"Write an equity report for {input_data.country} based on the recent events. Research the background of each investment and create comprehensive explanations justifying these investments. Avoid general superficial claims and ensure each highlighted investment is analyzed in depth.",
+            "max_revisions": 2,
+            "revision_number": 1,
+        }, thread, debug=input_data.debug)
+        return {"draft": s['generate']['draft']}
+    except Exception as e:
+        logging.error(f"Error in economic_report: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

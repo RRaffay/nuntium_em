@@ -15,3 +15,11 @@ start_backend:
 # Target to start the frontend
 start_frontend:
 	cd frontend && npm start 
+
+# Start all services in docker containers
+start_docker_app:
+	docker compose up --build -d
+
+# Stop all services in docker containers
+stop_docker_app:
+	docker compose down
