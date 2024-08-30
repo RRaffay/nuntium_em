@@ -22,6 +22,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/dbname
       - GRAPH_SERVER_URL=http://graph_server:8001
+      - NEWS_PIPELINE_SERVER_URL=http://news_pipeline_server:8002
       - MONGO_URI=mongodb://mongodb:27017  # Updated URI
     env_file:
       - .env
