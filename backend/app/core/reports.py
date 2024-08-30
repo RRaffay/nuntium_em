@@ -1,7 +1,7 @@
 import httpx
 from datetime import datetime
 from em_research_agentic.agent import graph
-from db.data import country_data
+from models import Event
 from fastapi import HTTPException
 import os
 import logging
@@ -23,12 +23,7 @@ def economic_report(country: str):
     return s['generate']['draft']
 
 
-async def economic_report_event(country: str, event_id: str):
-    event = next(
-        (e for e in country_data[country].events if e.id == event_id), None)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-
+async def economic_report_event(country: str, event: Event):
     async with httpx.AsyncClient(timeout=180.0) as client:
         try:
             graph_server_url = os.environ.get(
