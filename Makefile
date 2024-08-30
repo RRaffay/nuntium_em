@@ -1,8 +1,8 @@
-.PHONY: start_graph_server start_backend start_frontend
+.PHONY: start_report_server start_backend start_frontend start_news_pipeline_server
 
-# Target to start the Graph server
-start_graph_server:
-	poetry run python em_research_agentic/graph_server.py
+# Target to start the Report server
+start_report_server:
+	poetry run python em_research_agentic/report_server.py
 
 # Target to start the news pipeline server
 start_news_pipeline_server:

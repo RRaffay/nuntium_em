@@ -15,6 +15,7 @@ class GraphInput(BaseModel):
     task: str
     max_revisions: int
     revision_number: int
+    debug: bool = False
 
 
 @app.post("/run_graph")
@@ -25,7 +26,7 @@ async def run_graph(input_data: GraphInput):
             'task': input_data.task,
             "max_revisions": input_data.max_revisions,
             "revision_number": input_data.revision_number,
-        }, thread, debug=True)
+        }, thread, debug=input_data.debug)
         return {"draft": s['draft']}
     except Exception as e:
         logging.error(f"Error in run_graph: {str(e)}")

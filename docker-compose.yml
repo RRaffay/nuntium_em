@@ -17,35 +17,40 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
       - mongodb
+      - report_server
+      - news_pipeline_server
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/dbname
-      - GRAPH_SERVER_URL=http://graph_server:8001
+      - REPORT_SERVER_URL=http://report_server:8001
       - NEWS_PIPELINE_SERVER_URL=http://news_pipeline_server:8002
-      - MONGO_URI=mongodb://mongodb:27017  # Updated URI
+      - MONGO_URI=mongodb://mongodb:27017 
     env_file:
       - .env
 
-  graph_server:
+  report_server:
     build:
       context: .
       dockerfile: em_research_agentic/Dockerfile
     ports:
       - "8001:8001"
     depends_on:
-      - db
+      - mongodb
     env_file:
       - .env
-
-  db:
-    image: postgres:13
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=dbname
+  
+  news_pipeline_server:
+    build:
+      context: .
+      dockerfile: em_news_analysis/Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      - mongodb
+    env_file:
+      - .env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./em_news_analysis/config:/app/config
+
   
   mongodb:
     image: mongo:latest
@@ -53,8 +58,7 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-    # Removed authentication environment variables
+    
 
 volumes:
-  postgres_data:
   mongodb_data:
