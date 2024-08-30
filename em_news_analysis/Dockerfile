@@ -10,4 +10,4 @@ RUN poetry install --no-root
 # Copy the rest of the code
 COPY . .
 
-CMD ["poetry", "run", "python", "app/main.py"]
+CMD ["poetry", "run", "python", "news_pipeline_server.py"]

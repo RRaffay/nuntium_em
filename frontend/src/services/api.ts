@@ -24,6 +24,13 @@ export interface Report {
   generated_at: string;
 }
 
+export interface CountryInfo {
+  name: string;
+  timestamp: string;
+  hours: number;
+  no_relevant_events: number;
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -32,7 +39,17 @@ const getAuthHeaders = (): HeadersInit => {
 export const api = {
   API_BASE_URL,
 
-  async getCountries(): Promise<string[]> {
+  async getAddableCountries(): Promise<string[]> {
+    const response = await fetch(`${API_BASE_URL}/addable-countries`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch addable countries');
+    }
+    return response.json();
+  },
+
+  async getCountries(): Promise<CountryInfo[]> {
     const response = await fetch(`${API_BASE_URL}/countries`, {
       headers: getAuthHeaders(),
     });
@@ -72,5 +89,29 @@ export const api = {
       throw new Error(`Failed to generate report for event ${eventId} in ${country}`);
     }
     return response.json();
+  },
+
+  async runCountryPipeline(country: string, hours: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/run-country-pipeline`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ country, hours }),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to run pipeline for ${country}`);
+    }
+  },
+
+  async deleteCountry(country: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to delete ${country}`);
+    }
   },
 };

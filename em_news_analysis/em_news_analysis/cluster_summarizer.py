@@ -45,6 +45,8 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
 
     summaries = "\n\n".join(summaries_list)
 
+    summaries_prompt = f"These are the summaries\n<Summaries>\n\n{summaries}</Summaries>"
+
     if model == 3:
         open_ai_llm = ChatOpenAI(
             temperature=0,
@@ -61,13 +63,13 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
         Event, method="json_mode")
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a world class news analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest for an investor. Respond in JSON with title, summary and relevant_for_financial_analysis as keys."),
+        ("system", "You are financial analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to an investor. Respond in JSON with title, summary and relevant_for_financial_analysis as keys."),
         ("user", "{input}")
     ])
 
     chain = prompt | open_ai_llm
 
-    input_prompt = f"{objective}\n\n{summaries}"
+    input_prompt = f"{objective}\n\n{summaries_prompt}"
 
     return chain.invoke({"input": input_prompt})
 

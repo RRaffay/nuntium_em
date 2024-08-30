@@ -145,7 +145,8 @@ class GDELTNewsPipeline:
                     'cluster_summarizer_objective': cluster_summarizer_objective,
                     'no_clusters': no_clusters,
                     'no_matched_clusters': no_matched_clusters,
-                    'no_articles': no_articles
+                    'no_articles': no_articles,
+                    'no_financially_relevant_events': 0
                 }
             }
 
@@ -182,6 +183,9 @@ class GDELTNewsPipeline:
                                 'article_summaries': article_summaries,
                                 'article_urls': sampled_urls
                             }
+                            # Increment the counter if the event is financially relevant
+                            if event_obj.relevant_for_financial_analysis:
+                                cluster_article_summaries['metadata']['no_financially_relevant_events'] += 1
                     except Exception as e:
                         self.logger.error(
                             f"Error processing cluster {cluster}: {str(e)}")

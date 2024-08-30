@@ -1,8 +1,12 @@
-.PHONY: start_graph_server start_backend start_frontend
+.PHONY: start_report_server start_backend start_frontend start_news_pipeline_server
 
-# Target to start the Graph server
-start_graph_server:
-	poetry run python em_research_agentic/graph_server.py
+# Target to start the Report server
+start_report_server:
+	poetry run python em_research_agentic/report_server.py
+
+# Target to start the news pipeline server
+start_news_pipeline_server:
+	poetry run python em_news_analysis/news_pipeline_server.py
 
 # Target to start the backend
 start_backend:
@@ -11,3 +15,11 @@ start_backend:
 # Target to start the frontend
 start_frontend:
 	cd frontend && npm start 
+
+# Start all services in docker containers
+start_docker_app:
+	docker compose up --build -d
+
+# Stop all services in docker containers
+stop_docker_app:
+	docker compose down
