@@ -20,6 +20,7 @@ const Dashboard: React.FC = () => {
   const [addableCountries, setAddableCountries] = useState<string[]>([]);
   const [isAddingCountry, setIsAddingCountry] = useState(false);
   const [addProgress, setAddProgress] = useState(0);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,6 +52,7 @@ const Dashboard: React.FC = () => {
   const handleAddCountry = async () => {
     setIsAddingCountry(true);
     setAddProgress(0);
+    setSuccessMessage(null);
     const startTime = Date.now();
     const duration = 60000; // 60 seconds
 
@@ -68,10 +70,16 @@ const Dashboard: React.FC = () => {
       await api.runCountryPipeline(selectedCountry, timePeriod);
       clearInterval(interval);
       setAddProgress(100);
-      setIsDialogOpen(false);
+      setSuccessMessage(`${selectedCountry} has been successfully added!`);
       // Refresh the countries list
       const updatedCountries = await api.getCountries();
       setCountries(updatedCountries);
+      // Update addable countries list
+      const allAddableCountries = await api.getAddableCountries();
+      const filteredAddableCountries = allAddableCountries.filter(
+        country => !updatedCountries.includes(country)
+      );
+      setAddableCountries(filteredAddableCountries);
     } catch (err) {
       clearInterval(interval);
       setError('Failed to add country. Please try again.');
@@ -103,6 +111,8 @@ const Dashboard: React.FC = () => {
                   <p>Adding Country</p>
                   <Progress value={addProgress} className="mt-2" />
                 </>
+              ) : successMessage ? (
+                <p className="text-green-600">{successMessage}</p>
               ) : (
                 <>
                   <Select onValueChange={(value) => setSelectedCountry(value)}>

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from core.reports import economic_report, economic_report_event
 from core.pipeline import run_pipeline, CountryPipelineInputApp
 from models import CountryData, Report
-from db.data import country_data, addable_countries
+from db.data import fetch_country_data, addable_countries
 from datetime import datetime
 
 
@@ -32,7 +32,7 @@ async def run_country_pipeline(input_data: CountryPipelineInputApp):
 
 @router.get("/countries")
 async def get_countries():
-    return list(country_data.keys())
+    return await fetch_country_data()
 
 
 @router.get("/addable-countries")
@@ -42,6 +42,7 @@ async def get_addable_countries():
 
 @router.get("/countries/{country}", response_model=CountryData)
 async def get_country_data(country: str):
+    country_data = await fetch_country_data()
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
     return country_data[country]
@@ -49,6 +50,7 @@ async def get_country_data(country: str):
 
 @router.post("/countries/{country}/generate-report", response_model=Report)
 async def generate_country_report(country: str):
+    country_data = await fetch_country_data()
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
 
@@ -60,6 +62,7 @@ async def generate_country_report(country: str):
 
 @router.post("/countries/{country}/events/{event_id}/generate-report", response_model=Report)
 async def generate_event_report(country: str, event_id: str):
+    country_data = await fetch_country_data()
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
 
