@@ -55,9 +55,18 @@ async def fetch_country_data():
                     event_summary=event_data.get("event_summary", ""),
                     articles=articles
                 ))
+
+        # Extract timestamp from the document
+        timestamp = document.get('timestamp', datetime.utcnow())
+        if isinstance(timestamp, str):
+            timestamp = datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+
         country_data[country] = CountryData(
             country=country,
-            events=events
+            events=events,
+            timestamp=timestamp,
+            hours=data["metadata"].get("hours", 0),
+            no_matched_clusters=data["metadata"].get("no_matched_clusters", 0)
         )
     return country_data
 

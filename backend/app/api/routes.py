@@ -32,7 +32,16 @@ async def run_country_pipeline(input_data: CountryPipelineInputApp):
 
 @router.get("/countries")
 async def get_countries():
-    return await fetch_country_data()
+    countries = await fetch_country_data()
+    return [
+        {
+            "name": country,
+            "timestamp": data.timestamp.isoformat(),
+            "hours": data.hours,
+            "no_matched_clusters": data.no_matched_clusters
+        }
+        for country, data in countries.items()
+    ]
 
 
 @router.get("/addable-countries")

@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { api } from '@/services/api';
+import { api, CountryInfo } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 
 const Dashboard: React.FC = () => {
-  const [countries, setCountries] = useState<string[]>([]);
+  const [countries, setCountries] = useState<CountryInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [headerMessage, setHeaderMessage] = useState<string>('');
   const { getDashboardHeader } = useAuth();
@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
         
         // Filter out countries that are already added
         const filteredAddableCountries = allAddableCountries.filter(
-          country => !countriesData.includes(country)
+          country => !countriesData.map(c => c.name).includes(country)
         );
         setAddableCountries(filteredAddableCountries);
       } catch (err) {
@@ -77,7 +77,7 @@ const Dashboard: React.FC = () => {
       // Update addable countries list
       const allAddableCountries = await api.getAddableCountries();
       const filteredAddableCountries = allAddableCountries.filter(
-        country => !updatedCountries.includes(country)
+        country => !updatedCountries.map(c => c.name).includes(country)
       );
       setAddableCountries(filteredAddableCountries);
     } catch (err) {
@@ -144,13 +144,15 @@ const Dashboard: React.FC = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {countries.map((country) => (
-          <Link key={country} to={`/country/${country}`}>
+          <Link key={country.name} to={`/country/${country.name}`}>
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
-                <CardTitle>{country}</CardTitle>
+                <CardTitle>{country.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Click to view key events and generate reports</p>
+                <p>Last updated: {new Date(country.timestamp).toLocaleString()}</p>
+                <p>Hours of data: {country.hours}</p>
+                <p>Events Found: {country.no_matched_clusters}</p>
               </CardContent>
             </Card>
           </Link>

@@ -24,6 +24,13 @@ export interface Report {
   generated_at: string;
 }
 
+export interface CountryInfo {
+  name: string;
+  timestamp: string;
+  hours: number;
+  no_matched_clusters: number;
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -42,7 +49,7 @@ export const api = {
     return response.json();
   },
 
-  async getCountries(): Promise<string[]> {
+  async getCountries(): Promise<CountryInfo[]> {
     const response = await fetch(`${API_BASE_URL}/countries`, {
       headers: getAuthHeaders(),
     });
