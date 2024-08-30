@@ -38,7 +38,7 @@ async def get_countries():
             "name": country,
             "timestamp": data.timestamp.isoformat(),
             "hours": data.hours,
-            "no_matched_clusters": data.no_matched_clusters
+            "no_relevant_events": data.no_relevant_events
         }
         for country, data in countries.items()
     ]

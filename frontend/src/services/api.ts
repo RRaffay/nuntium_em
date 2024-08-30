@@ -28,7 +28,7 @@ export interface CountryInfo {
   name: string;
   timestamp: string;
   hours: number;
-  no_matched_clusters: number;
+  no_relevant_events: number;
 }
 
 const getAuthHeaders = (): HeadersInit => {

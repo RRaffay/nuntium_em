@@ -21,7 +21,7 @@ class CountryData(BaseModel):
     events: List[Event]
     timestamp: datetime
     hours: int
-    no_matched_clusters: int
+    no_relevant_events: int
 
 
 class Report(BaseModel):

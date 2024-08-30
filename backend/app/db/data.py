@@ -61,12 +61,18 @@ async def fetch_country_data():
         if isinstance(timestamp, str):
             timestamp = datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
 
+        relevant_events_count = data["metadata"].get(
+            "no_financially_relevant_events")
+        if relevant_events_count is None:
+            relevant_events_count = data["metadata"].get(
+                "no_matched_clusters", 0)
+
         country_data[country] = CountryData(
             country=country,
             events=events,
             timestamp=timestamp,
             hours=data["metadata"].get("hours", 0),
-            no_matched_clusters=data["metadata"].get("no_matched_clusters", 0)
+            no_relevant_events=relevant_events_count
         )
     return country_data
 

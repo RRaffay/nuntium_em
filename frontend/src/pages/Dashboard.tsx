@@ -189,7 +189,7 @@ const Dashboard: React.FC = () => {
             <CardContent>
               <p>Last updated: {new Date(country.timestamp).toLocaleString()}</p>
               <p>Hours of data: {country.hours}</p>
-              <p>Events Found: {country.no_matched_clusters}</p>
+              <p>Events Found: {country.no_relevant_events}</p>
             </CardContent>
           </Card>
         </Link>
