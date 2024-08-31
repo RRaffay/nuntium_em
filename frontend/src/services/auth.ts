@@ -76,6 +76,22 @@ export const auth = {
       return data.message;
     },
 
+    async refreshToken(): Promise<void> {
+      const response = await fetch(`${api.API_BASE_URL}/auth/jwt/refresh`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.getToken()}`,
+        },
+      });
+    
+      if (!response.ok) {
+        throw new Error('Token refresh failed');
+      }
+    
+      const data: AuthResponse = await response.json();
+      localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
+    },
+
   logout(): void {
     localStorage.removeItem(AUTH_TOKEN_KEY);
   },
