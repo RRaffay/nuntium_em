@@ -14,26 +14,27 @@ class CountryPipelineInputApp(BaseModel):
     hours: int = Field(ge=2, le=24, default=3)
 
 
-class PipelineInputServer(BaseModel):
+class PipelineInput(BaseModel):
     input_sentence: str = Field(
         default="Political Changes")
     country: str
+    country_alpha2_code: str
     hours: int
     article_summarizer_objective: str = Field(
         default="")
     cluster_summarizer_objective: str = Field(
-        default="Below are article summaries for a particular event")
+        default="")
     process_all: bool = False
     sample_size: int = 1500
     max_workers: int = 10
 
 
-async def run_pipeline(pipeline_inputs: PipelineInputServer):
+async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
     """
     Run the news pipeline for processing country data.
 
     Args:
-        pipeline_inputs (PipelineInputServer): The input parameters for the pipeline.
+        pipeline_inputs (CountryPipelineInputApp): The input parameters for the pipeline.
 
     Returns:
         dict: The result of the pipeline execution.
@@ -48,11 +49,24 @@ async def run_pipeline(pipeline_inputs: PipelineInputServer):
             logger.info(
                 f"News pipeline server URL: {news_pipeline_server_url}")
 
-            logger.info(pipeline_inputs.model_dump())
+            logger.info(
+                f"These are the inputs for pipeline from user: {pipeline_inputs}")
+
+            pipeline_inputs
+
+            pipeline_input = PipelineInput(
+                country=pipeline_inputs.country,
+                country_alpha2_code=pipeline_inputs.country_alpha2_code,
+                hours=pipeline_inputs.hours
+            )
+
+            pipeline_input.cluster_summarizer_objective = f"Analyze for someone interested in events about {pipeline_inputs.country}"
+
+            logger.info(f"These are the inputs for pipeline: {pipeline_input}")
 
             response = await client.post(
                 f"{news_pipeline_server_url}/run_pipeline",
-                json=pipeline_inputs.model_dump()
+                json=pipeline_input.model_dump()
             )
             response.raise_for_status()
 
