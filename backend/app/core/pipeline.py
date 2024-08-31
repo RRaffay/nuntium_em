@@ -29,6 +29,18 @@ class PipelineInputServer(BaseModel):
 
 
 async def run_pipeline(pipeline_inputs: PipelineInputServer):
+    """
+    Run the news pipeline for processing country data.
+
+    Args:
+        pipeline_inputs (PipelineInputServer): The input parameters for the pipeline.
+
+    Returns:
+        dict: The result of the pipeline execution.
+
+    Raises:
+        HTTPException: If there's an error communicating with the news pipeline server or during execution.
+    """
     async with httpx.AsyncClient(timeout=180.0) as client:
         try:
             news_pipeline_server_url = os.environ.get(
