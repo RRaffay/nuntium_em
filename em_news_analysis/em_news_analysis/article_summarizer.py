@@ -17,6 +17,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +85,8 @@ Helpful Answer:"""
 
     # Reduce
     reduce_question_start = f"The following is a set of summaries from different portions of an online article. {objective}"
-
-    reduce_question_end = f"""Take these and distill it into a final, consolidated report of the event.
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    reduce_question_end = f"""Take these and distill it into a final, consolidated report of the event. Today's date is {current_date}.
 
 Helpful Answer:
 

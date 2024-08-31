@@ -17,6 +17,7 @@ import json
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,9 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
     """
 
     summaries = "\n\n".join(summaries_list)
+    current_date = datetime.now().strftime("%Y-%m-%d")
 
-    summaries_prompt = f"These are the summaries\n<Summaries>\n\n{summaries}</Summaries>"
+    summaries_prompt = f"These are the summaries\n<Summaries>\n\n{summaries}</Summaries>.\n\nToday's date is {current_date}."
 
     if model == 3:
         open_ai_llm = ChatOpenAI(
