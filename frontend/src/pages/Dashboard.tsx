@@ -71,7 +71,7 @@ const Dashboard: React.FC = () => {
       await api.runCountryPipeline(selectedCountry, timePeriod);
       clearInterval(interval);
       setAddProgress(100);
-      setSuccessMessage(`${selectedCountry} has been successfully added!`);
+      setSuccessMessage(`Events for ${selectedCountry} have been successfully added!`);
       // Refresh the countries list
       const updatedCountries = await api.getCountries();
       setCountries(updatedCountries);
@@ -124,7 +124,7 @@ const Dashboard: React.FC = () => {
             <div className="grid gap-4 py-4">
               {isAddingCountry ? (
                 <>
-                  <p>Adding Country</p>
+                  <p>Fetching events for country</p>
                   <Progress value={addProgress} className="mt-2" />
                 </>
               ) : successMessage ? (

@@ -15,7 +15,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(auth.isAuthenticated());
+    const checkAuth = async () => {
+      const token = auth.getToken();
+      if (token) {
+        try {
+          await auth.getDashboardHeader(); 
+          setIsAuthenticated(true);
+        } catch (error) {
+          setIsAuthenticated(false);
+          auth.logout();
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+    };
+  
+    checkAuth();
   }, []);
 
   const login = async (username: string, password: string) => {

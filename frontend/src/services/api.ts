@@ -36,6 +36,29 @@ const getAuthHeaders = (): HeadersInit => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const handleResponse = async (response: Response) => {
+  if (response.status === 401) {
+    // Token might be expired, try to refresh
+    try {
+      await auth.refreshToken();
+      // Retry the original request
+      const newResponse = await fetch(response.url, {
+        ...response,
+        headers: {
+          ...response.headers,
+          Authorization: `Bearer ${auth.getToken()}`,
+        },
+      });
+      return newResponse;
+    } catch (error) {
+      // If refresh fails, log out the user
+      auth.logout();
+      throw new Error('Session expired. Please log in again.');
+    }
+  }
+  return response;
+};
+
 export const api = {
   API_BASE_URL,
 
@@ -43,30 +66,33 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/addable-countries`, {
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
-      throw new Error('Failed to fetch addable countries');
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch countries');
     }
-    return response.json();
+    return handledResponse.json();
   },
 
   async getCountries(): Promise<CountryInfo[]> {
     const response = await fetch(`${API_BASE_URL}/countries`, {
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
       throw new Error('Failed to fetch countries');
     }
-    return response.json();
+    return handledResponse.json();
   },
 
   async getCountryData(country: string): Promise<CountryData> {
     const response = await fetch(`${API_BASE_URL}/countries/${country}`, {
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch data for ${country}`);
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch countries');
     }
-    return response.json();
+    return handledResponse.json();
   },
 
   async generateCountryReport(country: string): Promise<Report> {
@@ -74,10 +100,11 @@ export const api = {
       method: 'POST',
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
-      throw new Error(`Failed to generate report for ${country}`);
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch countries');
     }
-    return response.json();
+    return handledResponse.json();
   },
 
   async generateEventReport(country: string, eventId: string): Promise<Report> {
@@ -85,10 +112,11 @@ export const api = {
       method: 'POST',
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
-      throw new Error(`Failed to generate report for event ${eventId} in ${country}`);
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch countries');
     }
-    return response.json();
+    return handledResponse.json();
   },
 
   async runCountryPipeline(country: string, hours: number): Promise<void> {
@@ -100,9 +128,11 @@ export const api = {
       },
       body: JSON.stringify({ country, hours }),
     });
-    if (!response.ok) {
-      throw new Error(`Failed to run pipeline for ${country}`);
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch countries');
     }
+    return handledResponse.json();
   },
 
   async deleteCountry(country: string): Promise<void> {
@@ -110,8 +140,10 @@ export const api = {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
-    if (!response.ok) {
-      throw new Error(`Failed to delete ${country}`);
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch countries');
     }
+    return handledResponse.json();
   },
 };
