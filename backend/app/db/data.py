@@ -37,6 +37,12 @@ mongo_collection = mongo_db['news_summaries']
 
 
 async def fetch_country_data():
+    """
+    Fetch country data from the MongoDB database.
+
+    Returns:
+        dict: A dictionary where keys are country names and values are CountryData objects.
+    """
     country_data = {}
     for document in mongo_collection.find():
         data = document['summaries']

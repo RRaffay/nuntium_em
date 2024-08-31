@@ -16,6 +16,18 @@ async def read_root():
 
 @router.post("/run-country-pipeline")
 async def run_country_pipeline(input_data: CountryPipelineInputApp):
+    """
+    Run the country pipeline for data processing.
+
+    Args:
+        input_data (CountryPipelineInputApp): The input data for the pipeline.
+
+    Returns:
+        dict: A dictionary containing the status and result of the pipeline execution.
+
+    Raises:
+        HTTPException: If the country is not in the addable countries list or if there's an error during execution.
+    """
     try:
         # Check if the country is in the addable countries list
         if input_data.country not in addable_countries:
@@ -32,6 +44,12 @@ async def run_country_pipeline(input_data: CountryPipelineInputApp):
 
 @router.get("/countries")
 async def get_countries():
+    """
+    Retrieve a list of all countries with their latest data.
+
+    Returns:
+        list: A list of dictionaries containing country information including name, timestamp, hours, and number of relevant events.
+    """
     countries = await fetch_country_data()
     return [
         {
@@ -46,11 +64,29 @@ async def get_countries():
 
 @router.get("/addable-countries")
 async def get_addable_countries():
+    """
+    Retrieve a list of countries that can be added to the system.
+
+    Returns:
+        list: A list of country names that can be added to the system.
+    """
     return list(addable_countries.keys())
 
 
 @router.get("/countries/{country}", response_model=CountryData)
 async def get_country_data(country: str):
+    """
+    Retrieve detailed data for a specific country.
+
+    Args:
+        country (str): The name of the country to retrieve data for.
+
+    Returns:
+        CountryData: Detailed data for the specified country.
+
+    Raises:
+        HTTPException: If the country is not found in the database.
+    """
     country_data = await fetch_country_data()
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
@@ -59,19 +95,41 @@ async def get_country_data(country: str):
 
 @router.post("/countries/{country}/generate-report", response_model=Report)
 async def generate_country_report(country: str):
+    """
+    Generate an economic report for a specific country.
+
+    Args:
+        country (str): The name of the country.
+
+    Returns:
+        Report: A Report object containing the generated report content and timestamp.
+
+    Raises:
+        HTTPException: If the country is not found in the database.
+    """
     country_data = await fetch_country_data()
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
 
-    report_content_start = f"# Economic Report for {country}\n\n"
-    report_content_main = await economic_report(country) + "\n\n"
-    report_content = report_content_start + report_content_main
+    report_content = await economic_report(country) + "\n\n"
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 
 
 @router.post("/countries/{country}/events/{event_id}/generate-report", response_model=Report)
 async def generate_event_report(country: str, event_id: str):
+    """
+    Generate an economic report for a specific country.
+
+    Args:
+        country (str): The name of the country.
+
+    Returns:
+        Report: A Report object containing the generated report content and timestamp.
+
+    Raises:
+        HTTPException: If the country is not found in the database.
+    """
     country_data = await fetch_country_data()
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
@@ -88,6 +146,15 @@ async def generate_event_report(country: str, event_id: str):
 
 @router.delete("/countries/{country}")
 async def delete_country(country: str):
+    """
+    Delete the data for a specific country.
+
+    Args:
+        country (str): The name of the country to delete data for.
+
+    Returns:
+        dict: A message indicating the success of the deletion.
+    """
     country_data = await fetch_country_data()
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")

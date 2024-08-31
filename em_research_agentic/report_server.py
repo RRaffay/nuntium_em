@@ -47,7 +47,7 @@ async def economic_report(input_data: EconomicReportInput):
             "max_revisions": 2,
             "revision_number": 1,
         }, thread, debug=input_data.debug)
-        return {"draft": s['generate']['draft']}
+        return {"draft": s['draft']}
     except Exception as e:
         logging.error(f"Error in economic_report: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
