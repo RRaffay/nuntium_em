@@ -70,7 +70,7 @@ def research_plan_node(state: AgentState, config):
         HumanMessage(content=state['task'])
     ])
 
-    content = state['content'] or []
+    content = state.get('content') or []
     max_results = config.get('configurable', {}).get('max_results_tavily', 1)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
