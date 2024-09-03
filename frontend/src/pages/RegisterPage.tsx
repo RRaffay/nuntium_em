@@ -10,6 +10,7 @@ const RegisterPage: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [areaOfInterest, setAreaOfInterest] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await register(firstName, lastName, email, password);
+      await register(firstName, lastName, email, password, areaOfInterest);
       navigate('/login');
     } catch (err) {
       setError('Registration failed. Please try again.');
@@ -51,6 +52,13 @@ const RegisterPage: React.FC = () => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input
+              type="text"
+              placeholder="Area of Interest"
+              value={areaOfInterest}
+              onChange={(e) => setAreaOfInterest(e.target.value)}
               required
             />
             <Input

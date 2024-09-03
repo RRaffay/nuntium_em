@@ -4,6 +4,7 @@ import Dashboard from '@/pages/Dashboard';
 import CountryPage from '@/pages/CountryPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
+import UserProfilePage from '@/pages/UserProfilePage';
 import { AuthProvider } from '@/contexts/AuthContext';
 import PrivateRoute from '@/components/PrivateRoute';
 import Header from '@/components/Header';
@@ -22,6 +23,7 @@ const AppContent: React.FC = () => {
             <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />} />
             <Route path="/" element={<PrivateRoute element={<Dashboard />} />} />
             <Route path="/country/:country" element={<PrivateRoute element={<CountryPage />} />} />
+            <Route path="/profile" element={<PrivateRoute element={<UserProfilePage />} />} />
           </Routes>
         </div>
       </main>

@@ -20,6 +20,9 @@ class GraphInput(BaseModel):
 
 class EconomicReportInput(BaseModel):
     country: str
+    task: str
+    max_revisions: int
+    revision_number: int
     debug: bool = False
 
 
@@ -43,9 +46,9 @@ async def economic_report(input_data: EconomicReportInput):
     try:
         thread = {"configurable": {"thread_id": "2"}}
         s = await graph.ainvoke({
-            'task': f"Write an equity report for {input_data.country} based on the recent events. Research the background of each investment and create comprehensive explanations justifying these investments. Avoid general superficial claims and ensure each highlighted investment is analyzed in depth.",
-            "max_revisions": 2,
-            "revision_number": 1,
+            'task': input_data.task,
+            "max_revisions": input_data.max_revisions,
+            "revision_number": input_data.revision_number,
         }, thread, debug=input_data.debug)
         return {"draft": s['draft']}
     except Exception as e:

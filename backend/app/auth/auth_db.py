@@ -11,6 +11,7 @@ db = client[settings.MONGO_DB_NAME]
 class User(BeanieBaseUser, Document):
     first_name: str
     last_name: str
+    area_of_interest: str
 
 
 async def get_user_db():

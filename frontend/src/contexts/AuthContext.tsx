@@ -4,7 +4,7 @@ import { auth } from '../services/auth';
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (first_name: string, last_name: string, email: string, password: string) => Promise<void>;
+  register: (first_name: string, last_name: string, email: string, password: string, area_of_interest: string) => Promise<void>;
   logout: () => void;
   getDashboardHeader: () => Promise<string>;
 }
@@ -38,8 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated(true);
   };
 
-  const register = async (first_name: string, last_name: string, email: string, password: string) => {
-    await auth.register({ first_name, last_name, email, password });
+  const register = async (first_name: string, last_name: string, email: string, password: string, area_of_interest: string) => {
+    await auth.register({ first_name, last_name, email, password, area_of_interest });
   };
 
   const logout = () => {
