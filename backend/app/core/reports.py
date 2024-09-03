@@ -19,7 +19,7 @@ async def economic_report_event(country: str, event: Event):
                 f"{report_server_url}/run_graph",
                 json={
                     "task": f"<Event>\n{event.event_summary}\n</Event>. \n\n <Task> Write a report that outlines lucrative financial investments for an emerging market investor in the equities markets based on the above event. \n Research the background of each investment and create comprehensive explanations justifying these investments. \n Avoid general superficial claims and ensure each highlighted investment is analyzed in depth. \n The current date is {datetime.now().strftime('%Y-%m-%d')}\n.</Task> ",
-                    "max_revisions": 2,
+                    "max_revisions": 4,
                     "revision_number": 1,
                 }
             )
