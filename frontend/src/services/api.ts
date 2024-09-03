@@ -177,5 +177,23 @@ export const api = {
     if (!handledResponse.ok) {
       throw new Error('Failed to update user profile');
     }
-  }
+  },
+
+  async sendChatMessage(message: string, context: string): Promise<string> {
+    console.log(message)
+    console.log(context)
+    const response = await fetch(`${API_BASE_URL}/chat`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message, context }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to send chat message');
+    }
+    return handledResponse.json();
+  },
 };
