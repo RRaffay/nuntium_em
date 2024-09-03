@@ -179,16 +179,14 @@ export const api = {
     }
   },
 
-  async sendChatMessage(message: string, context: string): Promise<string> {
-    console.log(message)
-    console.log(context)
-    const response = await fetch(`${API_BASE_URL}/chat`, {
+  async sendChatMessage(message: string, encodedReport: string): Promise<string> {
+    const response = await fetch(`${API_BASE_URL}/research-chat`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, context }),
+      body: JSON.stringify({ message, encodedReport }),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {

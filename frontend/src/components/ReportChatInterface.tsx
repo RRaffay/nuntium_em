@@ -4,6 +4,9 @@ import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui
 import { ChatInput } from '@/components/ui/chat/chat-input';
 import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
 import { api } from '@/services/api';
+import { btoa } from 'abab';
+import { MarkdownContent } from '@/components/MarkdownContent';
+import MessageLoading from '@/components/ui/chat/message-loading';
 
 interface ReportChatInterface {
   report: string;
@@ -13,6 +16,7 @@ interface ReportChatInterface {
 interface Message {
   content: string;
   isUser: boolean;
+  isLoading?: boolean;
 }
 
 export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onClose }) => {
@@ -23,16 +27,23 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
     if (!inputValue.trim()) return;
 
     const userMessage: Message = { content: inputValue, isUser: true };
-    setMessages([...messages, userMessage]);
+    const loadingMessage: Message = { content: '', isUser: false, isLoading: true };
+    setMessages([...messages, userMessage, loadingMessage]);
     setInputValue('');
 
     try {
-      const response = await api.sendChatMessage(inputValue, report);
-      const aiMessage: Message = { content: response, isUser: false };
-      setMessages(prevMessages => [...prevMessages, aiMessage]);
+      const encodedReport = btoa(encodeURIComponent(report)) ?? '';
+      const response = await api.sendChatMessage(inputValue, encodedReport);
+      setMessages(prevMessages => [
+        ...prevMessages.slice(0, -1),
+        { content: response, isUser: false }
+      ]);
     } catch (error) {
       console.error('Error sending message:', error);
-      // Handle error (e.g., show an error message to the user)
+      setMessages(prevMessages => [
+        ...prevMessages.slice(0, -1),
+        { content: 'An error occurred while processing your request.', isUser: false }
+      ]);
     }
   };
 
@@ -42,8 +53,16 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
         <ChatMessageList>
           {messages.map((message, index) => (
             <ChatBubble key={index} variant={message.isUser ? 'sent' : 'received'}>
-              <ChatBubbleAvatar />
-              <ChatBubbleMessage>{message.content}</ChatBubbleMessage>
+              <ChatBubbleAvatar fallback={message.isUser ? 'U' : 'N'} />
+              <ChatBubbleMessage>
+                {message.isLoading ? (
+                  <MessageLoading />
+                ) : message.isUser ? (
+                  message.content
+                ) : (
+                  <MarkdownContent content={message.content} />
+                )}
+              </ChatBubbleMessage>
             </ChatBubble>
           ))}
         </ChatMessageList>

@@ -24,6 +24,7 @@ services:
     environment:
       - REPORT_SERVER_URL=http://report_server:8001
       - NEWS_PIPELINE_SERVER_URL=http://news_pipeline_server:8002
+      - REPORT_CHAT_SERVER_URL=http://research_chat:8003
       - MONGO_URI=mongodb://mongodb:27017 
     env_file:
       - .env
@@ -60,6 +61,16 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    
+  research_chat:
+    build:
+      context: ./em_research_chat
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    depends_on:
+      - mongodb
+      
 
 volumes:
   mongodb_data:
