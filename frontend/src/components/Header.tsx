@@ -16,7 +16,12 @@ const Header: React.FC = () => {
         <Link to="/" className="text-3xl font-bold text-gray-900 hover:text-gray-700 transition-colors duration-200">
           Nuntium
         </Link>
-        <Button onClick={logout} variant="outline">Logout</Button>
+        <div>
+          <Link to="/profile" className="mr-4">
+            <Button variant="outline">Profile</Button>
+          </Link>
+          <Button onClick={logout} variant="outline">Logout</Button>
+        </div>
       </div>
     </header>
   );

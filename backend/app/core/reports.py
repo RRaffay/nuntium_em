@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 async def economic_report_event(country: str, event: Event):
-    async with httpx.AsyncClient(timeout=180.0) as client:
+    async with httpx.AsyncClient(timeout=240.0) as client:
         try:
             report_server_url = os.environ.get(
                 'REPORT_SERVER_URL', 'http://0.0.0.0:8001')

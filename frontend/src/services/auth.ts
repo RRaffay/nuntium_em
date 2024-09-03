@@ -10,6 +10,7 @@ interface RegisterCredentials {
   last_name: string;
   email: string;
   password: string;
+  area_of_interest: string;
 }
 
 interface AuthResponse {

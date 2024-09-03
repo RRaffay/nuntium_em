@@ -31,6 +31,12 @@ export interface CountryInfo {
   no_relevant_events: number;
 }
 
+export interface UserProfile {
+  first_name: string;
+  last_name: string;
+  area_of_interest: string;
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -146,4 +152,30 @@ export const api = {
     }
     return handledResponse.json();
   },
+
+  async getUserProfile(): Promise<UserProfile> {
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      headers: getAuthHeaders(),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+    return handledResponse.json();
+  },
+  
+  async updateUserProfile(profile: UserProfile): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profile),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to update user profile');
+    }
+  }
 };
