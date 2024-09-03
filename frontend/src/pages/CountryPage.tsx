@@ -83,7 +83,7 @@ const ReportDialog: React.FC<{
     setProgress(0);
     setIsOpen(true);
     const startTime = Date.now();
-    const duration = 180000; // 180 seconds
+    const duration = 210000; // 210 seconds
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;

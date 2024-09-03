@@ -84,27 +84,45 @@ const UserProfilePage: React.FC = () => {
       <CardContent>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <Input
-              type="text"
-              name="first_name"
-              value={profile.first_name}
-              onChange={handleInputChange}
-              placeholder="First Name"
-            />
-            <Input
-              type="text"
-              name="last_name"
-              value={profile.last_name}
-              onChange={handleInputChange}
-              placeholder="Last Name"
-            />
-            <Input
-              type="text"
-              name="area_of_interest"
-              value={profile.area_of_interest}
-              onChange={handleInputChange}
-              placeholder="Area of Interest"
-            />
+            <div>
+              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
+                First Name
+              </label>
+              <Input
+                id="first_name"
+                type="text"
+                name="first_name"
+                value={profile.first_name}
+                onChange={handleInputChange}
+                placeholder="Enter your first name"
+              />
+            </div>
+            <div>
+              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name
+              </label>
+              <Input
+                id="last_name"
+                type="text"
+                name="last_name"
+                value={profile.last_name}
+                onChange={handleInputChange}
+                placeholder="Enter your last name"
+              />
+            </div>
+            <div>
+              <label htmlFor="area_of_interest" className="block text-sm font-medium text-gray-700 mb-1">
+                Area of Interest
+              </label>
+              <Input
+                id="area_of_interest"
+                type="text"
+                name="area_of_interest"
+                value={profile.area_of_interest}
+                onChange={handleInputChange}
+                placeholder="Enter your area of interest"
+              />
+            </div>
             <Button type="submit">Save Changes</Button>
             <Button variant="outline" onClick={logout}>Logout</Button>
           </div>

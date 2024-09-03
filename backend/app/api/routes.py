@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from core.reports import economic_report, economic_report_event
 from core.pipeline import run_pipeline, CountryPipelineInputApp
 from models import CountryData, Report
 from db.data import fetch_country_data, addable_countries, delete_country_data
 from datetime import datetime
-
+from auth.users import current_active_user
+from auth.auth_db import User
 
 router = APIRouter()
 
@@ -94,10 +95,9 @@ async def get_country_data(country: str):
 
 
 @router.post("/countries/{country}/generate-report", response_model=Report)
-async def generate_country_report(country: str):
+async def generate_country_report(country: str, user: User = Depends(current_active_user)):
     """
     Generate an economic report for a specific country.
-
     Args:
         country (str): The name of the country.
 
@@ -111,13 +111,15 @@ async def generate_country_report(country: str):
     if country not in country_data:
         raise HTTPException(status_code=404, detail="Country not found")
 
-    report_content = await economic_report(country) + "\n\n"
+    area_of_interest = user.area_of_interest
+
+    report_content = await economic_report(country, area_of_interest) + "\n\n"
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 
 
 @router.post("/countries/{country}/events/{event_id}/generate-report", response_model=Report)
-async def generate_event_report(country: str, event_id: str):
+async def generate_event_report(country: str, event_id: str, user: User = Depends(current_active_user)):
     """
     Generate an economic report for a specific country.
 
@@ -139,7 +141,9 @@ async def generate_event_report(country: str, event_id: str):
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    report_content = await economic_report_event(country, event) + "\n\n"
+    area_of_interest = user.area_of_interest
+
+    report_content = await economic_report_event(country, area_of_interest, event) + "\n\n"
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 
