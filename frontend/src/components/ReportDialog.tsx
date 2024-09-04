@@ -11,7 +11,6 @@ import {
 import { Report } from '@/services/api';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import { ReportChatInterface } from '@/components/ReportChatInterface';
-import { MessageSquare } from 'lucide-react';
 
 const downloadReport = (content: string, filename: string) => {
   const blob = new Blob([content], { type: 'text/markdown' });
@@ -69,15 +68,26 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
       <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>{title}</DialogTitle>
-          {report && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {report && (
+              <>
+                <Button
+                  variant="outline"
+                  className="text-black mt-2"
+                  onClick={() => downloadReport(report.content, `${title}.md`)}
+                >
+                  Download Report
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-black mt-2"
+                  onClick={() => setIsChatOpen(!isChatOpen)}
+                >
+                  {isChatOpen ? 'Hide Chat' : 'Show Chat'}
+                </Button>
+              </>
+            )}
+          </div>
         </DialogHeader>
         <div className="flex-grow flex overflow-hidden">
           <div className={`flex-grow overflow-y-auto transition-all ${isChatOpen ? 'w-1/2' : 'w-full'}`}>
@@ -92,7 +102,6 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
               <div className="p-4">
                 <MarkdownContent content={report.content} />
                 <p className="text-sm text-gray-500 mt-4">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
-                <Button onClick={() => downloadReport(report.content, `${title}.md`)} className="mt-4">Download Report</Button>
               </div>
             ) : (
               <p className="p-4">No report generated. Please try again.</p>

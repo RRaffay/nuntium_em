@@ -26,7 +26,7 @@ async def economic_report_event(country: str, area_of_interest: str,  event: Eve
             response.raise_for_status()
             result = response.json()
 
-            content = result['draft']
+            content = result['final_report']
 
             return content
         except httpx.HTTPStatusError as e:
@@ -57,7 +57,7 @@ async def economic_report(country: str, area_of_interest: str, max_revisions: in
             response.raise_for_status()
             result = response.json()
 
-            content = result['draft']
+            content = result['final_report']
 
             return content
         except httpx.HTTPStatusError as e:

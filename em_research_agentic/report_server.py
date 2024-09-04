@@ -35,7 +35,7 @@ async def run_graph(input_data: GraphInput):
             "max_revisions": input_data.max_revisions,
             "revision_number": input_data.revision_number,
         }, thread, debug=input_data.debug)
-        return {"draft": s['draft']}
+        return {"final_report": s['final_report']}
     except Exception as e:
         logging.error(f"Error in run_graph: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -50,7 +50,7 @@ async def economic_report(input_data: EconomicReportInput):
             "max_revisions": input_data.max_revisions,
             "revision_number": input_data.revision_number,
         }, thread, debug=input_data.debug)
-        return {"draft": s['draft']}
+        return {"final_report": s['final_report']}
     except Exception as e:
         logging.error(f"Error in economic_report: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

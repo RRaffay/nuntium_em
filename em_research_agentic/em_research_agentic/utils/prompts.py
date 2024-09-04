@@ -101,3 +101,15 @@ To complete this task, follow these steps:
 5. Prioritize the most important aspects of the revision request when creating your queries.
 
 Remember to generate no more than 5 search queries, focusing on the most crucial aspects of the revision request."""
+
+############################################################################################################
+
+FINAL_REVIEW_PROMPT = """You are an expert financial writer tasked with reviewing a draft report for a financial document. Your goal is take the final report and make sure that it is polished and client ready.
+
+1. Carefully review the final report for any errors 
+2. Ensure that the report is polished and professional.
+3. Make sure there are no incomplete sections with placeholder text. If there are, remove them or add a section about further research.
+
+Your goal is to make sure that the report is client ready. 
+
+Return ONLY the final report, no other text or output. \n\n Report: \n\n"""

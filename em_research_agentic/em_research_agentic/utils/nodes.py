@@ -6,7 +6,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langgraph.graph import END
 from typing import List
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
-from em_research_agentic.utils.prompts import PLAN_PROMPT, RESEARCH_PLAN_PROMPT, WRITER_PROMPT, REFLECTION_PROMPT, RESEARCH_CRITIQUE_PROMPT
+from em_research_agentic.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT, REFLECTION_PROMPT, RESEARCH_CRITIQUE_PROMPT, FINAL_REVIEW_PROMPT, PLAN_PROMPT
 from em_research_agentic.utils.tools import tavily_client
 from em_research_agentic.utils.article_summarizer import generate_summaries
 import concurrent.futures
@@ -144,10 +144,21 @@ def research_critique_node(state: AgentState, config):
 
     return {"content": content}
 
-# Edge
+
+# Node for Final Review
+
+def final_review_node(state: AgentState, config):
+    messages = [
+        SystemMessage(content=FINAL_REVIEW_PROMPT),
+        HumanMessage(content=f"Here is the report:\n\n{state['draft']}")
+    ]
+    model_name = config.get('configurable', {}).get("model_name", "openai")
+    model = _get_model(model_name)
+    response = model.invoke(messages)
+    return {"final_report": response.content}
 
 
 def should_continue(state):
     if state["revision_number"] > state["max_revisions"]:
-        return END
+        return "final_review"
     return "reflect"

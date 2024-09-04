@@ -6,7 +6,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langgraph.graph import END
 from typing import List
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
-from em_research_chat.utils.prompts import PLAN_PROMPT, RESEARCH_PLAN_PROMPT, WRITER_PROMPT
+from em_research_chat.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT
 from em_research_chat.utils.tools import tavily_client
 from em_research_chat.utils.article_summarizer import generate_summaries
 import concurrent.futures
@@ -45,19 +45,6 @@ def _search_and_summarize(query, max_results):
     return [(r, summary) for r, summary in zip(response['results'], summaries)]
 
 
-def plan_node(state: AgentState, config):
-
-    input_message = f"The topic is:\n{state['task']}\n. Here is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>"
-
-    messages = [
-        SystemMessage(content=PLAN_PROMPT),
-        HumanMessage(content=input_message)
-    ]
-    model_name = config.get('configurable', {}).get("model_name", "openai")
-    model = _get_model(model_name)
-    response = model.invoke(messages)
-    return {"plan": response.content}
-
 # Node for Research Planning
 
 
@@ -91,8 +78,12 @@ def research_plan_node(state: AgentState, config):
 
 def generation_node(state: AgentState, config):
     content = "\n\n".join(state['content'] or [])
+
+    user_message = f"{state['task']}\n\nHere is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>"
+
     user_message = HumanMessage(
-        content=f"{state['task']}\n\nHere is my plan:\n\n{state['plan']}.\n\nHere is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>")
+        content=user_message
+    )
     messages = [
         SystemMessage(
             content=WRITER_PROMPT.format(content=content)

@@ -9,3 +9,4 @@ class AgentState(TypedDict):
     content: List[str]
     revision_number: int
     max_revisions: int
+    final_report: str
