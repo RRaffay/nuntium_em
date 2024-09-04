@@ -1,5 +1,3 @@
-# docker-compose.yml
-version: '3.8'
 
 services:
   frontend:
@@ -21,11 +19,14 @@ services:
       - mongodb
       - report_server
       - news_pipeline_server
+      - redis
     environment:
       - REPORT_SERVER_URL=http://report_server:8001
       - NEWS_PIPELINE_SERVER_URL=http://news_pipeline_server:8002
       - REPORT_CHAT_SERVER_URL=http://research_chat:8003
       - MONGO_URI=mongodb://mongodb:27017 
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     env_file:
       - .env
 
@@ -70,7 +71,14 @@ services:
       - "8003:8003"
     depends_on:
       - mongodb
-      
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
   mongodb_data:
+  redis_data:

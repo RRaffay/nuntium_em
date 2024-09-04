@@ -4,12 +4,22 @@ from models import Event
 from fastapi import HTTPException
 import os
 import logging
+from cache.cache import traced_cache as cache
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def custom_key_builder(country: str, area_of_interest: str, event: Event = None, *args, **kwargs):
+    if event:
+        return f"economic_report_event:{country}:{area_of_interest}:{event.id}"
+    else:
+        return f"economic_report:{country}:{area_of_interest}"
+
+
+@cache(expire=300, key_builder=custom_key_builder)
 async def economic_report_event(country: str, area_of_interest: str,  event: Event, max_revisions: int = 3, revision_number: int = 1):
+
     async with httpx.AsyncClient(timeout=280.0) as client:
         try:
             report_server_url = os.environ.get(
@@ -39,6 +49,7 @@ async def economic_report_event(country: str, area_of_interest: str,  event: Eve
                 status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
+@cache(expire=300, key_builder=custom_key_builder)
 async def economic_report(country: str, area_of_interest: str, max_revisions: int = 3, revision_number: int = 1):
     async with httpx.AsyncClient(timeout=210.0) as client:
         try:

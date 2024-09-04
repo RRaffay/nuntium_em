@@ -115,7 +115,7 @@ async def generate_country_report(country: str, user: User = Depends(current_act
 
     area_of_interest = user.area_of_interest
 
-    report_content = await economic_report(country, area_of_interest) + "\n\n"
+    report_content = await economic_report(country, area_of_interest)
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 
@@ -145,7 +145,7 @@ async def generate_event_report(country: str, event_id: str, user: User = Depend
 
     area_of_interest = user.area_of_interest
 
-    report_content = await economic_report_event(country, area_of_interest, event) + "\n\n"
+    report_content = await economic_report_event(country, area_of_interest, event)
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 
