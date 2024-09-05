@@ -4,6 +4,8 @@ from fastapi import HTTPException
 import os
 import logging
 from pydantic import BaseModel, Field
+from config import settings
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -44,8 +46,7 @@ async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
     """
     async with httpx.AsyncClient(timeout=180.0) as client:
         try:
-            news_pipeline_server_url = os.environ.get(
-                'NEWS_PIPELINE_SERVER_URL', 'http://0.0.0.0:8002')
+            news_pipeline_server_url = settings.NEWS_PIPELINE_SERVER_URL
             logger.info(
                 f"News pipeline server URL: {news_pipeline_server_url}")
 

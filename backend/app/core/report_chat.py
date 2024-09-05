@@ -5,6 +5,8 @@ from fastapi import HTTPException
 import os
 import logging
 from pydantic import BaseModel
+from config import settings
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -17,8 +19,7 @@ class ChatRequest(BaseModel):
 async def economic_report_chat(question: str, equity_report: str):
     async with httpx.AsyncClient(timeout=280.0) as client:
         try:
-            report_server_url = os.environ.get(
-                'REPORT_CHAT_SERVER_URL', 'http://0.0.0.0:8003')
+            report_server_url = settings.REPORT_CHAT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
             response = await client.post(
                 f"{report_server_url}/run_research_chat",

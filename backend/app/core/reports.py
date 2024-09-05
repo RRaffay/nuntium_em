@@ -5,8 +5,8 @@ from fastapi import HTTPException
 import os
 import logging
 from functools import wraps
-import asyncio
 import time
+from config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,8 +43,7 @@ async def economic_report_event(country: str, area_of_interest: str,  event: Eve
 
     async with httpx.AsyncClient(timeout=280.0) as client:
         try:
-            report_server_url = os.environ.get(
-                'REPORT_SERVER_URL', 'http://0.0.0.0:8001')
+            report_server_url = settings.REPORT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
             response = await client.post(
                 f"{report_server_url}/run_graph",
@@ -70,12 +69,11 @@ async def economic_report_event(country: str, area_of_interest: str,  event: Eve
                 status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@async_timed_lru_cache(maxsize=100, expires_after=300)
+@ async_timed_lru_cache(maxsize=100, expires_after=300)
 async def economic_report(country: str, area_of_interest: str, max_revisions: int = 3, revision_number: int = 1):
     async with httpx.AsyncClient(timeout=210.0) as client:
         try:
-            report_server_url = os.environ.get(
-                'REPORT_SERVER_URL', 'http://0.0.0.0:8001')
+            report_server_url = settings.REPORT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
             response = await client.post(
                 f"{report_server_url}/economic_report",
