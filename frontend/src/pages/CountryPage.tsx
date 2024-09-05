@@ -76,6 +76,13 @@ const CountryPage: React.FC = () => {
     navigate('/');
   };
 
+  const handleReportDialogClose = () => {
+    setCountryReport(null);
+    setCountryReportError(null);
+    setEventReports({});
+    setEventReportErrors({});
+  };
+
   if (error) {
     return <div className="text-red-500">{error}</div>;
   }
@@ -97,7 +104,8 @@ const CountryPage: React.FC = () => {
             isLoading={isGeneratingCountryReport} 
             onGenerate={handleGenerateCountryReport}
             error={countryReportError}
-            title="Generate Country Report"
+            title="Country Report"
+            onClose={handleReportDialogClose}
           />
           <Button onClick={handleBackToDashboard} variant="outline" className="w-full sm:w-auto">Back to Dashboard</Button>
         </div>
@@ -118,7 +126,8 @@ const CountryPage: React.FC = () => {
                   isLoading={isGeneratingEventReport[event.id] || false} 
                   onGenerate={() => handleGenerateEventReport(event.id)}
                   error={eventReportErrors[event.id] || null}
-                  title="Generate Event Report"
+                  title={`Event Report: ${event.title}`}
+                  onClose={handleReportDialogClose}
                 />
               </div>
             </AccordionContent>

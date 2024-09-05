@@ -46,12 +46,17 @@ interface ChatBubbleAvatarProps {
   src?: string
   fallback?: string
   className?: string
+  variant?: 'sent' | 'received'
 }
 
-const ChatBubbleAvatar: React.FC<ChatBubbleAvatarProps> = ({ src, fallback, className }) => (
-  <Avatar className={className}>
+const ChatBubbleAvatar: React.FC<ChatBubbleAvatarProps> = ({ src, fallback, className, variant }) => (
+  <Avatar className={cn(className)}>
     <AvatarImage src={src} alt="Avatar" />
-    <AvatarFallback>{fallback}</AvatarFallback>
+    <AvatarFallback className={cn(
+      variant === 'sent' ? 'bg-gray-800 text-white' : 'bg-muted text-muted-foreground'
+    )}>
+      {fallback}
+    </AvatarFallback>
   </Avatar>
 )
 
@@ -62,7 +67,7 @@ const chatBubbleMessageVariants = cva(
     variants: {
       variant: {
         received: "bg-secondary text-secondary-foreground rounded-r-lg rounded-tl-lg",
-        sent: "bg-primary text-primary-foreground rounded-l-lg rounded-tr-lg",
+        sent: "bg-gray-800 text-white rounded-l-lg rounded-tr-lg",
       },
       layout: {
         "default": "",
@@ -84,7 +89,7 @@ interface ChatBubbleMessageProps extends React.HTMLAttributes<HTMLDivElement>,
 const ChatBubbleMessage = React.forwardRef<HTMLDivElement, ChatBubbleMessageProps>(
   ({ className, variant, layout, isLoading = false, children, ...props }, ref) => (
     <div
-      className={cn(chatBubbleMessageVariants({ variant, layout, className }), 'break-words max-w-full')}
+      className={cn(chatBubbleMessageVariants({ variant, layout, className }), 'break-words max-w-full whitespace-pre-wrap')}
       ref={ref}
       {...props}
     >

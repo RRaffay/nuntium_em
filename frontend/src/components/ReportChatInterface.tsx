@@ -57,8 +57,14 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
               variant={message.isUser ? 'sent' : 'received'}
               className="max-w-[80%]" 
             >
-              <ChatBubbleAvatar fallback={message.isUser ? 'U' : 'N'} />
-              <ChatBubbleMessage className="w-full"> 
+              <ChatBubbleAvatar 
+                fallback={message.isUser ? 'U' : 'N'} 
+                variant={message.isUser ? 'sent' : 'received'}
+              />
+              <ChatBubbleMessage 
+                className="w-full"
+                variant={message.isUser ? 'sent' : 'received'}
+              > 
                 {message.isLoading ? (
                   <MessageLoading />
                 ) : message.isUser ? (
