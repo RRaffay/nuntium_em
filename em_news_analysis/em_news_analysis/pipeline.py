@@ -180,6 +180,7 @@ class GDELTNewsPipeline:
                             cluster_article_summaries[cluster] = {
                                 'event_title': event_obj.title,
                                 'event_relevant_for_financial_analysis': event_obj.relevant_for_financial_analysis,
+                                'event_relevance_score': event_obj.relevance_score,
                                 'event_summary': event_obj.summary,
                                 'article_summaries': article_summaries,
                                 'article_urls': sampled_urls

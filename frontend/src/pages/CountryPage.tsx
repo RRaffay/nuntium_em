@@ -84,6 +84,9 @@ const CountryPage: React.FC = () => {
     return <div>Loading...</div>;
   }
 
+  // Add this function to sort events by relevance score
+  const sortedEvents = countryData?.events.sort((a, b) => b.relevance_score - a.relevance_score) || [];
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
@@ -100,10 +103,13 @@ const CountryPage: React.FC = () => {
         </div>
       </div>
       <Accordion type="single" collapsible className="w-full">
-        {countryData.events.map((event) => (
+        {sortedEvents.map((event) => (
           <AccordionItem key={event.id} value={event.id}>
-            <AccordionTrigger>{event.title}</AccordionTrigger>
+            <AccordionTrigger className="flex justify-between items-center">
+              <span>{event.title}</span>
+            </AccordionTrigger>
             <AccordionContent>
+              <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
               <MarkdownContent content={event.event_summary} />
               <div className="flex space-x-2 mt-2">
                 <ArticleDialog event={event} />
