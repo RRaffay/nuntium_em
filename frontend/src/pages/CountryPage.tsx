@@ -85,10 +85,10 @@ const CountryPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
+    <div className="p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
         <CountryPageHeader countryData={countryData} userProfile={userProfile} />
-        <div>
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
           <ReportDialog 
             report={countryReport} 
             isLoading={isGeneratingCountryReport} 
@@ -96,7 +96,7 @@ const CountryPage: React.FC = () => {
             error={countryReportError}
             title="Generate Country Report"
           />
-          <Button onClick={handleBackToDashboard} variant="outline" className="ml-2">Back to Dashboard</Button>
+          <Button onClick={handleBackToDashboard} variant="outline" className="w-full sm:w-auto">Back to Dashboard</Button>
         </div>
       </div>
       <Accordion type="single" collapsible className="w-full">
