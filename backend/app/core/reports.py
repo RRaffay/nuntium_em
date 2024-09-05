@@ -70,7 +70,7 @@ async def economic_report_event(country: str, area_of_interest: str,  event: Eve
 
 
 @ async_timed_lru_cache(maxsize=100, expires_after=300)
-async def economic_report(country: str, area_of_interest: str, max_revisions: int = 3, revision_number: int = 1):
+async def economic_report(country: str, area_of_interest: str, max_revisions: int = 2, revision_number: int = 1):
     async with httpx.AsyncClient(timeout=210.0) as client:
         try:
             report_server_url = settings.REPORT_SERVER_URL

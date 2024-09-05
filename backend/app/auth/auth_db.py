@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from config import settings
 
 client = AsyncIOMotorClient(settings.MONGO_URI, uuidRepresentation="standard")
-db = client[settings.MONGO_DB_NAME]
+db = client[settings.MONGO_AUTH_DB_NAME]
 
 
 class User(BeanieBaseUser, Document):

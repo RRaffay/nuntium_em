@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
     setAddProgress(0);
     setSuccessMessage(null);
     const startTime = Date.now();
-    const duration = 60000; // 60 seconds
+    const duration = 120000; // 120 seconds
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;

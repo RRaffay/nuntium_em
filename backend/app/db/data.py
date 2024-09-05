@@ -10,8 +10,8 @@ country_data: Dict[str, CountryData] = {}
 
 # MongoDB connection setup
 mongo_client = MongoClient(settings.MONGO_URI)
-mongo_db = mongo_client[settings.MONGO_DB_NAME]
-mongo_collection = mongo_db[settings.MONGO_COLLECTION_NAME]
+mongo_db = mongo_client[settings.MONGO_EVENT_DB_NAME]
+mongo_collection = mongo_db[settings.MONGO_EVENT_COLLECTION_NAME]
 
 
 async def fetch_country_data():

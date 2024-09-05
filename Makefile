@@ -1,4 +1,4 @@
-.PHONY: start_report_server start_backend start_frontend start_news_pipeline_server
+.PHONY:
 
 # Target to start the Report server
 start_report_server:
