@@ -11,6 +11,11 @@ import {
 import { Report } from '@/services/api';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import { ReportChatInterface } from '@/components/ReportChatInterface';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
 
 const downloadReport = (content: string, filename: string) => {
   const blob = new Blob([content], { type: 'text/markdown' });
@@ -30,12 +35,14 @@ interface ReportDialogProps {
   onGenerate: () => Promise<void>;
   error: string | null;
   title: string;
+  onClose: () => void;
 }
 
-export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, onGenerate, error, title }) => {
+export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, onGenerate, error, title, onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatSize, setChatSize] = useState(50);
 
   const easeOutQuad = (t: number) => t * (2 - t);
 
@@ -60,8 +67,19 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
     setProgress(100);
   };
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      // Reset state when dialog is closed
+      setProgress(0);
+      setIsChatOpen(false);
+      setChatSize(50);
+      onClose(); // Call the onClose prop
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button onClick={handleGenerate}>{title}</Button>
       </DialogTrigger>
@@ -89,33 +107,38 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
             )}
           </div>
         </DialogHeader>
-        <div className="flex-grow flex overflow-hidden">
-          <div className={`flex-grow overflow-y-auto transition-all ${isChatOpen ? 'w-1/2' : 'w-full'}`}>
-            {isLoading ? (
-              <div className="p-4">
-                <p>Generating Report</p>
-                <Progress value={progress} className="mt-2" />
-              </div>
-            ) : error ? (
-              <p className="text-red-500 p-4">{error}</p>
-            ) : report ? (
-              <div className="p-4">
-                <MarkdownContent content={report.content} />
-                <p className="text-sm text-gray-500 mt-4">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
-              </div>
-            ) : (
-              <p className="p-4">No report generated. Please try again.</p>
-            )}
-          </div>
-          {isChatOpen && report && (
-            <div className="w-1/2 border-l">
-              <ReportChatInterface
-                report={report.content}
-                onClose={() => setIsChatOpen(false)}
-              />
+        <ResizablePanelGroup direction="horizontal" className="flex-grow overflow-hidden">
+          <ResizablePanel defaultSize={100 - chatSize} minSize={30}>
+            <div className="h-full overflow-y-auto p-4">
+              {isLoading ? (
+                <div>
+                  <p>Generating Report</p>
+                  <Progress value={progress} className="mt-2" />
+                </div>
+              ) : error ? (
+                <p className="text-red-500">{error}</p>
+              ) : report ? (
+                <>
+                  <MarkdownContent content={report.content} />
+                  <p className="text-sm text-gray-500 mt-4">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
+                </>
+              ) : (
+                <p>No report generated. Please try again.</p>
+              )}
             </div>
+          </ResizablePanel>
+          {isChatOpen && report && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={chatSize} minSize={30} onResize={(size) => setChatSize(size)}>
+                <ReportChatInterface
+                  report={report.content}
+                  onClose={() => setIsChatOpen(false)}
+                />
+              </ResizablePanel>
+            </>
           )}
-        </div>
+        </ResizablePanelGroup>
       </DialogContent>
     </Dialog>
   );

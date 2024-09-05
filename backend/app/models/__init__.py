@@ -12,6 +12,7 @@ class Event(BaseModel):
     id: str
     title: str
     relevant_for_financial_analysis: bool
+    relevance_score: int
     event_summary: str
     articles: List[ArticleInfo]
 

@@ -11,6 +11,7 @@ export interface Event {
   id: string;
   title: string;  
   event_summary: string;
+  relevance_score: number;
   articles: ArticleInfo[];
 }
 

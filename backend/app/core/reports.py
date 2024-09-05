@@ -42,7 +42,7 @@ def async_timed_lru_cache(maxsize=128, expires_after=3600, key_func=None):
     return decorator
 
 
-@async_timed_lru_cache(maxsize=100, expires_after=300, key_func=lambda country, area_of_interest, event, *args, **kwargs: f"{country}:{area_of_interest}:{event.id}")
+@async_timed_lru_cache(maxsize=100, expires_after=600, key_func=lambda country, area_of_interest, event, *args, **kwargs: f"{country}:{area_of_interest}:{event.id}")
 async def economic_report_event(country: str, area_of_interest: str, event: Event, max_revisions: int = 3, revision_number: int = 1):
 
     async with httpx.AsyncClient(timeout=280.0) as client:
@@ -73,7 +73,7 @@ async def economic_report_event(country: str, area_of_interest: str, event: Even
                 status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@async_timed_lru_cache(maxsize=100, expires_after=300, key_func=lambda country, area_of_interest, *args, **kwargs: f"{country}:{area_of_interest}")
+@async_timed_lru_cache(maxsize=100, expires_after=600, key_func=lambda country, area_of_interest, *args, **kwargs: f"{country}:{area_of_interest}")
 async def economic_report(country: str, area_of_interest: str, max_revisions: int = 3, revision_number: int = 1):
     async with httpx.AsyncClient(timeout=210.0) as client:
         try:

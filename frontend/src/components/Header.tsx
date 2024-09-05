@@ -18,9 +18,9 @@ const Header: React.FC = () => {
         </Link>
         <div>
           <Link to="/profile" className="mr-4">
-            <Button variant="outline">Profile</Button>
+            <Button variant="default">Profile</Button>
           </Link>
-          <Button onClick={logout} variant="outline">Logout</Button>
+          <Button onClick={logout} variant="ghost">Logout</Button>
         </div>
       </div>
     </header>

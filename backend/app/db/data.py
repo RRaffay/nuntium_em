@@ -35,7 +35,9 @@ async def fetch_country_data():
                 events.append(Event(
                     id=event_id,
                     title=event_data.get("event_title", "N/A"),
-                    relevant_for_financial_analysis=True,
+                    relevant_for_financial_analysis=event_data.get(
+                        "event_relevant_for_financial_analysis", False),
+                    relevance_score=event_data.get("event_relevance_score", 0),
                     event_summary=event_data.get("event_summary", ""),
                     articles=articles
                 ))
