@@ -17,6 +17,9 @@ export interface Event {
 export interface CountryData {
   country: string;
   events: Event[];
+  timestamp: string;
+  hours: number;
+  no_relevant_events: number;
 }
 
 export interface Report {
