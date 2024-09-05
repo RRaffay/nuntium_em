@@ -14,13 +14,17 @@ logger = logging.getLogger(__name__)
 # TODO: Fix the cache to use redis and not the local cache
 
 
-def async_timed_lru_cache(maxsize=128, expires_after=3600):
+def async_timed_lru_cache(maxsize=128, expires_after=3600, key_func=None):
     def decorator(func):
         cache = {}
 
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            key = str(args) + str(kwargs)
+            if key_func:
+                key = key_func(*args, **kwargs)
+            else:
+                key = str(args) + str(kwargs)
+
             current_time = time.time()
             if key in cache:
                 result, timestamp = cache[key]
@@ -38,8 +42,8 @@ def async_timed_lru_cache(maxsize=128, expires_after=3600):
     return decorator
 
 
-@async_timed_lru_cache(maxsize=100, expires_after=300)
-async def economic_report_event(country: str, area_of_interest: str,  event: Event, max_revisions: int = 3, revision_number: int = 1):
+@async_timed_lru_cache(maxsize=100, expires_after=300, key_func=lambda country, area_of_interest, event, *args, **kwargs: f"{country}:{area_of_interest}:{event.id}")
+async def economic_report_event(country: str, area_of_interest: str, event: Event, max_revisions: int = 3, revision_number: int = 1):
 
     async with httpx.AsyncClient(timeout=280.0) as client:
         try:
@@ -69,8 +73,8 @@ async def economic_report_event(country: str, area_of_interest: str,  event: Eve
                 status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@ async_timed_lru_cache(maxsize=100, expires_after=300)
-async def economic_report(country: str, area_of_interest: str, max_revisions: int = 2, revision_number: int = 1):
+@async_timed_lru_cache(maxsize=100, expires_after=300, key_func=lambda country, area_of_interest, *args, **kwargs: f"{country}:{area_of_interest}")
+async def economic_report(country: str, area_of_interest: str, max_revisions: int = 3, revision_number: int = 1):
     async with httpx.AsyncClient(timeout=210.0) as client:
         try:
             report_server_url = settings.REPORT_SERVER_URL
