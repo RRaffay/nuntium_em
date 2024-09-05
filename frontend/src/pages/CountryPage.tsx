@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { api, CountryData, Report } from '@/services/api';
+import { api, CountryData, Report, UserProfile } from '@/services/api';
 import { ReportDialog } from '@/components/ReportDialog';
 import { ArticleDialog } from '@/components/ArticleDialog';
 import { MarkdownContent } from '@/components/MarkdownContent';
-
+import { CountryPageHeader } from '@/components/CountryPageHeader';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -19,20 +19,25 @@ const CountryPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [countryReportError, setCountryReportError] = useState<string | null>(null);
   const [eventReportErrors, setEventReportErrors] = useState<{ [key: string]: string | null }>({});
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const fetchCountryData = async () => {
+    const fetchData = async () => {
       if (!country) return;
       try {
-        const data = await api.getCountryData(country);
-        setCountryData(data);
+        const [countryData, profile] = await Promise.all([
+          api.getCountryData(country),
+          api.getUserProfile()
+        ]);
+        setCountryData(countryData);
+        setUserProfile(profile);
       } catch (err) {
-        setError('Failed to fetch country data. Please try again later.');
-        console.error('Error fetching country data:', err);
+        setError('Failed to fetch data. Please try again later.');
+        console.error('Error fetching data:', err);
       }
     };
 
-    fetchCountryData();
+    fetchData();
   }, [country]);
 
   const handleGenerateCountryReport = async () => {
@@ -82,13 +87,7 @@ const CountryPage: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <div>
-          <h2 className="text-2xl font-bold">Events in {countryData.country}</h2>
-          <br/>
-          <p>Last updated: <strong>{new Date(countryData.timestamp).toLocaleString()}</strong></p>
-          <p>Hours of data: <strong>{countryData.hours}</strong></p>
-          <p>Events Found: <strong>{countryData.no_relevant_events}</strong></p>
-        </div>
+        <CountryPageHeader countryData={countryData} userProfile={userProfile} />
         <div>
           <ReportDialog 
             report={countryReport} 

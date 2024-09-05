@@ -20,7 +20,7 @@ export const ArticleDialog: React.FC<ArticleDialogProps> = ({ event }) => {
       <DialogTrigger asChild>
       <Button variant="outline">View Articles</Button>
     </DialogTrigger>
-    <DialogContent className="sm:max-w-[425px]">
+    <DialogContent className="sm:max-w-[50%]">
       <DialogHeader>
         <DialogTitle>Articles</DialogTitle>
       </DialogHeader>
