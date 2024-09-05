@@ -52,9 +52,13 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
       <div className="flex-grow overflow-y-auto">
         <ChatMessageList>
           {messages.map((message, index) => (
-            <ChatBubble key={index} variant={message.isUser ? 'sent' : 'received'}>
+            <ChatBubble 
+              key={index} 
+              variant={message.isUser ? 'sent' : 'received'}
+              className="max-w-[80%]" 
+            >
               <ChatBubbleAvatar fallback={message.isUser ? 'U' : 'N'} />
-              <ChatBubbleMessage>
+              <ChatBubbleMessage className="w-full"> 
                 {message.isLoading ? (
                   <MessageLoading />
                 ) : message.isUser ? (
