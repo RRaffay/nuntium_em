@@ -1,4 +1,4 @@
-# GDELT News Analysis Pipeline
+# Nuntium News Analysis Pipeline
 
 ## Overview
 
@@ -33,17 +33,30 @@ This project implements a sophisticated news analysis pipeline using GDELT (Glob
      GOOGLE_APPLICATION_CREDENTIALS=[path-to-your-google-credentials-file]
      OPENAI_API_KEY=[your-openai-api-key]
      USER_AGENT=EMNewsAnalysis/1.0
+     MONGO_URI=[your-mongodb-connection-string]
      ```
 
 ## Usage
 
-Run the pipeline using the following commands:
+### Running the Pipeline
+
+You can run the pipeline using the following command:
+
 ```
-poetry shell
-python run_pipeline.py
+poetry run python run_pipeline.py
 ```
 
 This script demonstrates how to use the `GDELTNewsPipeline` class with sample parameters.
+
+### API Server
+
+The project includes a FastAPI server for running the pipeline. To start the server:
+
+```
+poetry run python news_pipeline_server.py
+```
+
+The server will be available at `http://localhost:8002`. You can use the `/run_pipeline` endpoint to trigger the analysis.
 
 ## Configuration
 
@@ -61,7 +74,16 @@ The pipeline generates two types of output:
 1. CSV file: Contains processed GDELT data.
 2. JSON file: Includes cluster summaries and individual article summaries.
 
-These files are saved in the `exported_data` directory.
+These files are saved in the `exported_data` directory by default.
+
+## Docker Support
+
+The project includes a Dockerfile for containerization. To build and run the Docker image:
+
+```
+docker build -t em_news_analysis .
+docker run -p 8002:8002 em_news_analysis
+```
 
 ## Dependencies
 
@@ -71,6 +93,8 @@ Key dependencies include:
 - openai
 - google-cloud-bigquery
 - langchain
+- fastapi
+- pymongo
 
 For a complete list, refer to the `pyproject.toml` file.
 
@@ -81,5 +105,3 @@ This project is licensed under the MIT License (Non-Commercial Use). See the LIC
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-

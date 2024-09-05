@@ -1,13 +1,15 @@
 # Nuntium API Backend
 
-This is the backend for the Nuntium API, built with FastAPI. It provides endpoints to fetch country-specific economic data and generate economic reports based on recent events.
+This is the backend for the Nuntium API, built with FastAPI. It provides endpoints to fetch country-specific economic data, generate economic reports based on recent events, and handle user authentication.
 
 ## Features
 
-- **CORS Support**: Configured to allow requests from `http://localhost:3000`.
-- **Data Models**: Defines models for `ArticleInfo`, `Event`, `CountryData`, and `Report`.
-- **Data Loading**: Loads country-specific event data from JSON files and MongoDB.
-- **API Endpoints**: Provides endpoints to fetch country data and generate economic reports.
+- **CORS Support**: Configured to allow requests from specified origins.
+- **Data Models**: Defines models for `ArticleInfo`, `Event`, `CountryData`, `Report`, and `User`.
+- **Data Loading**: Loads country-specific event data from MongoDB.
+- **API Endpoints**: Provides endpoints to fetch country data, generate economic reports, and handle user authentication.
+- **Authentication**: Uses FastAPI Users for JWT-based authentication.
+- **Caching**: Implements Redis-based caching for improved performance.
 
 ## Requirements
 
@@ -27,9 +29,12 @@ This is the backend for the Nuntium API, built with FastAPI. It provides endpoin
     poetry install
     ```
 
-3. **Run the application**:
+3. **Set up environment variables**:
+   Create a `.env` file in the root directory with the necessary environment variables. The application uses `python-dotenv` to load these variables.
+
+4. **Run the application**:
     ```sh
-    uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+    uvicorn app.main:app --host 0.0.0.0 --port 8000
     ```
 
 ## Docker Setup
@@ -44,55 +49,36 @@ This is the backend for the Nuntium API, built with FastAPI. It provides endpoin
     docker run -p 8000:8000 em-investor-api
     ```
 
-## Environment Variables
-
-Ensure you have a `.env` file in the root directory with the necessary environment variables. The application uses `python-dotenv` to load these variables.
-
 ## API Endpoints
 
-### Root
+### Authentication
 
-- **GET /**: Returns a welcome message.
-    ```python:backend/app/main.py
-    startLine: 11
-    endLine: 13
-    ```
+- **POST /auth/jwt/login**: Log in a user
+- **POST /auth/register**: Register a new user
+- **GET /auth/jwt/logout**: Log out a user
+- **GET /user/profile**: Get user profile
+- **PUT /user/profile**: Update user profile
 
 ### Countries
 
 - **GET /countries**: Returns a list of available countries.
-    ```python:backend/app/main.py
-    startLine: 16
-    endLine: 18
-    ```
-
 - **GET /countries/{country}**: Returns data for a specific country.
-    ```python:backend/app/main.py
-    startLine: 21
-    endLine: 25
-    ```
 
 ### Reports
 
 - **POST /countries/{country}/generate-report**: Generates an economic report for a specific country.
-    ```python:backend/app/main.py
-    startLine: 28
-    endLine: 36
-    ```
-
 - **POST /countries/{country}/events/{event_id}/generate-report**: Generates an economic report for a specific event in a country.
-    ```python:backend/app/main.py
-    startLine: 39
-    endLine: 46
-    ```
 
-## Data Loading
+## Project Structure
 
-The application loads country-specific event data from JSON files located in the `em_news_analysis/exported_data` directory and from MongoDB.
-    ```python:backend/app/db/data.py
-    startLine: 1
-    endLine: 56
-    ```
+The backend is organized into several modules:
+
+- `app/main.py`: The main FastAPI application
+- `app/models`: Data models
+- `app/auth`: Authentication-related modules
+- `app/db`: Database operations
+- `app/cache`: Caching setup
+- `app/config.py`: Configuration settings
 
 ## License
 

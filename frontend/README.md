@@ -50,22 +50,14 @@ npm test
 
 This will launch the test runner in the interactive watch mode.
 
-### Ejecting
-
-If you need to customize the configuration, you can eject the app by running:
-
-```sh
-npm run eject
-```
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
 ## Project Structure
 
 - `src/`: Contains the source code of the application.
   - `components/`: Reusable UI components.
   - `pages/`: Page components for different routes.
   - `services/`: API service functions.
+  - `contexts/`: React context providers.
+  - `lib/`: Utility functions and helpers.
   - `App.tsx`: Main application component.
   - `index.tsx`: Entry point of the application.
 - `public/`: Public assets and the HTML template.
@@ -82,16 +74,25 @@ You can set environment variables by creating a `.env` file in the root director
 REACT_APP_API_BASE_URL=http://localhost:8000
 ```
 
-
 ### Tailwind CSS
 
 Tailwind CSS is used for styling. You can customize the theme and other settings in `tailwind.config.js`.
+
+## Features
+
+- User authentication (login, register, logout)
+- Dashboard with country information
+- Country-specific event details
+- Report generation and viewing
+- User profile management
+- Chat interface for interacting with reports
 
 ## Learn More
 
 - [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started)
 - [React documentation](https://reactjs.org/)
 - [Tailwind CSS documentation](https://tailwindcss.com/docs)
+- [TypeScript documentation](https://www.typescriptlang.org/docs/)
 
 ## License
 
