@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { api, CountryData, Report } from '@/services/api';
 import { ReportDialog } from '@/components/ReportDialog';
 import { ArticleDialog } from '@/components/ArticleDialog';
 import { MarkdownContent } from '@/components/MarkdownContent';
-
 
 
 const CountryPage: React.FC = () => {
@@ -83,7 +82,13 @@ const CountryPage: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Events in {countryData.country}</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Events in {countryData.country}</h2>
+          <br/>
+          <p>Last updated: <strong>{new Date(countryData.timestamp).toLocaleString()}</strong></p>
+          <p>Hours of data: <strong>{countryData.hours}</strong></p>
+          <p>Events Found: <strong>{countryData.no_relevant_events}</strong></p>
+        </div>
         <div>
           <ReportDialog 
             report={countryReport} 
@@ -95,13 +100,11 @@ const CountryPage: React.FC = () => {
           <Button onClick={handleBackToDashboard} variant="outline" className="ml-2">Back to Dashboard</Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <Accordion type="single" collapsible className="w-full">
         {countryData.events.map((event) => (
-          <Card key={event.id}>
-            <CardHeader>
-            <CardTitle>{event.title}</CardTitle> 
-            </CardHeader>
-            <CardContent>
+          <AccordionItem key={event.id} value={event.id}>
+            <AccordionTrigger>{event.title}</AccordionTrigger>
+            <AccordionContent>
               <MarkdownContent content={event.event_summary} />
               <div className="flex space-x-2 mt-2">
                 <ArticleDialog event={event} />
@@ -113,10 +116,10 @@ const CountryPage: React.FC = () => {
                   title="Generate Event Report"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   );
 };
