@@ -12,8 +12,9 @@ from fastapi_users.db import BeanieUserDatabase, ObjectIDIDMixin
 
 from auth.auth_db import User, get_user_db
 from auth.schemas import UserCreate
+from config import settings
 
-SECRET = "SECRET"
+SECRET = settings.JWT_SECRET
 
 
 class UserManager(ObjectIDIDMixin, BaseUserManager[User, PydanticObjectId]):

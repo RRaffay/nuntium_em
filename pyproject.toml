@@ -5,12 +5,13 @@ description = "Emerging Markets Research"
 authors = [
     "RRaffay"
 ]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
 em_news_analysis = {path = "./em_news_analysis"}
 em_research_agentic = {path = "./em_research_agentic"}
-nuntium_em_backend = {path = "./backend"}
+app = {path = "./backend"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

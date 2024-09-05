@@ -1,19 +1,27 @@
 from dotenv import load_dotenv  # noqa
 load_dotenv()  # noqa
 
+# Settings
+from config import settings
+
+from fastapi.middleware.cors import CORSMiddleware
+from api.routes import router as api_router
+from cache.cache import setup_cache
+
 # General fastapi
 from contextlib import asynccontextmanager
 from beanie import init_beanie
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 
 # Auth
 from auth.auth_db import User, db
 from auth.auth_routes import auth_router
 
+# Logging
+import logging
+logging.basicConfig(level=logging.INFO)
+
 # Other
-from api.routes import router as api_router
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
 
 
 @asynccontextmanager
@@ -24,6 +32,7 @@ async def lifespan(app: FastAPI):
             User,
         ],
     )
+    await setup_cache()
     yield
 
 
@@ -32,7 +41,7 @@ app = FastAPI(lifespan=lifespan)
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from core.reports import economic_report, economic_report_event
 from core.pipeline import run_pipeline, CountryPipelineInputApp
+from core.report_chat import economic_report_chat, ChatRequest
 from models import CountryData, Report
 from db.data import fetch_country_data, addable_countries, delete_country_data
 from datetime import datetime
 from auth.users import current_active_user
 from auth.auth_db import User
+import base64
 
 router = APIRouter()
 
@@ -113,7 +115,7 @@ async def generate_country_report(country: str, user: User = Depends(current_act
 
     area_of_interest = user.area_of_interest
 
-    report_content = await economic_report(country, area_of_interest) + "\n\n"
+    report_content = await economic_report(country, area_of_interest)
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 
@@ -143,7 +145,7 @@ async def generate_event_report(country: str, event_id: str, user: User = Depend
 
     area_of_interest = user.area_of_interest
 
-    report_content = await economic_report_event(country, area_of_interest, event) + "\n\n"
+    report_content = await economic_report_event(country, area_of_interest, event)
 
     return Report(content=report_content, generated_at=datetime.now().isoformat())
 
@@ -169,3 +171,24 @@ async def delete_country(country: str):
     else:
         raise HTTPException(
             status_code=500, detail="Failed to delete country data")
+
+
+@router.post("/research-chat")
+async def research_chat(request: ChatRequest):
+    """
+    Send a chat message to the research chat.
+    """
+    try:
+        # First, try UTF-8 decoding
+        try:
+            decoded_report = base64.b64decode(
+                request.encodedReport).decode('utf-8')
+        except UnicodeDecodeError:
+            # If UTF-8 fails, try decoding as ISO-8859-1 (Latin-1)
+            decoded_report = base64.b64decode(
+                request.encodedReport).decode('iso-8859-1')
+
+        return await economic_report_chat(request.message, decoded_report)
+    except Exception as e:
+        print(f"Error in research_chat: {str(e)}")  # Log the error
+        raise HTTPException(status_code=500, detail=str(e))
