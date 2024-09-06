@@ -83,7 +83,7 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
         <ChatInput
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+          onSend={handleSendMessage}
           placeholder="Type your message..."
           className="flex-grow mr-2"
         />
