@@ -52,7 +52,7 @@ async def economic_report_event(country: str, area_of_interest: str, event: Even
             response = await client.post(
                 f"{report_server_url}/run_graph",
                 json={
-                    "task": f"<Event>\n{event.event_summary}\n</Event>. \n\n <Task> Write a report that outlines lucrative financial investments for an emerging market investor based on the above event. Note that the investor is specifically interested in country: {country} and area of interest: {area_of_interest}. \n Research the background of each investment and create comprehensive explanations justifying these investments. \n Ensure each investment idea and all associated justifications are analyzed in depth. \n The current date is {datetime.now().strftime('%Y-%m-%d')}\n.</Task> ",
+                    "task": f"<Event>\n{event.event_summary}\n</Event>. \n\n <Task> Write a report detailing all major market movements caused by this event, and any investment opportunities that arise as a result. \n Note that we are specifically interested in: \nCountry: {country}\n Area of interest: {area_of_interest}. \nResearch the background of each investment and create comprehensive explanations justifying these investments. \nEnsure the event will have a material effect on all investment opportunities. \nThe current date is {datetime.now().strftime('%Y-%m-%d')}\n.</Task> ",
                     "max_revisions": max_revisions,
                     "revision_number": revision_number,
                 }
