@@ -10,6 +10,7 @@ from em_research_chat.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT
 from em_research_chat.utils.tools import tavily_client
 from em_research_chat.utils.article_summarizer import generate_summaries
 import concurrent.futures
+from datetime import datetime
 
 
 class Queries(BaseModel):
@@ -58,8 +59,11 @@ def research_plan_node(state: AgentState, config):
 
     conversation_history = _format_conversation_history(state['messages'])
 
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     queries = model.with_structured_output(Queries).invoke([
-        SystemMessage(content=RESEARCH_PLAN_PROMPT),
+        SystemMessage(content=RESEARCH_PLAN_PROMPT.format(
+            current_date=current_date)),
         HumanMessage(
             content=f"Conversation history:\n{conversation_history}\n\nThe question is:\n{state['task']}\n. Here is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>")
     ])
@@ -87,6 +91,8 @@ def generation_node(state: AgentState, config):
 
     conversation_history = _format_conversation_history(state['messages'])
 
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     user_message = f"Conversation history:\n{conversation_history}\n\nTask: {state['task']}\n\n"
 
     user_message = HumanMessage(
@@ -95,7 +101,7 @@ def generation_node(state: AgentState, config):
     messages = [
         SystemMessage(
             content=WRITER_PROMPT.format(
-                content=content, equity_report=state['equity_report'])
+                content=content, equity_report=state['equity_report'], current_date=current_date)
         ),
         user_message
     ]

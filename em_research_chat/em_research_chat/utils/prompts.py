@@ -12,7 +12,10 @@ Examples of effective search queries might include:
 - "[Industry] market trends analysis"
 - "[Economic indicator] impact on [sector] stocks"
 
-Remember, you should generate no more than 5 search queries. Focus on creating high-quality, diverse queries that will provide the most valuable information for answering the question."""
+Remember, you should generate no more than 5 search queries. Focus on creating high-quality, diverse queries that will provide the most valuable information for answering the question.
+
+Note that the current date is {current_date}.
+"""
 
 ############################################################################################################
 
@@ -38,4 +41,7 @@ WRITER_PROMPT = """You are an AI assistant at a hedge fund focused on Emerging M
 {content}
 </relevant_research>
 
-Remember to maintain a professional tone throughout the answer and focus on providing valuable, actionable insights. If you need to make assumptions or if there's insufficient information, state this clearly in your answer. Avoid speculative or unfounded claims."""
+Remember to maintain a professional tone throughout the answer and focus on providing valuable, actionable insights. If you need to make assumptions or if there's insufficient information, state this clearly in your answer. Avoid speculative or unfounded claims.
+
+Note that the current date is {current_date}.
+"""
