@@ -99,7 +99,7 @@ def generation_node(state: AgentState, config):
     current_date = datetime.now().strftime("%Y-%m-%d")
 
     user_message = HumanMessage(
-        content=f"{state['task']}\n\nHere is my plan:\n\n{state['plan']}")
+        content=f"{state['task']}\n\nHere is my plan:\n\n<Plan>\n{state['plan']}\n</Plan>")
     messages = [
         SystemMessage(
             content=WRITER_PROMPT.format(
