@@ -4,7 +4,7 @@ from langchain_openai import ChatOpenAI
 from em_research_chat.utils.state import AgentState
 from langchain_core.pydantic_v1 import BaseModel
 from langgraph.graph import END
-from typing import List
+from typing import List, Tuple
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
 from em_research_chat.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT
 from em_research_chat.utils.tools import tavily_client
@@ -48,14 +48,20 @@ def _search_and_summarize(query, max_results):
 # Node for Research Planning
 
 
+def _format_conversation_history(messages: List[Tuple[str, str]]) -> str:
+    return "\n".join([f"{sender}: {content}" for content, sender in messages])
+
+
 def research_plan_node(state: AgentState, config):
     model_name = config.get('configurable', {}).get("model_name", "openai")
     model = _get_model(model_name)
 
+    conversation_history = _format_conversation_history(state['messages'])
+
     queries = model.with_structured_output(Queries).invoke([
         SystemMessage(content=RESEARCH_PLAN_PROMPT),
         HumanMessage(
-            content=f"The question is:\n{state['task']}\n. Here is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>")
+            content=f"Conversation history:\n{conversation_history}\n\nThe question is:\n{state['task']}\n. Here is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>")
     ])
 
     content = state.get('content') or []
@@ -79,14 +85,17 @@ def research_plan_node(state: AgentState, config):
 def generation_node(state: AgentState, config):
     content = "\n\n".join(state['content'] or [])
 
-    user_message = f"{state['task']}\n\nHere is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>"
+    conversation_history = _format_conversation_history(state['messages'])
+
+    user_message = f"Conversation history:\n{conversation_history}\n\nTask: {state['task']}\n\n"
 
     user_message = HumanMessage(
         content=user_message
     )
     messages = [
         SystemMessage(
-            content=WRITER_PROMPT.format(content=content)
+            content=WRITER_PROMPT.format(
+                content=content, equity_report=state['equity_report'])
         ),
         user_message
     ]

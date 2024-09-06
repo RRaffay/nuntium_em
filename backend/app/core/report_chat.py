@@ -6,6 +6,7 @@ import os
 import logging
 from pydantic import BaseModel
 from config import settings
+from typing import List, Tuple
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,9 +15,10 @@ logger = logging.getLogger(__name__)
 class ChatRequest(BaseModel):
     message: str
     encodedReport: str
+    messages: List[Tuple[str, str]] = []  # List of (content, sender) tuples
 
 
-async def economic_report_chat(question: str, equity_report: str):
+async def economic_report_chat(question: str, equity_report: str, messages: List[Tuple[str, str]]):
     async with httpx.AsyncClient(timeout=280.0) as client:
         try:
             report_server_url = settings.REPORT_CHAT_SERVER_URL
@@ -26,6 +28,7 @@ async def economic_report_chat(question: str, equity_report: str):
                 json={
                     "task": question,
                     "equity_report": equity_report,
+                    "messages": messages,
                 }
             )
             response.raise_for_status()

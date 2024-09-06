@@ -28,7 +28,12 @@ WRITER_PROMPT = """You are an AI assistant at a hedge fund focused on Emerging M
    b. Ensure all information is accurate and up-to-date.
    c. Provide balanced analysis, considering multiple perspectives where appropriate.
    
-3. Use the following research as context to answer the question:
+3. This is the equity report:
+<equity_report>
+{equity_report}
+</equity_report>
+   
+4. Use the following research as context to answer the question:
 <relevant_research>
 {content}
 </relevant_research>

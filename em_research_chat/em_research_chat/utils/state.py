@@ -1,7 +1,8 @@
-from typing import TypedDict, List
+from typing import TypedDict, List, Tuple
 
 
 class AgentState(TypedDict):
+    messages: List[Tuple[str, str]]
     task: str
     equity_report: str
     plan: str
