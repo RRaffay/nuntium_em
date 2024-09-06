@@ -10,6 +10,7 @@ from em_research_agentic.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMP
 from em_research_agentic.utils.tools import tavily_client
 from em_research_agentic.utils.article_summarizer import generate_summaries
 import concurrent.futures
+from datetime import datetime
 
 
 class Queries(BaseModel):
@@ -49,8 +50,10 @@ def plan_node(state: AgentState, config):
 
     input_message = f"The topic is:\n{state['task']}\n"
 
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     messages = [
-        SystemMessage(content=PLAN_PROMPT),
+        SystemMessage(content=PLAN_PROMPT.format(current_date=current_date)),
         HumanMessage(content=input_message)
     ]
     model_name = config.get('configurable', {}).get("model_name", "openai")
@@ -65,8 +68,11 @@ def research_plan_node(state: AgentState, config):
     model_name = config.get('configurable', {}).get("model_name", "openai")
     model = _get_model(model_name)
 
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     queries = model.with_structured_output(Queries).invoke([
-        SystemMessage(content=RESEARCH_PLAN_PROMPT),
+        SystemMessage(content=RESEARCH_PLAN_PROMPT.format(
+            current_date=current_date)),
         HumanMessage(content=state['task'])
     ])
 
@@ -90,11 +96,14 @@ def research_plan_node(state: AgentState, config):
 
 def generation_node(state: AgentState, config):
     content = "\n\n".join(state['content'] or [])
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     user_message = HumanMessage(
         content=f"{state['task']}\n\nHere is my plan:\n\n{state['plan']}")
     messages = [
         SystemMessage(
-            content=WRITER_PROMPT.format(content=content)
+            content=WRITER_PROMPT.format(
+                content=content, current_date=current_date)
         ),
         user_message
     ]
@@ -110,8 +119,11 @@ def generation_node(state: AgentState, config):
 
 
 def reflection_node(state: AgentState, config):
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     messages = [
-        SystemMessage(content=REFLECTION_PROMPT),
+        SystemMessage(content=REFLECTION_PROMPT.format(
+            current_date=current_date)),
         HumanMessage(content=state['draft'])
     ]
     model_name = config.get('configurable', {}).get("model_name", "openai")
@@ -123,10 +135,13 @@ def reflection_node(state: AgentState, config):
 
 
 def research_critique_node(state: AgentState, config):
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     model_name = config.get('configurable', {}).get("model_name", "openai")
     model = _get_model(model_name)
     queries = model.with_structured_output(Queries).invoke([
-        SystemMessage(content=RESEARCH_CRITIQUE_PROMPT),
+        SystemMessage(content=RESEARCH_CRITIQUE_PROMPT.format(
+            current_date=current_date)),
         HumanMessage(content=state['critique'])
     ])
     content = state['content'] or []
@@ -148,8 +163,11 @@ def research_critique_node(state: AgentState, config):
 # Node for Final Review
 
 def final_review_node(state: AgentState, config):
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
     messages = [
-        SystemMessage(content=FINAL_REVIEW_PROMPT),
+        SystemMessage(content=FINAL_REVIEW_PROMPT.format(
+            current_date=current_date)),
         HumanMessage(content=f"Here is the report:\n\n{state['draft']}")
     ]
     model_name = config.get('configurable', {}).get("model_name", "openai")

@@ -14,7 +14,10 @@ When creating your outline, include brief notes or instructions for each section
 - Specific angles or perspectives to consider
 - Any particular requirements or focus areas for the section
 
-Remember to tailor the outline to the specific topic provided, ensuring that it covers all relevant aspects and provides a comprehensive structure for the report."""
+Remember to tailor the outline to the specific topic provided, ensuring that it covers all relevant aspects and provides a comprehensive structure for the report.
+
+Note that the current date is {current_date}.
+"""
 
 ############################################################################################################
 
@@ -34,7 +37,10 @@ Examples of effective search queries might include:
 - "[Industry] market trends analysis"
 - "[Economic indicator] impact on [sector] stocks"
 
-Remember, you should generate no more than 5 search queries. Focus on creating high-quality, diverse queries that will provide the most valuable information for the report."""
+Remember, you should generate no more than 5 search queries. Focus on creating high-quality, diverse queries that will provide the most valuable information for the report.
+
+Note that the current date is {current_date}.
+"""
 
 ############################################################################################################
 
@@ -62,7 +68,10 @@ WRITER_PROMPT = """You are an AI assistant at a hedge fund focused on Emerging M
 {content}
 </content>
 
-Remember to maintain a professional tone throughout the report and focus on providing valuable, actionable insights for an Emerging Markets hedge fund. If you need to make assumptions or if there's insufficient information, state this clearly in your report. Avoid speculative or unfounded claims."""
+Remember to maintain a professional tone throughout the report and focus on providing valuable, actionable insights for an Emerging Markets hedge fund. If you need to make assumptions or if there's insufficient information, state this clearly in your report. Avoid speculative or unfounded claims.
+
+Note that the current date is {current_date}.
+"""
 
 ############################################################################################################
 
@@ -86,7 +95,10 @@ Based on your analysis, generate a detailed critique and set of recommendations 
    c. Advice on improving the writing style or clarity
 5. Any other relevant feedback or suggestions
 
-Ensure that your feedback is thorough, constructive, and aligned with the expectations. Your goal is to help the report writer understand their current performance and provide clear guidance on how to improve their submission."""
+Ensure that your feedback is thorough, constructive, and aligned with the expectations. Your goal is to help the report writer understand their current performance and provide clear guidance on how to improve their submission.
+
+Note that the current date is {current_date}.
+"""
 
 ############################################################################################################
 
@@ -111,5 +123,7 @@ FINAL_REVIEW_PROMPT = """You are an expert financial writer tasked with reviewin
 3. Make sure there are no incomplete sections with placeholder text. If there are, remove them or add a section about further research.
 
 Your goal is to make sure that the report is client ready. 
+
+Note that the current date is {current_date}.
 
 Return ONLY the final report, no other text or output. \n\n Report: \n\n"""
