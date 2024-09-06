@@ -40,7 +40,7 @@ def _get_model(model_name: str):
 
 def _search_and_summarize(query, max_results):
     response = tavily_client.search(query=query, max_results=max_results)
-    article_urls = [r['url'] for r in response['results']][:1]
+    article_urls = [r['url'] for r in response['results']]
     summaries = generate_summaries(article_urls)
     return [(r, summary) for r, summary in zip(response['results'], summaries)]
 
@@ -65,7 +65,7 @@ def research_plan_node(state: AgentState, config):
     ])
 
     content = state.get('content') or []
-    max_results = config.get('configurable', {}).get('max_results_tavily', 1)
+    max_results = config.get('configurable', {}).get('max_results_tavily', 3)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(

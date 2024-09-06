@@ -20,7 +20,16 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => 
       ul: ({ children }) => <ul className="list-disc pl-5 mb-4">{children}</ul>,
       ol: ({ children }) => <ol className="list-decimal pl-5 mb-4">{children}</ol>,
       li: ({ children }) => <li className="mb-1">{children}</li>,
-      a: ({ href, children }) => <a href={href} className="text-blue-500 hover:underline">{children}</a>,
+      a: ({ href, children }) => (
+        <a 
+          href={href} 
+          className="text-blue-500 hover:underline" 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          {children}
+        </a>
+      ),
     }}
   >
     {content}
