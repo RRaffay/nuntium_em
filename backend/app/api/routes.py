@@ -188,7 +188,7 @@ async def research_chat(request: ChatRequest):
             decoded_report = base64.b64decode(
                 request.encodedReport).decode('iso-8859-1')
 
-        return await economic_report_chat(request.message, decoded_report)
+        return await economic_report_chat(request.message, decoded_report, request.messages)
     except Exception as e:
         print(f"Error in research_chat: {str(e)}")  # Log the error
         raise HTTPException(status_code=500, detail=str(e))

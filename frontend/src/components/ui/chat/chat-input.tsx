@@ -8,14 +8,21 @@ interface ChatInputProps {
   onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void
   placeholder?: string
+  onSend: () => void
 }
 
-const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({ className, value, onKeyDown, onChange, placeholder, ...props }, ref) => (
+const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({ className, value, onKeyDown, onChange, placeholder, onSend, ...props }, ref) => (
   <Textarea
     autoComplete="off"
     value={value}
     ref={ref}
-    onKeyDown={onKeyDown}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        onSend();
+      }
+      onKeyDown?.(e);
+    }}
     onChange={onChange}
     name="message"
     placeholder={placeholder}

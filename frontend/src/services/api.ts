@@ -41,6 +41,11 @@ export interface UserProfile {
   area_of_interest: string;
 }
 
+export interface ChatMessage {
+  content: string;
+  sender: 'user' | 'model';
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -183,14 +188,18 @@ export const api = {
     }
   },
 
-  async sendChatMessage(message: string, encodedReport: string): Promise<string> {
+  async sendChatMessage(message: string, encodedReport: string, messages: ChatMessage[]): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/research-chat`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, encodedReport }),
+      body: JSON.stringify({ 
+        message, 
+        encodedReport, 
+        messages: messages.map(m => [m.content, m.sender] as [string, string])
+      }),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {

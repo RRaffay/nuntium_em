@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui/chat/chat-bubble';
 import { ChatInput } from '@/components/ui/chat/chat-input';
 import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
-import { api } from '@/services/api';
+import { api, ChatMessage } from '@/services/api';
 import { btoa } from 'abab';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
@@ -13,9 +13,7 @@ interface ReportChatInterface {
   onClose: () => void;
 }
 
-interface Message {
-  content: string;
-  isUser: boolean;
+interface Message extends ChatMessage {
   isLoading?: boolean;
 }
 
@@ -26,23 +24,27 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    const userMessage: Message = { content: inputValue, isUser: true };
-    const loadingMessage: Message = { content: '', isUser: false, isLoading: true };
+    const userMessage: Message = { content: inputValue, sender: 'user' };
+    const loadingMessage: Message = { content: '', sender: 'model', isLoading: true };
     setMessages([...messages, userMessage, loadingMessage]);
     setInputValue('');
 
     try {
       const encodedReport = btoa(encodeURIComponent(report)) ?? '';
-      const response = await api.sendChatMessage(inputValue, encodedReport);
+      const response = await api.sendChatMessage(
+        inputValue, 
+        encodedReport, 
+        messages.filter(m => !m.isLoading)
+      );
       setMessages(prevMessages => [
         ...prevMessages.slice(0, -1),
-        { content: response, isUser: false }
+        { content: response, sender: 'model' }
       ]);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prevMessages => [
         ...prevMessages.slice(0, -1),
-        { content: 'An error occurred while processing your request.', isUser: false }
+        { content: 'An error occurred while processing your request.', sender: 'model' }
       ]);
     }
   };
@@ -54,20 +56,20 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
           {messages.map((message, index) => (
             <ChatBubble 
               key={index} 
-              variant={message.isUser ? 'sent' : 'received'}
+              variant={message.sender === 'user' ? 'sent' : 'received'}
               className="max-w-[80%]" 
             >
               <ChatBubbleAvatar 
-                fallback={message.isUser ? 'U' : 'N'} 
-                variant={message.isUser ? 'sent' : 'received'}
+                fallback={message.sender === 'user' ? 'U' : 'N'} 
+                variant={message.sender === 'user' ? 'sent' : 'received'}
               />
               <ChatBubbleMessage 
                 className="w-full"
-                variant={message.isUser ? 'sent' : 'received'}
+                variant={message.sender === 'user' ? 'sent' : 'received'}
               > 
                 {message.isLoading ? (
                   <MessageLoading />
-                ) : message.isUser ? (
+                ) : message.sender === 'user' ? (
                   message.content
                 ) : (
                   <MarkdownContent content={message.content} />
@@ -81,7 +83,7 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
         <ChatInput
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+          onSend={handleSendMessage}
           placeholder="Type your message..."
           className="flex-grow mr-2"
         />
