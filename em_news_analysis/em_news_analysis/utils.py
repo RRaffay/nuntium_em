@@ -1,6 +1,43 @@
 from typing import List
 import pycountry
 
+# First, let's define a dictionary mapping FIPS 10-4 codes to country names
+FIPS_TO_COUNTRY = {
+    "AR": "Argentina",
+    "BR": "Brazil",
+    "CI": "Chile",
+    "CH": "China",
+    "CO": "Colombia",
+    "EG": "Egypt",
+    "IN": "India",
+    "ID": "Indonesia",
+    "MX": "Mexico",
+    "MO": "Morocco",
+    "NI": "Nigeria",
+    "PK": "Pakistan",
+    "RP": "Philippines",
+    "SF": "South Africa",
+    "TH": "Thailand",
+    "TU": "Turkey",
+    "UP": "Ukraine",
+    "UK": "United Kingdom",
+    "VM": "Vietnam",
+    # Add more countries as needed
+}
+
+
+def get_country_name(country_code: str) -> str:
+    """
+    Convert GDELT FIPS 10-4 country code to country name.
+
+    Args:
+    country_code (str): The FIPS 10-4 country code used by GDELT.
+
+    Returns:
+    str: The corresponding country name, or "Unknown" if not found.
+    """
+    return FIPS_TO_COUNTRY.get(country_code.upper(), "Unknown")
+
 
 def sample_articles(urls: List[str], max_articles: int) -> List[str]:
     """
@@ -9,19 +46,3 @@ def sample_articles(urls: List[str], max_articles: int) -> List[str]:
     unique_urls = list(dict.fromkeys(
         urls))  # Remove duplicates while maintaining order
     return unique_urls[:max_articles]
-
-
-def get_country_name(country_code: str) -> str:
-    """
-    Convert ISO 3166-1 alpha-2 country code to country name.
-
-    Args:
-    country_code (str): The ISO 3166-1 alpha-2 country code.
-
-    Returns:
-    str: The corresponding country name, or "Unknown" if not found.
-    """
-    try:
-        return pycountry.countries.get(alpha_2=country_code).name
-    except AttributeError:
-        return "Unknown"
