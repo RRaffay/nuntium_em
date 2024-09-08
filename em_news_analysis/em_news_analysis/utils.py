@@ -22,6 +22,7 @@ FIPS_TO_COUNTRY = {
     "UP": "Ukraine",
     "UK": "United Kingdom",
     "VM": "Vietnam",
+    "BO": "Belarus",
     # Add more countries as needed
 }
 

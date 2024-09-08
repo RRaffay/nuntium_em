@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
             User,
         ],
     )
-    await setup_cache()
+    # await setup_cache()
     yield
 
 
