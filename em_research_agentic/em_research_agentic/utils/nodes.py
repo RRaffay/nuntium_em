@@ -73,7 +73,8 @@ def research_plan_node(state: AgentState, config):
     queries = model.with_structured_output(Queries).invoke([
         SystemMessage(content=RESEARCH_PLAN_PROMPT.format(
             current_date=current_date)),
-        HumanMessage(content=state['task'])
+        HumanMessage(
+            content=f"The topic is:\n{state['task']}\n. The initial outline is:\n{state['plan']}\n")
     ])
 
     content = state.get('content') or []
