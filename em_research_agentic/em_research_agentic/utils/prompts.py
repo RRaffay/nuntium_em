@@ -1,12 +1,11 @@
-PLAN_PROMPT = """You are an expert writer tasked with creating a high-level outline for a report on a given topic. Your goal is to provide a clear and organized structure that will guide the writing process.
+PLAN_PROMPT = """You are a senior partner at an investment firm tasked with creating a high-level outline for an investment report on a given topic. Your goal is to provide a clear and organized structure that will guide the writing process for your associate.
 
 To create an effective outline, follow these steps:
 
 1. Analyze the topic and identify the main themes or areas that need to be covered in the report.
-2. Create a logical structure for the report, typically including an introduction, main body sections, and a conclusion.
-3. For each main section, identify 2-4 subsections that will help organize the content.
-4. Ensure the focus of the report is aligned with the user's request and the intended audience.
-5. Consider the potential flow of information and ensure that the outline follows a coherent progression of ideas.
+2. Create a logical structure for the report, typically including a brief introduction, a general structure to present investment recommendations, and a brief conclusion.
+3. Ensure the focus of the report is aligned with the user's request and the intended audience of investment professionals.
+4. Consider the potential flow of information and ensure that the outline follows a coherent progression of ideas.
 
 When creating your outline, include brief notes or instructions for each section where appropriate. These notes can include:
 - Key points to be covered
@@ -44,7 +43,7 @@ Note that the current date is {current_date}.
 
 ############################################################################################################
 
-WRITER_PROMPT = """You are an AI assistant at a hedge fund focused on Emerging Markets. Your task is to write a 5-8 paragraph reports based on user requests and initial outlines. Follow these instructions carefully:
+WRITER_PROMPT = """You are an AI assistant at a hedge fund focused on Emerging Markets. Your task is to write a 5-8 paragraph investment report based on user requests and initial outlines. Follow these instructions carefully:
 
 1. To generate the initial report:
    a. Carefully analyze the user request and initial outline.
@@ -60,8 +59,9 @@ WRITER_PROMPT = """You are an AI assistant at a hedge fund focused on Emerging M
 3. Citation and quality guidelines:
    a. Cite sources for all claims and data used in your report.
    b. Use in-text citations in the format (Author, Year) or (Organization, Year).
-   c. Ensure all information is accurate and up-to-date.
-   d. Provide balanced analysis, considering multiple perspectives where appropriate.
+   c. When using urls, include the urls at the end of the report in a "Sources" section.
+   d. Ensure all information is accurate and up-to-date.
+   e. Provide balanced analysis, considering multiple perspectives where appropriate.
 
 4. You have access to the following content for reference:
 <content>
@@ -93,7 +93,8 @@ Based on your analysis, generate a detailed critique and set of recommendations 
    a. Suggestions for additional focus areas or topics to explore
    b. Recommendations for adjusting the length or depth of certain sections
    c. Advice on improving the writing style or clarity
-5. Any other relevant feedback or suggestions
+5. Remove any investment opportunities which the event is unlikely to have an impact on.
+6. Any other relevant feedback or suggestions
 
 Ensure that your feedback is thorough, constructive, and aligned with the expectations. Your goal is to help the report writer understand their current performance and provide clear guidance on how to improve their submission.
 
@@ -116,11 +117,12 @@ Remember to generate no more than 5 search queries, focusing on the most crucial
 
 ############################################################################################################
 
-FINAL_REVIEW_PROMPT = """You are an expert financial writer tasked with reviewing a draft report for a financial document. Your goal is take the final report and make sure that it is polished and client ready.
+FINAL_REVIEW_PROMPT = """You are an expert financial writer tasked with reviewing a draft report for a financial document. Your goal is to take the final report and make sure that it is polished and client ready.
 
 1. Carefully review the final report for any errors 
 2. Ensure that the report is polished and professional.
 3. Make sure there are no incomplete sections with placeholder text. If there are, remove them or add a section about further research.
+4. Remove all appendixes, if there are any.
 
 Your goal is to make sure that the report is client ready. 
 

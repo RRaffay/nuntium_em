@@ -67,7 +67,7 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
         Event, method="json_mode")
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are financial analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to an investor. If the event is relevant, assign it a score from 0 to 5. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys."),
+        ("system", "You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor. If the event is relevant to investors, assign it a score from 0 to 5, where 0 represents no significant market movement and 5 represents a major trading opportunity. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys."),
         ("user", "{input}")
     ])
 
