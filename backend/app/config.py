@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 import os
-from typing import List, Any
+from typing import List
 
 
 class BaseConfig(BaseSettings):
@@ -20,16 +20,6 @@ class BaseConfig(BaseSettings):
     class Config:
         env_file = ".env"
 
-    @classmethod
-    def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
-        print(f"Parsing {field_name}: {raw_val}")  # Debug print
-        if field_name == "CORS_ORIGINS":
-            parsed = [origin.strip()
-                      for origin in raw_val.split(",") if origin.strip()]
-            print(f"Parsed CORS_ORIGINS: {parsed}")  # Debug print
-            return parsed
-        return cls.json_loads(raw_val)
-
 
 class DevelopmentConfig(BaseConfig):
     DEBUG: bool = True
@@ -42,11 +32,7 @@ class ProductionConfig(BaseConfig):
 def get_settings():
     env = os.getenv("APP_ENV", "development")
     config_class = ProductionConfig if env == "production" else DevelopmentConfig
-    settings = config_class()
-    print("Loaded settings:")  # Debug print
-    for field, value in settings.dict().items():
-        print(f"{field}: {value}")
-    return settings
+    return config_class()
 
 
 settings = get_settings()
