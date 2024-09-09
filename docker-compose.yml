@@ -62,6 +62,8 @@ services:
     image: ghcr.io/rraffay/nuntium_em:research-chat-latest
     depends_on:
       - mongodb
+    env_file:
+      - .env
 
   redis:
     image: redis:latest
