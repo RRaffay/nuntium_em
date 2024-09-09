@@ -17,6 +17,7 @@ class BaseConfig(BaseSettings):
     REPORT_SERVER_URL: str = "http://0.0.0.0:8001"
     NEWS_PIPELINE_SERVER_URL: str = "http://0.0.0.0:8002"
     REPORT_CHAT_SERVER_URL: str = "http://0.0.0.0:8003"
+    API_PREFIX: str = ""
 
     class Config:
         env_file = ".env"

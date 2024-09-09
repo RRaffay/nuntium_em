@@ -48,10 +48,10 @@ app.add_middleware(
 )
 
 # Include FastAPI Users routes
-app.include_router(auth_router)
+app.include_router(auth_router, prefix=settings.API_PREFIX)
 
 # Include API router
-app.include_router(api_router)
+app.include_router(api_router, prefix=settings.API_PREFIX)
 
 if __name__ == "__main__":
     import uvicorn
