@@ -1,112 +1,17 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:frontend-latest
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: DockerFile
-    image: ghcr.io/rraffay/nuntium_em:backend-latest
-    ports:
-      - "8000:8000"
-    depends_on:
-      - mongodb
-      - report_server
-      - news_pipeline_server
-      - redis
-      - research_chat
-    environment:
-      - REPORT_SERVER_URL=http://report_server:8001
-      - NEWS_PIPELINE_SERVER_URL=http://news_pipeline_server:8002
-      - REPORT_CHAT_SERVER_URL=http://research_chat:8003
-      - MONGO_URI=mongodb://mongodb:27017 
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    env_file:
-      - .env
-
-  report_server:
-    build:
-      context: ./em_research_agentic
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:report-server-latest
-    ports:
-      - "8001:8001"
-    depends_on:
-      - mongodb
-    env_file:
-      - .env
-  
-  news_pipeline_server:
-    build:
-      context: ./em_news_analysis
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:news-pipeline-latest
-    ports:
-      - "8002:8002"
-    depends_on:
-      - mongodb
-    env_file:
-      - .env
-    environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=config/em-news-gdelt.json
-    volumes:
-      - ./em_news_analysis/config:/app/config
-
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    
-  research_chat:
-    build:
-      context: ./em_research_chat
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:research-chat-latest
-    ports:
-      - "8003:8003"
-    depends_on:
-      - mongodb
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
   nginx:
     image: nginx:latest
     ports:
       - "80:80"
-      - "443:443"  # for future HTTPS setup
+      - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    depends_on:
-      - frontend
-      - backend
-      - report_server
-      - news_pipeline_server
-      - research_chat
-
+  
   certbot:
     image: certbot/certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot --force-renewal --email ranaraffay@gmail.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos
-
-volumes:
-  mongodb_data:
-  redis_data:
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email your-email@example.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos --non-interactive
