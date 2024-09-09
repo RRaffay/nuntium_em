@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push-images:
@@ -43,6 +42,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./frontend
+          file: ./frontend/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LC }}/frontend:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -51,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./backend
+          file: ./backend/DockerFile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LC }}/backend:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -59,6 +60,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./em_research_agentic
+          file: ./em_research_agentic/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LC }}/report_server:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -67,6 +69,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./em_news_analysis
+          file: ./em_news_analysis/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LC }}/news_pipeline_server:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -75,6 +78,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./em_research_chat
+          file: ./em_research_chat/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LC }}/research_chat:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
