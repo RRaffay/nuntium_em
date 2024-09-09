@@ -28,37 +28,48 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+
       - name: Build and push Frontend image
         uses: docker/build-push-action@v4
         with:
           context: ./frontend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/frontend:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Backend image
         uses: docker/build-push-action@v4
         with:
           context: ./backend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/backend:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Report Server image
         uses: docker/build-push-action@v4
         with:
           context: ./em_research_agentic
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/report_server:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/report_server:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push News Pipeline Server image
         uses: docker/build-push-action@v4
         with:
           context: ./em_news_analysis
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/news_pipeline_server:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/news_pipeline_server:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Research Chat image
         uses: docker/build-push-action@v4
         with:
           context: ./em_research_chat
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/research_chat:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/research_chat:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
