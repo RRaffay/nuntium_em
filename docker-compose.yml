@@ -27,8 +27,6 @@ services:
       - MONGO_URI=mongodb://mongodb:27017 
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - CORS_ORIGINS=${CORS_ORIGINS}
-      - FRONTEND_URL=${FRONTEND_URL}
     env_file:
       - .env
 
