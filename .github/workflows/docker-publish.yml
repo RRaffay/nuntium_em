@@ -3,7 +3,7 @@ name: Build and Push Docker Images to GHCR
 on:
   push:
     branches:
-      - main  # You can change this to any branch you'd like to trigger the workflow on
+      - prod-ready
 
 jobs:
   build:
