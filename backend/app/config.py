@@ -22,8 +22,12 @@ class BaseConfig(BaseSettings):
 
     @classmethod
     def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
+        print(f"Parsing {field_name}: {raw_val}")  # Debug print
         if field_name == "CORS_ORIGINS":
-            return [origin.strip() for origin in raw_val.split(",") if origin.strip()]
+            parsed = [origin.strip()
+                      for origin in raw_val.split(",") if origin.strip()]
+            print(f"Parsed CORS_ORIGINS: {parsed}")  # Debug print
+            return parsed
         return cls.json_loads(raw_val)
 
 
@@ -38,7 +42,11 @@ class ProductionConfig(BaseConfig):
 def get_settings():
     env = os.getenv("APP_ENV", "development")
     config_class = ProductionConfig if env == "production" else DevelopmentConfig
-    return config_class()
+    settings = config_class()
+    print("Loaded settings:")  # Debug print
+    for field, value in settings.dict().items():
+        print(f"{field}: {value}")
+    return settings
 
 
 settings = get_settings()
