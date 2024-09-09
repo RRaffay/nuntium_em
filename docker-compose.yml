@@ -4,6 +4,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     image: ghcr.io/rraffay/nuntium_em:frontend-latest
+    environment:
+      - REACT_APP_API_BASE_URL=${FRONTEND_URL}/api
+    env_file:
+      - .env
 
   backend:
     build:
@@ -23,6 +27,8 @@ services:
       - MONGO_URI=mongodb://mongodb:27017 
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - FRONTEND_URL=${FRONTEND_URL}
     env_file:
       - .env
 

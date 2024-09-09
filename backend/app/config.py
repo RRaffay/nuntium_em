@@ -11,6 +11,7 @@ class BaseConfig(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     CORS_ORIGINS: list = ["http://localhost:3000"]
+    FRONTEND_URL: str = "http://localhost:3000"
     REPORT_SERVER_URL: str = "http://0.0.0.0:8001"
     NEWS_PIPELINE_SERVER_URL: str = "http://0.0.0.0:8002"
     REPORT_CHAT_SERVER_URL: str = "http://0.0.0.0:8003"
