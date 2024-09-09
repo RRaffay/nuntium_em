@@ -1,4 +1,4 @@
-# Dockerfile for backend
+# Dockerfile for em_research_chat
 FROM python:3.11
 WORKDIR /app
 

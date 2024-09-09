@@ -1,4 +1,4 @@
-# Dockerfile for backend
+# Dockerfile for em_news_analysis
 FROM python:3.11
 WORKDIR /app
 
