@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 import os
+from typing import List
 
 
 class BaseConfig(BaseSettings):
@@ -10,7 +11,7 @@ class BaseConfig(BaseSettings):
     JWT_SECRET: str
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
-    CORS_ORIGINS: list = ["http://localhost:3000"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
     FRONTEND_URL: str = "http://localhost:3000"
     REPORT_SERVER_URL: str = "http://0.0.0.0:8001"
     NEWS_PIPELINE_SERVER_URL: str = "http://0.0.0.0:8002"
@@ -18,6 +19,10 @@ class BaseConfig(BaseSettings):
 
     class Config:
         env_file = ".env"
+
+    @classmethod
+    def parse_cors_origins(cls, v: str) -> List[str]:
+        return [origin.strip() for origin in v.split(",") if origin.strip()]
 
 
 class DevelopmentConfig(BaseConfig):
@@ -30,9 +35,8 @@ class ProductionConfig(BaseConfig):
 
 def get_settings():
     env = os.getenv("APP_ENV", "development")
-    if env == "production":
-        return ProductionConfig()
-    return DevelopmentConfig()
+    config_class = ProductionConfig if env == "production" else DevelopmentConfig
+    return config_class(CORS_ORIGINS=config_class.parse_cors_origins(os.getenv("CORS_ORIGINS", "")))
 
 
 settings = get_settings()
