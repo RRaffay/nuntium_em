@@ -39,7 +39,7 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/frontend:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/rraffay/${{ github.event.repository.name }}/frontend:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Backend image
@@ -47,7 +47,7 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/backend:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/rraffay/${{ github.event.repository.name }}/backend:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Report Server image
@@ -55,7 +55,7 @@ jobs:
         with:
           context: ./em_research_agentic
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/report_server:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/rraffay/${{ github.event.repository.name }}/report_server:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push News Pipeline Server image
@@ -63,7 +63,7 @@ jobs:
         with:
           context: ./em_news_analysis
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/news_pipeline_server:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/rraffay/${{ github.event.repository.name }}/news_pipeline_server:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Research Chat image
@@ -71,5 +71,5 @@ jobs:
         with:
           context: ./em_research_chat
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ github.event.repository.name }}/research_chat:${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/rraffay/${{ github.event.repository.name }}/research_chat:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
