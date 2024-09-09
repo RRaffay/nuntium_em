@@ -14,4 +14,4 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot --force-renewal --email ranaraffay@gmail.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos --non-interactive
+    command: certonly --webroot -w /var/www/certbot --force-renewal --email ranaraffay@gmail.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos --non-interactive --staging
