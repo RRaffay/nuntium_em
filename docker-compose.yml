@@ -83,7 +83,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '3'
           memory: 5G
     networks:
       - backend_network
@@ -92,10 +92,6 @@ services:
     image: mongo:latest
     volumes:
       - mongodb_data:/data/db
-    command: ["mongod", "--auth"]
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     networks:
       - backend_network
     
@@ -120,7 +116,6 @@ services:
     image: redis:latest
     volumes:
       - redis_data:/data
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     networks:
       - backend_network
 
