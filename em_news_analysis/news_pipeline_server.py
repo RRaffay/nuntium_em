@@ -9,7 +9,7 @@ class PipelineInput(BaseModel):
     input_sentence: str = Field(
         default="Political Changes")
     country: str
-    country_alpha2_code: str
+    country_fips_10_4_code: str
     hours: int
     article_summarizer_objective: str = Field(
         default="")
@@ -29,7 +29,7 @@ async def run_pipeline(input_data: PipelineInput):
     try:
         _ = pipeline.run_pipeline(
             input_sentence=input_data.input_sentence,
-            country=input_data.country_alpha2_code,
+            country=input_data.country_fips_10_4_code,
             hours=input_data.hours,
             article_summarizer_objective=input_data.article_summarizer_objective,
             cluster_summarizer_objective=input_data.cluster_summarizer_objective,

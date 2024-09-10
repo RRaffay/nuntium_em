@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 
 class CountryPipelineRequest(BaseModel):
     country: str
-    country_alpha2_code: str = Field(default="")
+    country_fips_10_4_code: str = Field(default="")
     hours: int = Field(ge=2, le=24, default=3)
 
 
 class CountryPipelineInputApp(BaseModel):
     country: str
-    country_alpha2_code: str = Field(default="")
+    country_fips_10_4_code: str = Field(default="")
     hours: int = Field(ge=2, le=24, default=3)
     user_id: str
 
@@ -27,7 +27,7 @@ class PipelineInput(BaseModel):
     input_sentence: str = Field(
         default="Political Changes")
     country: str
-    country_alpha2_code: str
+    country_fips_10_4_code: str
     hours: int
     article_summarizer_objective: str = Field(
         default="")
@@ -65,7 +65,7 @@ async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
 
             pipeline_input = PipelineInput(
                 country=pipeline_inputs.country,
-                country_alpha2_code=pipeline_inputs.country_alpha2_code,
+                country_fips_10_4_code=pipeline_inputs.country_fips_10_4_code,
                 hours=pipeline_inputs.hours,
                 user_id=pipeline_inputs.user_id
             )

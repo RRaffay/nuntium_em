@@ -43,7 +43,7 @@ async def run_country_pipeline(input_data: CountryPipelineRequest, user: User = 
 
         pipeline_input = CountryPipelineInputApp(
             country=input_data.country,
-            country_alpha2_code=addable_countries[input_data.country],
+            country_fips_10_4_code=addable_countries[input_data.country],
             hours=input_data.hours,
             user_id=str(user.id)
         )
