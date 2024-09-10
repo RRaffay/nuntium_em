@@ -23,6 +23,7 @@ class CountryData(BaseModel):
     timestamp: datetime
     hours: int
     no_relevant_events: int
+    user_id: str
 
 
 class Report(BaseModel):

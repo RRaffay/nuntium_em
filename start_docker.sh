@@ -17,6 +17,6 @@ else
 fi
 
 # Start Docker Compose with the selected file
-docker-compose -f $COMPOSE_FILE up -d
+docker-compose -f $COMPOSE_FILE up -d --build
 
 echo "Started Docker Compose with $COMPOSE_FILE"

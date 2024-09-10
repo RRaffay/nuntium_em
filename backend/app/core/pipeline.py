@@ -10,10 +10,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class CountryPipelineRequest(BaseModel):
+    country: str
+    country_alpha2_code: str = Field(default="")
+    hours: int = Field(ge=2, le=24, default=3)
+
+
 class CountryPipelineInputApp(BaseModel):
     country: str
     country_alpha2_code: str = Field(default="")
     hours: int = Field(ge=2, le=24, default=3)
+    user_id: str
 
 
 class PipelineInput(BaseModel):
@@ -29,6 +36,7 @@ class PipelineInput(BaseModel):
     process_all: bool = False
     sample_size: int = 1500
     max_workers: int = 10
+    user_id: str
 
 
 async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
@@ -58,7 +66,8 @@ async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
             pipeline_input = PipelineInput(
                 country=pipeline_inputs.country,
                 country_alpha2_code=pipeline_inputs.country_alpha2_code,
-                hours=pipeline_inputs.hours
+                hours=pipeline_inputs.hours,
+                user_id=pipeline_inputs.user_id
             )
 
             pipeline_input.cluster_summarizer_objective = f"Analyze for someone interested in events about {pipeline_inputs.country}"
