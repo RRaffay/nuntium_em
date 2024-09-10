@@ -22,6 +22,7 @@ const Dashboard: React.FC = () => {
   const [isAddingCountry, setIsAddingCountry] = useState(false);
   const [addProgress, setAddProgress] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,6 +58,7 @@ const Dashboard: React.FC = () => {
     setIsAddingCountry(true);
     setAddProgress(0);
     setSuccessMessage(null);
+    setRateLimitError(null);
     const startTime = Date.now();
     const duration = 120000; // 120 seconds
 
@@ -86,7 +88,11 @@ const Dashboard: React.FC = () => {
       setAddableCountries(filteredAddableCountries);
     } catch (err) {
       clearInterval(interval);
-      setError('Failed to add country. Please try again.');
+      if (err instanceof Error && err.message.includes('Rate limit exceeded')) {
+        setRateLimitError(err.message);
+      } else {
+        setError('Failed to add country. Please try again.');
+      }
       console.error('Error adding country:', err);
     } finally {
       setIsAddingCountry(false);
@@ -173,6 +179,9 @@ const Dashboard: React.FC = () => {
                     </>
                   )}
                 </div>
+                {rateLimitError && (
+                  <p className="text-red-600">{rateLimitError}</p>
+                )}
               </>
             ) : (
               <DialogHeader>

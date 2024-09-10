@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
 import os
-from typing import List
+from typing import List, Dict
 
 
 class BaseConfig(BaseSettings):
@@ -22,18 +22,30 @@ class BaseConfig(BaseSettings):
     MAIL_PORT: int = 587
     MAIL_SERVER: str = "smtp.gmail.com"
     FRONTEND_URL: str = "http://localhost:3000"
+    RATE_LIMITS: Dict[str, str]
 
-
-class Config:
-    env_file = ".env"
+    class Config:
+        env_file = ".env"
 
 
 class DevelopmentConfig(BaseConfig):
     DEBUG: bool = True
+    RATE_LIMITS: Dict[str, str] = {
+        "run_country_pipeline": "20/hour",
+        "generate_country_report": "30/hour",
+        "generate_event_report": "30/hour",
+        "research_chat": "10/hour"
+    }
 
 
 class ProductionConfig(BaseConfig):
     DEBUG: bool = False
+    RATE_LIMITS: Dict[str, str] = {
+        "run_country_pipeline": "5/hour",
+        "generate_country_report": "10/hour",
+        "generate_event_report": "10/hour",
+        "research_chat": "20/hour"
+    }
 
 
 def get_settings():

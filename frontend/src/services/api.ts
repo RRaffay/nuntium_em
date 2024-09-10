@@ -72,6 +72,10 @@ const handleResponse = async (response: Response) => {
       auth.logout();
       throw new Error('Session expired. Please log in again.');
     }
+  } else if (response.status === 429) {
+    // Rate limit exceeded
+    const retryAfter = response.headers.get('Retry-After');
+    throw new Error(`Rate limit exceeded. Please try again ${retryAfter ? `in ${retryAfter} seconds` : 'later'}.`);
   }
   return response;
 };

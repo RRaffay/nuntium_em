@@ -20,6 +20,7 @@ interface Message extends ChatMessage {
 export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -28,6 +29,7 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
     const loadingMessage: Message = { content: '', sender: 'model', isLoading: true };
     setMessages([...messages, userMessage, loadingMessage]);
     setInputValue('');
+    setRateLimitError(null);
 
     try {
       const encodedReport = btoa(encodeURIComponent(report)) ?? '';
@@ -42,10 +44,14 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
       ]);
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prevMessages => [
-        ...prevMessages.slice(0, -1),
-        { content: 'An error occurred while processing your request.', sender: 'model' }
-      ]);
+      if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+        setRateLimitError(error.message);
+      } else {
+        setMessages(prevMessages => [
+          ...prevMessages.slice(0, -1),
+          { content: 'An error occurred while processing your request.', sender: 'model' }
+        ]);
+      }
     }
   };
 
@@ -89,6 +95,11 @@ export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onC
         />
         <Button onClick={handleSendMessage}>Send</Button>
       </div>
+      {rateLimitError && (
+        <div className="p-2 bg-red-100 text-red-700 mb-2">
+          {rateLimitError}
+        </div>
+      )}
     </div>
   );
 };

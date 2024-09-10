@@ -20,7 +20,7 @@ from langchain_core.output_parsers import StrOutputParser
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 20000, timeout: int = 12) -> str:
+def article_summarizer(url: str, model: int = 3, max_length: int = 20000, timeout: int = 5) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -32,7 +32,7 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 20000, timeou
     url (str): The URL of the online article to summarize.
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
     max_length (int, optional): The maximum length of the article content. Defaults to 20000 characters.
-    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 12 seconds.
+    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 5 seconds.
 
     Returns:
     str: The summary of the article. If there was an error loading the article or the article is too long, returns an appropriate message.
@@ -153,7 +153,7 @@ Helpful Answer:
         return f"Error in generating summary: {str(e)}"
 
 
-def generate_summaries(article_urls: List[str], max_workers: int = 10, timeout: int = 12) -> List[str]:
+def generate_summaries(article_urls: List[str], max_workers: int = 10, timeout: int = 5) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """

@@ -20,6 +20,7 @@ const CountryPage: React.FC = () => {
   const [countryReportError, setCountryReportError] = useState<string | null>(null);
   const [eventReportErrors, setEventReportErrors] = useState<{ [key: string]: string | null }>({});
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,12 +45,17 @@ const CountryPage: React.FC = () => {
     if (!country) return;
     setIsGeneratingCountryReport(true);
     setCountryReportError(null);
+    setRateLimitError(null);
     try {
       const generatedReport = await api.generateCountryReport(country);
       setCountryReport(generatedReport);
     } catch (err) {
       console.error('Error generating country report:', err);
-      setCountryReportError('Failed to generate country report. Please try again.');
+      if (err instanceof Error && err.message.includes('Rate limit exceeded')) {
+        setRateLimitError(err.message);
+      } else {
+        setCountryReportError('Failed to generate country report. Please try again.');
+      }
       setCountryReport(null);
     } finally {
       setIsGeneratingCountryReport(false);
@@ -60,12 +66,17 @@ const CountryPage: React.FC = () => {
     if (!country) return;
     setIsGeneratingEventReport(prev => ({ ...prev, [eventId]: true }));
     setEventReportErrors(prev => ({ ...prev, [eventId]: null }));
+    setRateLimitError(null);
     try {
       const generatedReport = await api.generateEventReport(country, eventId);
       setEventReports(prev => ({ ...prev, [eventId]: generatedReport }));
     } catch (err) {
       console.error('Error generating event report:', err);
-      setEventReportErrors(prev => ({ ...prev, [eventId]: 'Failed to generate event report. Please try again.' }));
+      if (err instanceof Error && err.message.includes('Rate limit exceeded')) {
+        setRateLimitError(err.message);
+      } else {
+        setEventReportErrors(prev => ({ ...prev, [eventId]: 'Failed to generate event report. Please try again.' }));
+      }
       setEventReports(prev => ({ ...prev, [eventId]: null }));
     } finally {
       setIsGeneratingEventReport(prev => ({ ...prev, [eventId]: false }));
@@ -134,6 +145,11 @@ const CountryPage: React.FC = () => {
           </AccordionItem>
         ))}
       </Accordion>
+      {rateLimitError && (
+        <div className="p-2 bg-red-100 text-red-700 mb-4">
+          {rateLimitError}
+        </div>
+      )}
     </div>
   );
 };
