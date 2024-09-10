@@ -64,7 +64,7 @@ async def fetch_country_data(user_id: str):
     return country_data
 
 
-# Dictionary with names of emerging market country names and their Codes Alpha-2 codes
+# Dictionary with names of emerging market country names and FIPS 10-4 country codes
 addable_countries = {
     "Argentina": "AR",
     "Brazil": "BR",
