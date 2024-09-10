@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from core.reports import economic_report, economic_report_event
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
 from core.report_chat import economic_report_chat, ChatRequest
@@ -9,9 +9,13 @@ from auth.users import current_active_user
 from auth.auth_db import User
 import base64
 import logging
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from config import settings
 
 logger = logging.getLogger(__name__)
 
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
@@ -22,7 +26,8 @@ async def read_root():
 
 
 @router.post("/run-country-pipeline")
-async def run_country_pipeline(input_data: CountryPipelineRequest, user: User = Depends(current_active_user)):
+@limiter.limit(settings.RATE_LIMITS["run_country_pipeline"])
+async def run_country_pipeline(request: Request, input_data: CountryPipelineRequest, user: User = Depends(current_active_user)):
     """
     Run the country pipeline for data processing.
 
@@ -35,6 +40,7 @@ async def run_country_pipeline(input_data: CountryPipelineRequest, user: User = 
     Raises:
         HTTPException: If the country is not in the addable countries list or if there's an error during execution.
     """
+    limiter.key_func = lambda: str(user.id)
     try:
         # Check if the country is in the addable countries list
         if input_data.country not in addable_countries:
@@ -117,7 +123,8 @@ async def get_country_data(country: str, user: User = Depends(current_active_use
 
 
 @router.post("/countries/{country}/generate-report", response_model=Report)
-async def generate_country_report(country: str, user: User = Depends(current_active_user)):
+@limiter.limit(settings.RATE_LIMITS["generate_country_report"])
+async def generate_country_report(request: Request, country: str, user: User = Depends(current_active_user)):
     """
     Generate an economic report for a specific country.
     Args:
@@ -129,6 +136,7 @@ async def generate_country_report(country: str, user: User = Depends(current_act
     Raises:
         HTTPException: If the country is not found in the database.
     """
+    limiter.key_func = lambda: str(user.id)
     try:
         user_id = str(user.id)
         country_data = await fetch_country_data(user_id)
@@ -147,7 +155,8 @@ async def generate_country_report(country: str, user: User = Depends(current_act
 
 
 @router.post("/countries/{country}/events/{event_id}/generate-report", response_model=Report)
-async def generate_event_report(country: str, event_id: str, user: User = Depends(current_active_user)):
+@limiter.limit(settings.RATE_LIMITS["generate_event_report"])
+async def generate_event_report(request: Request, country: str, event_id: str, user: User = Depends(current_active_user)):
     """
     Generate an economic report for a specific country.
 
@@ -160,6 +169,7 @@ async def generate_event_report(country: str, event_id: str, user: User = Depend
     Raises:
         HTTPException: If the country is not found in the database.
     """
+    limiter.key_func = lambda: str(user.id)
     try:
         user_id = str(user.id)
         country_data = await fetch_country_data(user_id)
@@ -211,21 +221,23 @@ async def delete_country(country: str, user: User = Depends(current_active_user)
 
 
 @router.post("/research-chat")
-async def research_chat(request: ChatRequest):
+@limiter.limit(settings.RATE_LIMITS["research_chat"])
+async def research_chat(request: Request, chat_request: ChatRequest, user: User = Depends(current_active_user)):
     """
     Send a chat message to the research chat.
     """
+    limiter.key_func = lambda: str(user.id)
     try:
         # First, try UTF-8 decoding
         try:
             decoded_report = base64.b64decode(
-                request.encodedReport).decode('utf-8')
+                chat_request.encodedReport).decode('utf-8')
         except UnicodeDecodeError:
             # If UTF-8 fails, try decoding as ISO-8859-1 (Latin-1)
             decoded_report = base64.b64decode(
-                request.encodedReport).decode('iso-8859-1')
+                chat_request.encodedReport).decode('iso-8859-1')
 
-        return await economic_report_chat(request.message, decoded_report, request.messages)
+        return await economic_report_chat(chat_request.message, decoded_report, chat_request.messages)
     except Exception as e:
         logger.error(f"Error in research_chat: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

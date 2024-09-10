@@ -1,6 +1,11 @@
 from dotenv import load_dotenv  # noqa
 load_dotenv()  # noqa
 
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from slowapi import Limiter, _rate_limit_exceeded_handler
+
+
 # Settings
 from config import settings
 
@@ -24,6 +29,9 @@ logging.basicConfig(level=logging.INFO)
 # Other
 
 
+limiter = Limiter(key_func=get_remote_address)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_beanie(
@@ -32,6 +40,7 @@ async def lifespan(app: FastAPI):
             User,
         ],
     )
+    app.state.limiter = limiter
     # await setup_cache()
     yield
 
@@ -52,6 +61,9 @@ app.include_router(auth_router)
 
 # Include API router
 app.include_router(api_router)
+
+# Add rate limit exception handler
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 if __name__ == "__main__":
