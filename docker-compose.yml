@@ -1,86 +1,11 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:frontend-latest
-    env_file:
-      - .env
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: DockerFile
-    image: ghcr.io/rraffay/nuntium_em:backend-latest
-    depends_on:
-      - mongodb
-      - report_server
-      - news_pipeline_server
-      - redis
-      - research_chat
-    env_file:
-      - .env
-
-  report_server:
-    build:
-      context: ./em_research_agentic
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:report-server-latest
-    depends_on:
-      - mongodb
-    env_file:
-      - .env
-  
-  news_pipeline_server:
-    build:
-      context: ./em_news_analysis
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:news-pipeline-latest
-    depends_on:
-      - mongodb
-    env_file:
-      - .env
-    environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=config/em-news-gdelt.json
-    volumes:
-      - ./em_news_analysis/config:/app/config
-
-  mongodb:
-    image: mongo:latest
-    volumes:
-      - mongodb_data:/data/db
-    
-  research_chat:
-    build:
-      context: ./em_research_chat
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:research-chat-latest
-    depends_on:
-      - mongodb
-    env_file:
-      - .env
-
-  redis:
-    image: redis:latest
-    volumes:
-      - redis_data:/data
-
   nginx:
     image: nginx:latest
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./certbot/www:/var/www/certbot:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-      - ./logs/nginx:/var/log/nginx
-    depends_on:
-      - frontend
-      - backend
-      - report_server
-      - news_pipeline_server
-      - research_chat
     networks:
       - webnet
 
@@ -89,7 +14,6 @@ services:
     volumes:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
-      - ./logs/letsencrypt:/var/log/letsencrypt
     command: certonly --webroot -w /var/www/certbot --force-renewal --email ranaraffay@gmail.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos --no-eff-email
     networks:
       - webnet
@@ -98,6 +22,4 @@ networks:
   webnet:
 
 volumes:
-  mongodb_data:
-  redis_data:
-  logs:
+  certbot_data:
