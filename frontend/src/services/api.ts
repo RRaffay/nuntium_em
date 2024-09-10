@@ -39,6 +39,8 @@ export interface UserProfile {
   first_name: string;
   last_name: string;
   area_of_interest: string;
+  email: string;
+  is_verified: boolean;
 }
 
 export interface ChatMessage {
@@ -207,4 +209,34 @@ export const api = {
     }
     return handledResponse.json();
   },
+
+  async requestVerifyToken(email: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/request-verify-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to request verification token');
+    }
+  },
+
+  async verifyEmail(token: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      const errorData = await handledResponse.json();
+      throw new Error(errorData.detail || 'Failed to verify email');
+    }
+  },
+
 };

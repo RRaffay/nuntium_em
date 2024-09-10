@@ -2,7 +2,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from .schemas import UserRead, UserCreate, UserUpdate
 from .users import fastapi_users, auth_backend, current_active_user
-from .auth_db import User, db
+from .auth_db import User
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
