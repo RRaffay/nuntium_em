@@ -53,6 +53,7 @@ app.include_router(auth_router)
 # Include API router
 app.include_router(api_router)
 
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

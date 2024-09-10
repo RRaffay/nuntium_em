@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 import os
+from typing import List
 
 
 class BaseConfig(BaseSettings):
@@ -10,13 +12,14 @@ class BaseConfig(BaseSettings):
     JWT_SECRET: str
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
-    CORS_ORIGINS: list = ["http://localhost:3000"]
-    REPORT_SERVER_URL: str = "http://0.0.0.0:8001"
-    NEWS_PIPELINE_SERVER_URL: str = "http://0.0.0.0:8002"
-    REPORT_CHAT_SERVER_URL: str = "http://0.0.0.0:8003"
+    CORS_ORIGINS: List[str] = Field(default_factory=list)
+    REPORT_SERVER_URL: str = "http://report_server:8001"
+    NEWS_PIPELINE_SERVER_URL: str = "http://news_pipeline_server:8002"
+    REPORT_CHAT_SERVER_URL: str = "http://research_chat:8003"
 
-    class Config:
-        env_file = ".env"
+
+class Config:
+    env_file = ".env"
 
 
 class DevelopmentConfig(BaseConfig):
@@ -29,9 +32,8 @@ class ProductionConfig(BaseConfig):
 
 def get_settings():
     env = os.getenv("APP_ENV", "development")
-    if env == "production":
-        return ProductionConfig()
-    return DevelopmentConfig()
+    config_class = ProductionConfig if env == "production" else DevelopmentConfig
+    return config_class()
 
 
 settings = get_settings()
