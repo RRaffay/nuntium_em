@@ -130,7 +130,8 @@ async def generate_country_report(country: str, user: User = Depends(current_act
         HTTPException: If the country is not found in the database.
     """
     try:
-        country_data = await fetch_country_data()
+        user_id = str(user.id)
+        country_data = await fetch_country_data(user_id)
         if country not in country_data:
             raise HTTPException(status_code=404, detail="Country not found")
 
@@ -160,7 +161,8 @@ async def generate_event_report(country: str, event_id: str, user: User = Depend
         HTTPException: If the country is not found in the database.
     """
     try:
-        country_data = await fetch_country_data()
+        user_id = str(user.id)
+        country_data = await fetch_country_data(user_id)
         if country not in country_data:
             raise HTTPException(status_code=404, detail="Country not found")
 

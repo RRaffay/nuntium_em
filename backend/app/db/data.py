@@ -58,7 +58,8 @@ async def fetch_country_data(user_id: str):
             events=events,
             timestamp=timestamp,
             hours=data["metadata"].get("hours", 0),
-            no_relevant_events=relevant_events_count
+            no_relevant_events=relevant_events_count,
+            user_id=user_id
         )
     return country_data
 
