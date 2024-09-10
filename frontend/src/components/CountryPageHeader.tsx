@@ -15,7 +15,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryDat
         <div className="space-y-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <p className="text-base">Last updated: <strong>{new Date(countryData.timestamp).toLocaleString()}</strong></p>
+              <p className="text-base">Last updated: <strong>{new Date(countryData.timestamp).toLocaleString()} UTC</strong></p>
             </TooltipTrigger>
             <TooltipContent side="right">
               <p>The most recent time the data was refreshed</p>
