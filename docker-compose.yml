@@ -80,6 +80,8 @@ services:
       - report_server
       - news_pipeline_server
       - research_chat
+    networks:
+      - webnet
 
   certbot:
     image: certbot/certbot
@@ -87,6 +89,11 @@ services:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
     command: certonly --webroot -w /var/www/certbot --force-renewal --email ranaraffay@gmail.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos --no-eff-email --dry-run
+    networks:
+      - webnet
+
+networks:
+  webnet:
 
 volumes:
   mongodb_data:
