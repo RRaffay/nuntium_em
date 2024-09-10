@@ -41,7 +41,7 @@ services:
     env_file:
       - .env
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=config/em-news-gdelt.json
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/config/em-news-gdelt.json
     volumes:
       - ./em_news_analysis/config:/app/config
 
