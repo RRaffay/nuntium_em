@@ -14,7 +14,7 @@ mongo_db = mongo_client[settings.MONGO_EVENT_DB_NAME]
 mongo_collection = mongo_db[settings.MONGO_EVENT_COLLECTION_NAME]
 
 
-async def fetch_country_data():
+async def fetch_country_data(user_id: str):
     """
     Fetch country data from the MongoDB database.
 
@@ -22,7 +22,7 @@ async def fetch_country_data():
         dict: A dictionary where keys are country names and values are CountryData objects.
     """
     country_data = {}
-    for document in mongo_collection.find():
+    for document in mongo_collection.find({"user_id": user_id}):
         data = document['summaries']
         country = data["metadata"]["country_name"]
         events = []
@@ -88,9 +88,9 @@ addable_countries = {
 }
 
 
-async def delete_country_data(country: str):
+async def delete_country_data(country: str, user_id: str):
     result = mongo_collection.delete_one(
-        {"summaries.metadata.country_name": country})
+        {"summaries.metadata.country_name": country, "user_id": user_id})
     if result.deleted_count == 0:
         return False
     return True

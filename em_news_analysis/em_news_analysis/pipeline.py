@@ -67,7 +67,8 @@ class GDELTNewsPipeline:
         process_all: bool = False,
         sample_size: int = 1500,
         max_workers: int = 10,
-        export_to_local: bool = False
+        export_to_local: bool = False,
+        user_id: str = None
     ) -> List[str]:
         try:
             self.logger.info("Fetching GDELT data...")
@@ -204,7 +205,7 @@ class GDELTNewsPipeline:
                 self.logger.info(f"Exported summaries to {json_path}")
             else:
                 mongo_id = self.export_data_mongo(
-                    sampled_data, cluster_article_summaries, input_sentence, country, hours
+                    sampled_data, cluster_article_summaries, input_sentence, country, hours, user_id
                 )
                 self.logger.info(
                     f"Exported data to MongoDB with ID: {mongo_id}")
@@ -245,7 +246,7 @@ class GDELTNewsPipeline:
 
         return csv_filepath, json_filepath
 
-    def export_data_mongo(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int) -> str:
+    def export_data_mongo(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int, user_id: str) -> str:
         """
         Export the processed DataFrame and summaries to MongoDB.
         """
@@ -258,6 +259,7 @@ class GDELTNewsPipeline:
                 'country': country,
                 'hours': hours,
                 'summaries': self._convert_keys_to_strings(summaries),
+                'user_id': user_id
             }
             result = mongo_collection.insert_one(mongo_data)
             return str(result.inserted_id)

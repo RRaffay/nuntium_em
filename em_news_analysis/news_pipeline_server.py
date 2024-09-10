@@ -18,6 +18,7 @@ class PipelineInput(BaseModel):
     process_all: bool = False
     sample_size: int = 1500
     max_workers: int = 10
+    user_id: str
 
 
 @app.post("/run_pipeline")
@@ -34,7 +35,8 @@ async def run_pipeline(input_data: PipelineInput):
             cluster_summarizer_objective=input_data.cluster_summarizer_objective,
             process_all=input_data.process_all,
             sample_size=input_data.sample_size,
-            max_workers=input_data.max_workers
+            max_workers=input_data.max_workers,
+            user_id=input_data.user_id
         )
         return {"status": "success"}
     except Exception as e:
