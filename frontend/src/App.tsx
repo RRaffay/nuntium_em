@@ -9,9 +9,24 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import PrivateRoute from '@/components/PrivateRoute';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
+import VerifyEmailPage from '@/pages/VerifyEmailPage';
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
+
+  React.useEffect(() => {
+    const handleUnauthorized = (event: Event) => {
+      if ((event as CustomEvent).detail === 'UNAUTHORIZED') {
+        logout();
+      }
+    };
+
+    window.addEventListener('unauthorized', handleUnauthorized);
+
+    return () => {
+      window.removeEventListener('unauthorized', handleUnauthorized);
+    };
+  }, [logout]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -24,6 +39,7 @@ const AppContent: React.FC = () => {
             <Route path="/" element={<PrivateRoute element={<Dashboard />} />} />
             <Route path="/country/:country" element={<PrivateRoute element={<CountryPage />} />} />
             <Route path="/profile" element={<PrivateRoute element={<UserProfilePage />} />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
           </Routes>
         </div>
       </main>

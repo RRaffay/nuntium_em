@@ -16,6 +16,12 @@ class BaseConfig(BaseSettings):
     REPORT_SERVER_URL: str = "http://report_server:8001"
     NEWS_PIPELINE_SERVER_URL: str = "http://news_pipeline_server:8002"
     REPORT_CHAT_SERVER_URL: str = "http://research_chat:8003"
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+    FRONTEND_URL: str = "http://localhost:3000"
 
 
 class Config:

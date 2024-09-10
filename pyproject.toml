@@ -12,6 +12,7 @@ python = ">=3.11,<3.13"
 em_news_analysis = {path = "./em_news_analysis"}
 em_research_agentic = {path = "./em_research_agentic"}
 app = {path = "./backend"}
+fastapi-mail = "^1.4.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

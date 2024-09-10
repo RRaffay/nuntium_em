@@ -14,7 +14,7 @@ const Dashboard: React.FC = () => {
   const [countries, setCountries] = useState<CountryInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [headerMessage, setHeaderMessage] = useState<string>('');
-  const { getDashboardHeader } = useAuth();
+  const { getDashboardHeader, isVerified, checkVerificationStatus } = useAuth();
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [timePeriod, setTimePeriod] = useState<number>(3);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -39,6 +39,9 @@ const Dashboard: React.FC = () => {
           country => !countriesData.map(c => c.name).includes(country)
         );
         setAddableCountries(filteredAddableCountries);
+
+        // Check verification status
+        await checkVerificationStatus();
       } catch (err) {
         setError('Failed to fetch data. Please try again later.');
         console.error('Error fetching data:', err);
@@ -46,7 +49,7 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
-  }, [getDashboardHeader]);
+  }, [getDashboardHeader, checkVerificationStatus]);
 
   const easeOutQuad = (t: number) => t * (2 - t);
 
@@ -115,57 +118,68 @@ const Dashboard: React.FC = () => {
       <div className="mb-4">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>Add Country</Button>
+            <Button disabled={!isVerified}>
+              {isVerified ? 'Add Country' : 'Verify Email to Add Country'}
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add a New Country</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              {isAddingCountry ? (
-                <>
-                  <p>Fetching events for country</p>
-                  <Progress value={addProgress} className="mt-2" />
-                </>
-              ) : successMessage ? (
-                <p className="text-green-600">{successMessage}</p>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <label htmlFor="country-select" className="text-sm font-medium">
-                      Country Name
-                    </label>
-                    <Select onValueChange={(value) => setSelectedCountry(value)}>
-                      <SelectTrigger id="country-select">
-                        <SelectValue placeholder="Select a country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {addableCountries.map((country) => (
-                          <SelectItem key={country} value={country}>
-                            {country}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="time-period" className="text-sm font-medium">
-                      Hours
-                    </label>
-                    <Input
-                      id="time-period"
-                      type="number"
-                      placeholder="Time period (2-24 hours)"
-                      min={2}
-                      max={24}
-                      value={timePeriod}
-                      onChange={(e) => setTimePeriod(Number(e.target.value))}
-                    />
-                  </div>
-                  <Button onClick={handleAddCountry}>Add Country</Button>
-                </>
-              )}
-            </div>
+            {isVerified ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Add a New Country</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  {isAddingCountry ? (
+                    <>
+                      <p>Fetching events for country</p>
+                      <Progress value={addProgress} className="mt-2" />
+                    </>
+                  ) : successMessage ? (
+                    <p className="text-green-600">{successMessage}</p>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <label htmlFor="country-select" className="text-sm font-medium">
+                          Country Name
+                        </label>
+                        <Select onValueChange={(value) => setSelectedCountry(value)}>
+                          <SelectTrigger id="country-select">
+                            <SelectValue placeholder="Select a country" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {addableCountries.map((country) => (
+                              <SelectItem key={country} value={country}>
+                                {country}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="time-period" className="text-sm font-medium">
+                          Hours
+                        </label>
+                        <Input
+                          id="time-period"
+                          type="number"
+                          placeholder="Time period (2-24 hours)"
+                          min={2}
+                          max={24}
+                          value={timePeriod}
+                          onChange={(e) => setTimePeriod(Number(e.target.value))}
+                        />
+                      </div>
+                      <Button onClick={handleAddCountry}>Add Country</Button>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <DialogHeader>
+                <DialogTitle>Email Verification Required</DialogTitle>
+                <p>Please verify your email address to add a new country.</p>
+              </DialogHeader>
+            )}
           </DialogContent>
         </Dialog>
       </div>

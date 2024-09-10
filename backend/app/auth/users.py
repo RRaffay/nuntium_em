@@ -1,3 +1,4 @@
+from fastapi_users.jwt import generate_jwt
 from typing import Optional
 
 from beanie import PydanticObjectId
@@ -9,7 +10,7 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import BeanieUserDatabase, ObjectIDIDMixin
-
+from .email_utils import send_verification_email
 from auth.auth_db import User, get_user_db
 from auth.schemas import UserCreate
 from config import settings
@@ -32,8 +33,13 @@ class UserManager(ObjectIDIDMixin, BaseUserManager[User, PydanticObjectId]):
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
     ):
+        await send_verification_email(user.email, token)
         print(
             f"Verification requested for user {user.id}. Verification token: {token}")
+
+    async def on_after_verify(self, user: User, request: Optional[Request] = None):
+        user.is_verified = True
+        print(f"User {user.id} has verified their email.")
 
 
 async def get_user_manager(user_db: BeanieUserDatabase = Depends(get_user_db)):
