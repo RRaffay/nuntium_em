@@ -20,7 +20,7 @@ from langchain_core.output_parsers import StrOutputParser
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 20000) -> str:
+def article_summarizer(url: str, model: int = 3, max_length: int = 20000, timeout: int = 12) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -32,6 +32,7 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 20000) -> str
     url (str): The URL of the online article to summarize.
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
     max_length (int, optional): The maximum length of the article content. Defaults to 20000 characters.
+    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 12 seconds.
 
     Returns:
     str: The summary of the article. If there was an error loading the article or the article is too long, returns an appropriate message.
@@ -141,23 +142,35 @@ Helpful Answer:
     )
     split_docs = text_splitter.split_documents(docs)
 
-    summary = map_reduce_chain.invoke(split_docs)
-    return summary["output_text"]
+    try:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(map_reduce_chain.invoke, split_docs)
+            summary = future.result(timeout=timeout)
+        return summary["output_text"]
+    except concurrent.futures.TimeoutError:
+        return f"Timeout: Summary generation for {url} took longer than {timeout} seconds."
+    except Exception as e:
+        return f"Error in generating summary: {str(e)}"
 
 
-def generate_summaries(article_urls: List[str], max_workers: int = 5) -> List[str]:
+def generate_summaries(article_urls: List[str], max_workers: int = 10, timeout: int = 12) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
     summaries = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {executor.submit(
-            article_summarizer, url): url for url in article_urls}
+            article_summarizer, url, timeout=timeout): url for url in article_urls}
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
             try:
-                summary = future.result()
+                summary = future.result(timeout=timeout)
                 summaries.append(summary)
+            except concurrent.futures.TimeoutError:
+                logger.error(
+                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
+                summaries.append(
+                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
                 summaries.append(f"Failed to generate summary for {url}")
