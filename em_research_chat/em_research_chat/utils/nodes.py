@@ -69,7 +69,7 @@ def research_plan_node(state: AgentState, config):
     ])
 
     content = state.get('content') or []
-    max_results = config.get('configurable', {}).get('max_results_tavily', 3)
+    max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(
@@ -93,7 +93,7 @@ def generation_node(state: AgentState, config):
 
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    user_message = f"Conversation history:\n{conversation_history}\n\nTask: {state['task']}\n\n"
+    user_message = f"Current Question: \n<current_question>\n{state['task']}\n</current_question>\n\n Conversation history:\n<conversation_history>\n{conversation_history}\n</conversation_history>\n\n"
 
     user_message = HumanMessage(
         content=user_message
