@@ -24,3 +24,5 @@ start_app:
 stop_app:
 	./stop_docker.sh
 
+prod_logs:
+	docker compose -f docker-compose.prod.yml logs -f frontend nginx
