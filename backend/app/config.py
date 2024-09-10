@@ -13,14 +13,13 @@ class BaseConfig(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     CORS_ORIGINS: List[str] = Field(default_factory=list)
-    FRONTEND_URL: str = "http://localhost:3000"
-    REPORT_SERVER_URL: str = "http://0.0.0.0:8001"
-    NEWS_PIPELINE_SERVER_URL: str = "http://0.0.0.0:8002"
-    REPORT_CHAT_SERVER_URL: str = "http://0.0.0.0:8003"
-    API_PREFIX: str = ""
+    REPORT_SERVER_URL: str = "http://report_server:8001"
+    NEWS_PIPELINE_SERVER_URL: str = "http://news_pipeline_server:8002"
+    REPORT_CHAT_SERVER_URL: str = "http://research_chat:8003"
 
-    class Config:
-        env_file = ".env"
+
+class Config:
+    env_file = ".env"
 
 
 class DevelopmentConfig(BaseConfig):
