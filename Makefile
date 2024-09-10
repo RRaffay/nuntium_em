@@ -1,4 +1,4 @@
-.PHONY: start_report_server start_news_pipeline_server start_backend start_frontend start_docker_app stop_docker_app start_app
+.PHONY: start_report_server start_news_pipeline_server start_backend start_frontend start_app stop_app
 
 # Target to start the Report server
 start_report_server:
@@ -16,14 +16,11 @@ start_backend:
 start_frontend:
 	cd frontend && npm start 
 
-# Start all services in docker containers based on DEV_MODE
+# Start all services in docker containers based on APP_ENV
 start_app:
 	./start_docker.sh
 
-# Start all services in docker containers (deprecated, use start_app instead)
-start_docker_app:
-	docker compose up --build -d
+# Stop all services in docker containers based on APP_ENV
+stop_app:
+	./stop_docker.sh
 
-# Stop all services in docker containers
-stop_docker_app:
-	docker compose down
