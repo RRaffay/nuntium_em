@@ -12,11 +12,12 @@ COPY . .
 
 # Create a script to generate the JSON file
 RUN echo '#!/bin/sh\n\
+ESCAPED_PRIVATE_KEY=$(echo "$GOOGLE_PRIVATE_KEY" | sed "s/\\\n/\\\\n/g")\n\
 echo "{\n\
   \"type\": \"service_account\",\n\
   \"project_id\": \"$GOOGLE_PROJECT_ID\",\n\
   \"private_key_id\": \"$GOOGLE_PRIVATE_KEY_ID\",\n\
-  \"private_key\": $GOOGLE_PRIVATE_KEY,\n\
+  \"private_key\": \"$ESCAPED_PRIVATE_KEY\",\n\
   \"client_email\": \"$GOOGLE_CLIENT_EMAIL\",\n\
   \"client_id\": \"$GOOGLE_CLIENT_ID\",\n\
   \"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\",\n\
