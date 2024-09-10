@@ -1,16 +1,19 @@
 #!/bin/bash
 
-# Read the DEV_MODE from .env file
-DEV_MODE=$(grep '^DEV_MODE=' .env | cut -d '=' -f2)
+# Read the APP_ENV from .env file
+APP_ENV=$(grep '^APP_ENV=' .env | cut -d '=' -f2)
 
 # Remove any surrounding quotes
-DEV_MODE=$(echo $DEV_MODE | tr -d '"' | tr -d "'")
+APP_ENV=$(echo $APP_ENV | tr -d '"' | tr -d "'")
 
 # Choose the appropriate docker-compose file
-if [ "$DEV_MODE" = "true" ]; then
+if [ "$APP_ENV" = "development" ]; then
     COMPOSE_FILE="docker-compose.dev.yml"
-else
+elif [ "$APP_ENV" = "production" ]; then
     COMPOSE_FILE="docker-compose.prod.yml"
+else
+    echo "Invalid APP_ENV value. Please set it to 'development' or 'production' in .env file."
+    exit 1
 fi
 
 # Start Docker Compose with the selected file
