@@ -10,24 +10,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: Config) -> pd.DataFrame:
+def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: Config, use_cache: bool = False) -> pd.DataFrame:
     """
     Fetch GDELT data from BigQuery for a specific country and time range, using both Events and GKG tables.
     Performs the join in BigQuery.
     """
-    cache_file = os.path.join(config.gdelt_cache_dir,
-                              f"{country}_{hours}hours.pkl")
+    if use_cache:
+        cache_file = os.path.join(config.gdelt_cache_dir,
+                                  f"{country}_{hours}hours.pkl")
 
-    # Check if cached data exists and is not expired
-    if os.path.exists(cache_file):
-        with open(cache_file, 'rb') as f:
-            cache_time, df = pickle.load(f)
-        if datetime.now() - cache_time <= config.gdelt_cache_expiry:
-            logger.info(f"Using cached data from {cache_time}.")
-            return df
+        # Check if cached data exists and is not expired
+        if os.path.exists(cache_file):
+            with open(cache_file, 'rb') as f:
+                cache_time, df = pickle.load(f)
+            if datetime.now() - cache_time <= config.gdelt_cache_expiry:
+                logger.info(f"Using cached data from {cache_time}.")
+                return df
 
     try:
-        # Define query with join
         query = f"""
             WITH events AS (
         SELECT
@@ -114,9 +114,9 @@ def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: 
             merged_df['GKG_DATE'], format='%Y%m%d%H%M%S')
         logging.info(f"Fetched {len(merged_df)} rows of data.")
 
-        # Cache the fetched data
-        with open(cache_file, 'wb') as f:
-            pickle.dump((datetime.now(), merged_df), f)
+        if use_cache:
+            with open(cache_file, 'wb') as f:
+                pickle.dump((datetime.now(), merged_df), f)
 
         return merged_df
 
