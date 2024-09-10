@@ -25,4 +25,4 @@ stop_app:
 	./stop_docker.sh
 
 prod_logs:
-	docker compose -f docker-compose.prod.yml logs -f frontend nginx
+	docker compose -f docker-compose.prod.yml logs -f frontend nginx backend report_server news_pipeline_server research_chat
