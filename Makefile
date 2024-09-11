@@ -24,5 +24,7 @@ start_app:
 stop_app:
 	./stop_docker.sh
 
+# Example usage:
+# make prod_logs TIME="10m"
 prod_logs:
-	docker compose -f docker-compose.prod.yml logs -f frontend nginx backend report_server news_pipeline_server research_chat
+	docker compose -f docker-compose.prod.yml logs -f --since $(if $(TIME),$(TIME),5m) frontend nginx backend report_server news_pipeline_server research_chat
