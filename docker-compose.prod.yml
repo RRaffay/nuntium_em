@@ -3,7 +3,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:frontend-latest
     env_file:
       - .env
     restart: unless-stopped
@@ -12,7 +11,6 @@ services:
     build:
       context: ./backend
       dockerfile: DockerFile
-    image: ghcr.io/rraffay/nuntium_em:backend-latest
     depends_on:
       - mongodb
       - report_server
@@ -32,7 +30,6 @@ services:
     build:
       context: ./em_research_agentic
       dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:report-server-latest
     depends_on:
       - mongodb
     env_file:
@@ -48,7 +45,6 @@ services:
     build:
       context: ./em_news_analysis
       dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:news-pipeline-latest
     depends_on:
       - mongodb
     env_file:
@@ -67,7 +63,7 @@ services:
   mongodb:
     image: mongo:latest
     volumes:
-      - mongodb_data:/data/db
+      - /mnt/volume_nyc1_01/mongodb:/data/db
     ports:
       - "27017:27017"
     
@@ -75,7 +71,6 @@ services:
     build:
       context: ./em_research_chat
       dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:research-chat-latest
     depends_on:
       - mongodb
     env_file:
@@ -90,7 +85,7 @@ services:
   redis:
     image: redis:latest
     volumes:
-      - redis_data:/data
+      - /mnt/volume_nyc1_01/redis:/data
 
   nginx:
     image: nginx:latest
@@ -116,6 +111,4 @@ services:
     command: certonly --webroot -w /var/www/certbot --force-renewal --email ranaraffay@gmail.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos --no-eff-email
 
 volumes:
-  mongodb_data:
-  redis_data:
   certbot_data:
