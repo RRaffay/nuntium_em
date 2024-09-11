@@ -22,7 +22,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, objective: str, model: int = 3) -> str:
+def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 5) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -34,9 +34,10 @@ def article_summarizer(url: str, objective: str, model: int = 3) -> str:
     url (str): The URL of the online article to summarize.
     objective(str): This provides an objective for the summary of the article, including the relevant meta-data
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
+    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 5 seconds.
 
     Returns:
-    str: The summary of the article. If there was an error loading the article, returns "Error in loading doc".
+    str: The summary of the article. If there was an error loading the article or a timeout occurred, returns an appropriate message.
     """
 
     loader = WebBaseLoader(url)
@@ -86,7 +87,7 @@ Helpful Answer:"""
     # Reduce
     reduce_question_start = f"The following is a set of summaries from different portions of an online article. {objective}"
     current_date = datetime.now().strftime("%Y-%m-%d")
-    reduce_question_end = f"""Take these and distill it into a final, consolidated report of the event. Today's date is {current_date}.
+    reduce_question_end = f"""Take these and distill them into a final, consolidated report of the event. Today's date is {current_date}. If summaries seem to indicate an error accessing the article, please return a message indicating that the article could not be accessed.
 
 Helpful Answer:
 
@@ -141,23 +142,35 @@ Helpful Answer:
     )
     split_docs = text_splitter.split_documents(docs)
 
-    summary = map_reduce_chain.invoke(split_docs)
-    return summary["output_text"]
+    try:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(map_reduce_chain.invoke, split_docs)
+            summary = future.result(timeout=timeout)
+        return summary["output_text"]
+    except concurrent.futures.TimeoutError:
+        return f"Timeout: Summary generation for {url} took longer than {timeout} seconds."
+    except Exception as e:
+        return f"Error in generating summary: {str(e)}"
 
 
-def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 5) -> List[str]:
+def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 5, timeout: int = 5) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
     summaries = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {executor.submit(
-            article_summarizer, url, objective): url for url in article_urls}
+            article_summarizer, url, objective, timeout=timeout): url for url in article_urls}
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
             try:
-                summary = future.result()
+                summary = future.result(timeout=timeout)
                 summaries.append(summary)
+            except concurrent.futures.TimeoutError:
+                logger.error(
+                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
+                summaries.append(
+                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
                 summaries.append(f"Failed to generate summary for {url}")

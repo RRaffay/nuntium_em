@@ -2,8 +2,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:frontend-latest
+      dockerfile: DockerFile
     ports:
       - "3000:3000"
     depends_on:
@@ -13,7 +12,6 @@ services:
     build:
       context: ./backend
       dockerfile: DockerFile
-    image: ghcr.io/rraffay/nuntium_em:backend-latest
     ports:
       - "8000:8000"
     depends_on:
@@ -48,7 +46,6 @@ services:
     build:
       context: ./em_news_analysis
       dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:news-pipeline-latest
     ports:
       - "8002:8002"
     depends_on:
@@ -71,7 +68,6 @@ services:
     build:
       context: ./em_research_chat
       dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:research-chat-latest
     ports:
       - "8003:8003"
     depends_on:
