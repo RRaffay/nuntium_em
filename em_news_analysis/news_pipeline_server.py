@@ -1,6 +1,15 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
 from em_news_analysis import Config, GDELTNewsPipeline
+import logging
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -46,6 +55,12 @@ async def run_pipeline(input_data: PipelineInput):
 @app.get("/")
 async def root():
     return {"message": "Welcome to the GDELT News Analysis API"}
+
+
+@app.get("/health")
+async def health():
+    logger.info("Health check")
+    return Response(status_code=200)
 
 if __name__ == "__main__":
     import uvicorn

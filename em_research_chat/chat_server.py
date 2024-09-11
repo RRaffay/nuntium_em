@@ -1,14 +1,20 @@
 from dotenv import load_dotenv  # noqa
 load_dotenv()  # noqa
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
 from em_research_chat.agent import graph
 import logging
 from typing import List, Tuple
 
 app = FastAPI()
-logging.basicConfig(level=logging.INFO)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 
 class GraphInput(BaseModel):
@@ -31,6 +37,12 @@ async def run_research_chat(input_data: GraphInput):
     except Exception as e:
         logging.error(f"Error in run_graph: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/health")
+async def health():
+    logger.info("Health check")
+    return Response(status_code=200)
 
 if __name__ == "__main__":
     import uvicorn
