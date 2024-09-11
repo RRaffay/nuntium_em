@@ -73,15 +73,18 @@ async def get_countries(user: User = Depends(current_active_user)):
     """
     try:
         countries = await fetch_country_data(str(user.id))
-        return [
-            {
-                "name": country,
-                "timestamp": data.timestamp.isoformat(),
-                "hours": data.hours,
-                "no_relevant_events": data.no_relevant_events
-            }
-            for country, data in countries.items()
-        ]
+        return sorted(
+            [
+                {
+                    "name": country,
+                    "timestamp": data.timestamp.isoformat(),
+                    "hours": data.hours,
+                    "no_relevant_events": data.no_relevant_events
+                }
+                for country, data in countries.items()
+            ],
+            key=lambda x: x["name"]
+        )
     except Exception as e:
         logger.error(f"Error in get_countries: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
