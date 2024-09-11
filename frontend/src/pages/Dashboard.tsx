@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import { Trash2 } from 'lucide-react';
 
-const Dashboard: React.FC = () => {
+const Dashboard: React.FC = React.memo(() => {
   const [countries, setCountries] = useState<CountryInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [headerMessage, setHeaderMessage] = useState<string>('');
@@ -54,7 +54,7 @@ const Dashboard: React.FC = () => {
 
   const easeOutQuad = (t: number) => t * (2 - t);
 
-  const handleAddCountry = async () => {
+  const handleAddCountry = useCallback(async () => {
     setIsAddingCountry(true);
     setAddProgress(0);
     setSuccessMessage(null);
@@ -97,9 +97,9 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsAddingCountry(false);
     }
-  };
+  }, [selectedCountry, timePeriod, api.runCountryPipeline, api.getCountries, api.getAddableCountries]);
 
-  const handleDeleteCountry = async (country: string, event: React.MouseEvent) => {
+  const handleDeleteCountry = useCallback(async (country: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     if (window.confirm(`Are you sure you want to delete data for ${country}?`)) {
@@ -112,7 +112,7 @@ const Dashboard: React.FC = () => {
         console.error('Error deleting country:', err);
       }
     }
-  };
+  }, [countries, addableCountries, api.deleteCountry]);
 
   if (error) {
     return <div className="text-red-500">{error}</div>;
@@ -220,6 +220,6 @@ const Dashboard: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 export default Dashboard;
