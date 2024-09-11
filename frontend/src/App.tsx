@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Dashboard from '@/pages/Dashboard';
-import CountryPage from '@/pages/CountryPage';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import UserProfilePage from '@/pages/UserProfilePage';
 import { AuthProvider } from '@/contexts/AuthContext';
 import PrivateRoute from '@/components/PrivateRoute';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import VerifyEmailPage from '@/pages/VerifyEmailPage';
+
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const CountryPage = lazy(() => import('@/pages/CountryPage'));
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
+const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
+const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'));
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -33,14 +34,16 @@ const AppContent: React.FC = () => {
       <Header />
       <main>
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <Routes>
-            <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
-            <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />} />
-            <Route path="/" element={<PrivateRoute element={<Dashboard />} />} />
-            <Route path="/country/:country" element={<PrivateRoute element={<CountryPage />} />} />
-            <Route path="/profile" element={<PrivateRoute element={<UserProfilePage />} />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-          </Routes>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
+              <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+              <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />} />
+              <Route path="/" element={<PrivateRoute element={<Dashboard />} />} />
+              <Route path="/country/:country" element={<PrivateRoute element={<CountryPage />} />} />
+              <Route path="/profile" element={<PrivateRoute element={<UserProfilePage />} />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
     </div>
