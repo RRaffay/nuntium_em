@@ -62,11 +62,12 @@ services:
 
   mongodb:
     image: mongo:latest
+    ports:
+      - "127.0.0.1:27017:27017"
     volumes:
       - /mnt/volume_nyc1_01/mongodb:/data/db
-    ports:
-      - "27017:27017"
-    
+    command: ["mongod", "--bind_ip", "localhost,mongodb"]
+
   research_chat:
     build:
       context: ./em_research_chat
