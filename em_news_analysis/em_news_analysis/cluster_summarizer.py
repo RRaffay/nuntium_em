@@ -31,7 +31,7 @@ class Event(BaseModel):
     relevant_for_financial_analysis: bool = Field(
         description="Whether the event could be of interest to an investor.")
     relevance_score: int = Field(
-        description="The relevance score of the event from 0 to 5. 0 is is likely to be of no interest to an investor. 3 if the event could be of interest to an investor. 5 if the event is highly likely to be of great interest to an investor.", default=0)
+        description="The relevance score of the event from 1 to 5. 1 means the event is unrelated to financial markets. 3 means the event will have minor or negligible impacts to financial markets. 5 means the event is highly likely move markets.", default=0)
 
 
 def combined_summary(summaries_list: List[str], objective: str, model: int = 3) -> str:
