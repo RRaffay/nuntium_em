@@ -1,6 +1,7 @@
 from typing import List
 import concurrent.futures
 import logging
+from concurrent.futures import TimeoutError
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
@@ -21,8 +22,17 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+open_ai_llm_mini = ChatOpenAI(
+    temperature=0,
+    model_name="gpt-4o-mini",
+)
+open_ai_llm = ChatOpenAI(
+    temperature=0,
+    model_name="gpt-4o",
+)
 
-def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 5) -> str:
+
+def article_summarizer(url: str, objective: str, model: int = 3) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -41,26 +51,17 @@ def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 
     """
 
     loader = WebBaseLoader(url)
+
     try:
         docs = loader.load()
     except Exception as e:
         return f"Error in loading doc {str(e)}"
 
     if model == 3:
-        open_ai_llm = ChatOpenAI(
-            temperature=0,
-            model_name="gpt-4o-mini",
-            # openai_api_key=settings.OPENAI_API_KEY,
-        )
+        llm = open_ai_llm_mini
 
     else:
-        open_ai_llm = ChatOpenAI(
-            temperature=0,
-            model_name="gpt-4o",
-            # openai_api_key=settings.OPENAI_API_KEY,
-        )
-
-    llm = open_ai_llm
+        llm = open_ai_llm
 
     map_question = f"""The following is a portion from an online article."""
 
@@ -87,7 +88,7 @@ Helpful Answer:"""
     # Reduce
     reduce_question_start = f"The following is a set of summaries from different portions of an online article. {objective}"
     current_date = datetime.now().strftime("%Y-%m-%d")
-    reduce_question_end = f"""Take these and distill them into a final, consolidated report of the event. Today's date is {current_date}. If summaries seem to indicate an error accessing the article, please return a message indicating that the article could not be accessed.
+    reduce_question_end = f"""Take these and distill them into a final, consolidated report of the event. Today's date is {current_date}. \n\nIf summaries seem to indicate an error accessing the article, such as JavaScript and cookies restrictions, just return the message "ARTICLE COULD NOT BE ACCESSED DUE TO RESTRICTIONS".
 
 Helpful Answer:
 
@@ -143,35 +144,46 @@ Helpful Answer:
     split_docs = text_splitter.split_documents(docs)
 
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(map_reduce_chain.invoke, split_docs)
-            summary = future.result(timeout=timeout)
+        summary = map_reduce_chain.invoke(split_docs)
         return summary["output_text"]
-    except concurrent.futures.TimeoutError:
-        return f"Timeout: Summary generation for {url} took longer than {timeout} seconds."
     except Exception as e:
-        return f"Error in generating summary: {str(e)}"
+        raise Exception(f"Error in generating summary: {str(e)}")
 
 
-def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 3, timeout: int = 5) -> List[str]:
+def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 3, timeout: int = 7) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
+
+    Parameters:
+    article_urls (List[str]): List of URLs to summarize
+    objective (str): Objective for the summary
+    max_workers (int): Maximum number of concurrent workers
+    timeout (int): Timeout in seconds for each summary generation
+
+    Returns:
+    List[str]: List of summaries or error messages
     """
     summaries = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {executor.submit(
-            article_summarizer, url, objective, timeout=timeout): url for url in article_urls}
+            article_summarizer, url, objective): url for url in article_urls}
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
             try:
                 summary = future.result(timeout=timeout)
-                summaries.append(summary)
+                if "ARTICLE COULD NOT BE ACCESSED DUE TO RESTRICTIONS" in summary:
+                    summaries.append(
+                        f"Article summarization not allowed. Please read article directly.")
+                else:
+                    summaries.append(summary)
+
             except concurrent.futures.TimeoutError:
                 logger.error(
-                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
+                    f"Timeout error for {url}: Summary generation took longer than {timeout} seconds")
                 summaries.append(
-                    f"Article summarization not allowed. Please read article directly.")
+                    f"Article summarization failed. Please read article directly.")
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
-                summaries.append(f"Failed to generate summary for {url}")
+                summaries.append(
+                    f"Article summarization failed. Please read article directly.")
     return summaries

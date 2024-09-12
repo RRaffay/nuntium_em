@@ -18,6 +18,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from datetime import datetime
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ class Event(BaseModel):
         description="The relevance score of the event from 1 to 5. 1 means the event is unrelated to financial markets. 3 means the event will have minor or negligible impacts to financial markets. 5 means the event is highly likely move markets.", default=0)
 
 
-def combined_summary(summaries_list: List[str], objective: str, model: int = 3) -> str:
+def combined_summary(summaries_list: List[str], objective: str, model: int = 3, retry_attempts: int = 3) -> str:
     """
     Combine multiple summaries into a final summary.
 
@@ -67,7 +68,7 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
         Event, method="json_mode")
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor. If the event is relevant to investors, assign it a score from 0 to 5, where 0 represents no significant market movement and 5 represents a major trading opportunity. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys."),
+        ("system", "You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor. If the event is relevant to investors, assign it a score from 0 to 5, where 0 represents no significant market movement and 5 represents a major trading opportunity. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys. If all the articles say inaccessible, return an event with title 'INACCESSIBLE' and summary 'INACCESSIBLE'."),
         ("user", "{input}")
     ])
 
@@ -75,7 +76,11 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 3) 
 
     input_prompt = f"{objective}\n\n{summaries_prompt}"
 
-    return chain.invoke({"input": input_prompt})
+    @retry(stop=stop_after_attempt(retry_attempts))
+    def invoke_with_retry():
+        return chain.invoke({"input": input_prompt})
+
+    return invoke_with_retry()
 
 
 def generate_cluster_summary(summaries: List[str], objective: str) -> Event:
@@ -84,7 +89,13 @@ def generate_cluster_summary(summaries: List[str], objective: str) -> Event:
     """
     try:
         event = combined_summary(summaries, objective)
-        return event
+        if "INACCESSIBLE" in event.title or "INACCESSIBLE" in event.summary:
+            logger.error(
+                f"Error generating cluster summary: {event.title} {event.summary}")
+            return Event(title="Error", summary="Error generating cluster summary", relevant_for_financial_analysis=False)
+
+        else:
+            return event
     except Exception as e:
         logger.error(f"Error generating cluster summary: {str(e)}")
         return Event(title="Error", summary="Error generating cluster summary", relevant_for_financial_analysis=False)

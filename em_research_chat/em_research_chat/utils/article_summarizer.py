@@ -20,7 +20,17 @@ from langchain_core.output_parsers import StrOutputParser
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 20000, timeout: int = 4) -> str:
+open_ai_llm_mini = ChatOpenAI(
+    temperature=0,
+    model_name="gpt-4o-mini",
+)
+open_ai_llm = ChatOpenAI(
+    temperature=0,
+    model_name="gpt-4o",
+)
+
+
+def article_summarizer(url: str, model: int = 3, max_length: int = 20000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -50,17 +60,10 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 20000, timeou
         return f"Article content exceeds the maximum length of {max_length} characters."
 
     if model == 3:
-        open_ai_llm = ChatOpenAI(
-            temperature=0,
-            model_name="gpt-4o-mini",
-        )
-    else:
-        open_ai_llm = ChatOpenAI(
-            temperature=0,
-            model_name="gpt-4o",
-        )
+        llm = open_ai_llm_mini
 
-    llm = open_ai_llm
+    else:
+        llm = open_ai_llm
 
     map_question = f"""The following is a portion from an online article."""
 
@@ -143,24 +146,20 @@ Helpful Answer:
     split_docs = text_splitter.split_documents(docs)
 
     try:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(map_reduce_chain.invoke, split_docs)
-            summary = future.result(timeout=timeout)
+        summary = map_reduce_chain.invoke(split_docs)
         return summary["output_text"]
-    except concurrent.futures.TimeoutError:
-        return f"Timeout: Summary generation for {url} took longer than {timeout} seconds."
     except Exception as e:
-        return f"Error in generating summary: {str(e)}"
+        raise Exception(f"Error in generating summary: {str(e)}")
 
 
-def generate_summaries(article_urls: List[str], max_workers: int = 10, timeout: int = 4) -> List[str]:
+def generate_summaries(article_urls: List[str], max_workers: int = 5, timeout: int = 5) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
     summaries = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {executor.submit(
-            article_summarizer, url, timeout=timeout): url for url in article_urls}
+            article_summarizer, url): url for url in article_urls}
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
             try:
