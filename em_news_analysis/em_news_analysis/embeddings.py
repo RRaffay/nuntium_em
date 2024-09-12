@@ -6,6 +6,8 @@ import pandas as pd
 from tqdm import tqdm
 import logging
 from openai import OpenAI
+from functools import partial
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,13 +40,44 @@ def generate_embedding_for_text(args):
         return index, None
 
 
+def generate_embedding_for_text_with_retry(args):
+    """
+    Generate an embedding for a given text using OpenAI's API.
+    """
+    text, get_embedding_func, index, max_attempts, delay, timeout, model = args
+    embedding_size = 1536 if model == "text-embedding-3-small" else 3072
+
+    for attempt in range(max_attempts):
+        try:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(get_embedding_func, text)
+                try:
+                    embedding = future.result(timeout=timeout)
+                    return index, embedding
+                except TimeoutError:
+                    logger.warning(
+                        f"Embedding generation timed out for index {index}. Returning random embedding.")
+                    return index, np.random.rand(embedding_size).tolist()
+        except Exception as e:
+            if attempt < max_attempts - 1:
+                logger.warning(
+                    f"Attempt {attempt + 1} failed for index {index}: {str(e)}. Retrying...")
+                time.sleep(delay)
+            else:
+                logger.error(
+                    f"All attempts failed for index {index}: {str(e)}")
+                return index, np.random.rand(embedding_size).tolist()
+
+
 def generate_embeddings(
     df: pd.DataFrame,
     get_embedding_func: Callable[[str], List[float]],
     max_workers: int = 5,
     batch_size: int = 50,
     retry_attempts: int = 3,
-    retry_delay: float = 1.0
+    retry_delay: float = 1.0,
+    timeout: float = 3.0,
+    model: str = "text-embedding-3-small"
 ) -> Tuple[np.ndarray, List[int]]:
     """
     Generate embeddings for the combined text in the dataframe using parallel processing and batching.
@@ -59,7 +92,7 @@ def generate_embeddings(
         embeddings = []
         valid_indices = []
 
-        args_list = [(text, get_embedding_func, i, retry_attempts, retry_delay)
+        args_list = [(text, get_embedding_func, i, retry_attempts, retry_delay, timeout, model)
                      for i, text in enumerate(batch_df['combined'], start=start_idx)]
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -80,23 +113,6 @@ def generate_embeddings(
             f"Completed batch {start_idx//batch_size + 1}. Total embeddings: {len(all_embeddings)}")
 
         # Add a small delay between batches to avoid rate limiting
-        time.sleep(0.5)
+        time.sleep(1)
 
     return np.array(all_embeddings), all_valid_indices
-
-
-def generate_embedding_for_text_with_retry(args):
-    text, get_embedding_func, index, max_attempts, delay = args
-    for attempt in range(max_attempts):
-        try:
-            embedding = get_embedding_func(text)
-            return index, embedding
-        except Exception as e:
-            if attempt < max_attempts - 1:
-                logger.warning(
-                    f"Attempt {attempt + 1} failed for index {index}: {str(e)}. Retrying...")
-                time.sleep(delay)
-            else:
-                logger.error(
-                    f"All attempts failed for index {index}: {str(e)}")
-                return index, None
