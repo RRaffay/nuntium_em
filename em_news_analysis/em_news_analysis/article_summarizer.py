@@ -22,7 +22,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 10) -> str:
+def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 5) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -153,7 +153,7 @@ Helpful Answer:
         return f"Error in generating summary: {str(e)}"
 
 
-def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 5, timeout: int = 10) -> List[str]:
+def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 5, timeout: int = 5) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
