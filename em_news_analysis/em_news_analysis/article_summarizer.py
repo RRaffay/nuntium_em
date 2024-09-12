@@ -22,7 +22,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 5) -> str:
+def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 10) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -34,7 +34,7 @@ def article_summarizer(url: str, objective: str, model: int = 3, timeout: int = 
     url (str): The URL of the online article to summarize.
     objective(str): This provides an objective for the summary of the article, including the relevant meta-data
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
-    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 5 seconds.
+    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 10 seconds.
 
     Returns:
     str: The summary of the article. If there was an error loading the article or a timeout occurred, returns an appropriate message.
@@ -153,7 +153,7 @@ Helpful Answer:
         return f"Error in generating summary: {str(e)}"
 
 
-def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 5, timeout: int = 5) -> List[str]:
+def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 5, timeout: int = 10) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
@@ -170,7 +170,7 @@ def generate_summaries(article_urls: List[str], objective: str, max_workers: int
                 logger.error(
                     f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
                 summaries.append(
-                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
+                    f"Article summarization not allowed. Please read article directly.")
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
                 summaries.append(f"Failed to generate summary for {url}")

@@ -5,13 +5,11 @@ import pandas as pd
 from tqdm import tqdm
 import logging
 from openai import OpenAI
-from functools import lru_cache
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=1100)
 def get_embedding(text: str, model: str) -> List[float]:
     """
     Generate an embedding for a given text using OpenAI's API.
@@ -41,7 +39,7 @@ def generate_embedding_for_text(args):
 def generate_embeddings(
     df: pd.DataFrame,
     get_embedding_func: Callable[[str], List[float]],
-    max_workers: int = 10
+    max_workers: int = 5
 ) -> Tuple[np.ndarray, List[int]]:
     """
     Generate embeddings for the combined text in the dataframe using parallel processing.

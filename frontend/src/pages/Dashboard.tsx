@@ -35,10 +35,10 @@ const Dashboard: React.FC = React.memo(() => {
         setCountries(countriesData);
         setHeaderMessage(headerData);
         
-        // Filter out countries that are already added
-        const filteredAddableCountries = allAddableCountries.filter(
-          country => !countriesData.map(c => c.name).includes(country)
-        );
+        // Filter out countries that are already added and sort alphabetically
+        const filteredAddableCountries = allAddableCountries
+          .filter(country => !countriesData.map(c => c.name).includes(country))
+          .sort((a, b) => a.localeCompare(b));
         setAddableCountries(filteredAddableCountries);
 
         // Check verification status
@@ -82,9 +82,9 @@ const Dashboard: React.FC = React.memo(() => {
       setCountries(updatedCountries);
       // Update addable countries list
       const allAddableCountries = await api.getAddableCountries();
-      const filteredAddableCountries = allAddableCountries.filter(
-        country => !updatedCountries.map(c => c.name).includes(country)
-      );
+      const filteredAddableCountries = allAddableCountries
+        .filter(country => !updatedCountries.map(c => c.name).includes(country))
+        .sort((a, b) => a.localeCompare(b));
       setAddableCountries(filteredAddableCountries);
     } catch (err) {
       clearInterval(interval);
@@ -175,7 +175,9 @@ const Dashboard: React.FC = React.memo(() => {
                           onChange={(e) => setTimePeriod(Number(e.target.value))}
                         />
                       </div>
-                      <Button onClick={handleAddCountry}>Add Country</Button>
+                      <Button onClick={handleAddCountry} disabled={!selectedCountry}>
+                        Add Country
+                      </Button>
                     </>
                   )}
                 </div>
