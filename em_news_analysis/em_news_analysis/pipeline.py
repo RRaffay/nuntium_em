@@ -66,7 +66,8 @@ class GDELTNewsPipeline:
         cluster_summarizer_objective: str,
         process_all: bool = False,
         sample_size: int = 1500,
-        max_workers: int = 5,
+        max_workers_embeddings: int = 3,
+        max_workers_summaries: int = 3,
         export_to_local: bool = False,
         user_id: str = None
     ) -> List[str]:
@@ -93,7 +94,7 @@ class GDELTNewsPipeline:
 
             self.logger.info("Generating embeddings...")
             embeddings, valid_indices = generate_embeddings(
-                sampled_data, self.get_embedding, max_workers=max_workers)
+                sampled_data, self.get_embedding, max_workers=max_workers_embeddings)
 
             self.logger.info(f"Generated embeddings shape: {embeddings.shape}")
 
@@ -168,7 +169,7 @@ class GDELTNewsPipeline:
                     article_summaries, cluster_summarizer_objective)
                 return cluster, event_obj, article_summaries, sampled_urls
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers_summaries) as executor:
                 future_to_cluster = {executor.submit(
                     process_cluster, cluster): cluster for cluster in matched_clusters}
                 for future in tqdm(concurrent.futures.as_completed(future_to_cluster), total=len(matched_clusters), desc="Summarizing clusters"):

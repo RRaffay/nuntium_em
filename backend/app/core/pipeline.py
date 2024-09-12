@@ -22,6 +22,8 @@ class CountryPipelineInputApp(BaseModel):
     hours: int = Field(ge=2, le=24, default=3)
     user_id: str
 
+# Backend Pipeline Input Config (IMPORTANT)
+
 
 class PipelineInput(BaseModel):
     input_sentence: str = Field(
@@ -35,7 +37,8 @@ class PipelineInput(BaseModel):
         default="")
     process_all: bool = False
     sample_size: int = 1500
-    max_workers: int = 5
+    max_workers_embeddings: int = 3
+    max_workers_summaries: int = 3
     user_id: str
 
 

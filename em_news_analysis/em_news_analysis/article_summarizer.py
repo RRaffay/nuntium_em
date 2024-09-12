@@ -143,7 +143,7 @@ Helpful Answer:
     split_docs = text_splitter.split_documents(docs)
 
     try:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(map_reduce_chain.invoke, split_docs)
             summary = future.result(timeout=timeout)
         return summary["output_text"]
@@ -153,7 +153,7 @@ Helpful Answer:
         return f"Error in generating summary: {str(e)}"
 
 
-def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 5, timeout: int = 5) -> List[str]:
+def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 3, timeout: int = 5) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
