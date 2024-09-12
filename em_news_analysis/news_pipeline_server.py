@@ -26,7 +26,7 @@ class PipelineInput(BaseModel):
         default="")
     process_all: bool = False
     sample_size: int = 1500
-    max_workers: int = 10
+    max_workers: int = 5
     user_id: str
 
 

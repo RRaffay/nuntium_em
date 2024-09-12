@@ -66,7 +66,7 @@ class GDELTNewsPipeline:
         cluster_summarizer_objective: str,
         process_all: bool = False,
         sample_size: int = 1500,
-        max_workers: int = 10,
+        max_workers: int = 5,
         export_to_local: bool = False,
         user_id: str = None
     ) -> List[str]:
