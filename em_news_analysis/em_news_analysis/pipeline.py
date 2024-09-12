@@ -210,7 +210,20 @@ class GDELTNewsPipeline:
                 self.logger.info(
                     f"Exported data to MongoDB with ID: {mongo_id}")
 
-            return cluster_summaries
+            # Return metadata of run
+            run_information = {
+                'input_sentence': input_sentence,
+                'country': country,
+                'country_name': get_country_name(country),
+                'hours': hours,
+                'cluster_summarizer_objective': cluster_summarizer_objective,
+                'no_clusters': no_clusters,
+                'no_matched_clusters': no_matched_clusters,
+                'no_articles': no_articles,
+                'no_financially_relevant_events': cluster_article_summaries['metadata']['no_financially_relevant_events']
+            }
+
+            return run_information
 
         except ValueError as ve:
             self.logger.error(

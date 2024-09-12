@@ -37,7 +37,7 @@ async def run_pipeline(input_data: PipelineInput):
     pipeline = GDELTNewsPipeline(config)
 
     try:
-        _ = pipeline.run_pipeline(
+        result = pipeline.run_pipeline(
             input_sentence=input_data.input_sentence,
             country=input_data.country_fips_10_4_code,
             hours=input_data.hours,
@@ -49,6 +49,7 @@ async def run_pipeline(input_data: PipelineInput):
             max_workers_summaries=input_data.max_workers_summaries,
             user_id=input_data.user_id
         )
+        logger.info(f"Pipeline result: {result}")
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
