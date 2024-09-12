@@ -21,7 +21,6 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     try {
       await register(firstName, lastName, email, password, areaOfInterest);
-      await api.requestVerifyToken(email);
       setIsRegistered(true);
     } catch (err) {
       setError('Registration failed. Please try again.');
