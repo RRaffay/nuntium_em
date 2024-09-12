@@ -36,7 +36,6 @@ class GDELTNewsPipeline:
 
         self.config = config
         self.bigquery_client = bigquery.Client()
-        self.openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         os.makedirs(self.config.gdelt_cache_dir, exist_ok=True)
 
         # Add a directory for exporting CSV files
@@ -66,7 +65,7 @@ class GDELTNewsPipeline:
         cluster_summarizer_objective: str,
         process_all: bool = False,
         sample_size: int = 1500,
-        max_workers_embeddings: int = 3,
+        max_workers_embeddings: int = 5,
         max_workers_summaries: int = 3,
         export_to_local: bool = False,
         user_id: str = None
@@ -94,7 +93,7 @@ class GDELTNewsPipeline:
 
             self.logger.info("Generating embeddings...")
             embeddings, valid_indices = generate_embeddings(
-                sampled_data, self.get_embedding, max_workers=max_workers_embeddings)
+                sampled_data, max_workers=max_workers_embeddings)
 
             self.logger.info(f"Generated embeddings shape: {embeddings.shape}")
 
@@ -227,7 +226,7 @@ class GDELTNewsPipeline:
             raise ValueError("Pipeline execution failed") from e
 
     def get_embedding(self, text: str) -> List[float]:
-        return get_embedding(text, self.config.embedding_model)
+        return get_embedding(text=text, model=self.config.embedding_model)
 
     def export_data_local(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int) -> Tuple[str, str]:
         """

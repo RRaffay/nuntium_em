@@ -24,10 +24,10 @@ class PipelineInput(BaseModel):
         default="")
     cluster_summarizer_objective: str = Field(
         default="")
-    process_all: bool = False
-    sample_size: int = 1500
-    max_workers_embeddings: int = 3
-    max_workers_summaries: int = 3
+    process_all: bool
+    sample_size: int
+    max_workers_embeddings: int
+    max_workers_summaries: int
     user_id: str
 
 
