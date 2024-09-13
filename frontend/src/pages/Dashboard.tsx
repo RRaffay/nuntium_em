@@ -97,7 +97,7 @@ const Dashboard: React.FC = React.memo(() => {
     } finally {
       setIsAddingCountry(false);
     }
-  }, [selectedCountry, timePeriod, api.runCountryPipeline, api.getCountries, api.getAddableCountries]);
+  }, [selectedCountry, timePeriod]);
 
   const handleDeleteCountry = useCallback(async (country: string, event: React.MouseEvent) => {
     event.preventDefault();
@@ -112,7 +112,7 @@ const Dashboard: React.FC = React.memo(() => {
         console.error('Error deleting country:', err);
       }
     }
-  }, [countries, addableCountries, api.deleteCountry]);
+  }, [countries, addableCountries]);
 
   if (error) {
     return <div className="text-red-500">{error}</div>;

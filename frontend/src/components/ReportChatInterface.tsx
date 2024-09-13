@@ -8,7 +8,7 @@ import { btoa } from 'abab';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
 
-interface ReportChatInterface {
+interface ReportChatInterfaceProps {
   report: string;
   onClose: () => void;
 }
@@ -17,7 +17,7 @@ interface Message extends ChatMessage {
   isLoading?: boolean;
 }
 
-export const ReportChatInterface: React.FC<ReportChatInterface> = ({ report, onClose }) => {
+export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
