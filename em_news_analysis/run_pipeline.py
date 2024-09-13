@@ -11,7 +11,7 @@ def main():
 
     try:
         results = pipeline.run_pipeline(
-            input_sentence="Political Changes",
+            input_sentence="Economy Finance Markets",
             country="AF",  # FIPS 10-4 country codes
             hours=3,
             article_summarizer_objective="",
