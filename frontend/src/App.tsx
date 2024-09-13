@@ -11,6 +11,8 @@ const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
 const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'));
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -42,6 +44,8 @@ const AppContent: React.FC = () => {
               <Route path="/country/:country" element={<PrivateRoute element={<CountryPage />} />} />
               <Route path="/profile" element={<PrivateRoute element={<UserProfilePage />} />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Routes>
           </Suspense>
         </div>

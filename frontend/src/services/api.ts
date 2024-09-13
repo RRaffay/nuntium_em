@@ -243,4 +243,33 @@ export const api = {
     }
   },
 
+  async requestPasswordReset(email: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to request password reset');
+    }
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token, password: newPassword }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      const errorData = await handledResponse.json();
+      throw new Error(errorData.detail || 'Failed to reset password');
+    }
+  },
+
 };

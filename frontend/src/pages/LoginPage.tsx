@@ -46,6 +46,11 @@ const LoginPage: React.FC = () => {
             />
             {error && <p className="text-red-500">{error}</p>}
             <Button type="submit" className="w-full">Login</Button>
+            <div className="text-center mt-4">
+              <Link to="/forgot-password" className="text-blue-500 hover:underline">
+                Forgot your password?
+              </Link>
+            </div>
             <div className="text-center">
               <Link to="/register" className="text-blue-500 hover:underline">
                 Don't have an account? Register here

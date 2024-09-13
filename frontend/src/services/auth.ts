@@ -133,6 +133,12 @@ export const auth = {
     isAuthenticated(): boolean {
       return !!this.getToken();
     },
-  
 
+    async requestPasswordReset(email: string): Promise<void> {
+      await api.requestPasswordReset(email);
+    },
+
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+      await api.resetPassword(token, newPassword);
+    },
 };

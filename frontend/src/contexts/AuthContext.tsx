@@ -3,20 +3,22 @@ import { auth, UserProfile } from '@/services/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  isVerified: boolean; // Add this line
+  isVerified: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (first_name: string, last_name: string, email: string, password: string, area_of_interest: string) => Promise<void>;
   logout: () => void;
   getDashboardHeader: () => Promise<string>;
   verifyEmail: (token: string) => Promise<void>;
-  checkVerificationStatus: () => Promise<void>; // Add this line
+  checkVerificationStatus: () => Promise<void>; 
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isVerified, setIsVerified] = useState(false); // Add this line
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -25,15 +27,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           await auth.getDashboardHeader();
           setIsAuthenticated(true);
-          await checkVerificationStatus(); // Add this line
+          await checkVerificationStatus();
         } catch (error) {
           setIsAuthenticated(false);
-          setIsVerified(false); // Add this line
+          setIsVerified(false);
           auth.logout();
         }
       } else {
         setIsAuthenticated(false);
-        setIsVerified(false); // Add this line
+        setIsVerified(false);
       }
     };
 
@@ -71,16 +73,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await auth.verifyEmail(token);
   };
 
+  const requestPasswordReset = async (email: string) => {
+    await auth.requestPasswordReset(email);
+  };
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    await auth.resetPassword(token, newPassword);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, 
-      isVerified, // Add this line
+      isVerified, 
       login, 
       register, 
       logout, 
       getDashboardHeader, 
       verifyEmail,
-      checkVerificationStatus // Add this line
+      checkVerificationStatus,
+      requestPasswordReset,
+      resetPassword
     }}>
       {children}
     </AuthContext.Provider>
