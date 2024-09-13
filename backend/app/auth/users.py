@@ -10,7 +10,7 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import BeanieUserDatabase, ObjectIDIDMixin
-from .email_utils import send_verification_email
+from .email_utils import send_verification_email, send_password_reset_email
 from auth.auth_db import User, get_user_db
 from auth.schemas import UserCreate
 from config import settings
@@ -28,6 +28,7 @@ class UserManager(ObjectIDIDMixin, BaseUserManager[User, PydanticObjectId]):
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
     ):
+        await send_password_reset_email(user.email, token)
         print(f"User {user.id} has forgot their password. Reset token: {token}")
 
     async def on_after_request_verify(

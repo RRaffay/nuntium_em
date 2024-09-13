@@ -263,7 +263,7 @@ export const api = {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ token, new_password: newPassword }),
+      body: JSON.stringify({ token, password: newPassword }),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {
