@@ -71,7 +71,7 @@ def research_plan_node(state: AgentState, config):
     content = state.get('content') or []
     max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         futures = [executor.submit(
             _search_and_summarize, q, max_results) for q in queries.queries]
         for future in concurrent.futures.as_completed(futures):

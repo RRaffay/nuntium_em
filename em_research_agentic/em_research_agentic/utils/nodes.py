@@ -80,14 +80,11 @@ def research_plan_node(state: AgentState, config):
     content = state.get('content') or []
     max_results = config.get('configurable', {}).get('max_results_tavily', 1)
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(
-            _search_and_summarize, q, max_results) for q in queries.queries]
-        for future in concurrent.futures.as_completed(futures):
-            for r, summary in future.result():
-                response_obj = SearchResponse(
-                    content=summary, url=r['url'], title=r['title'])
-                content.append(response_obj.to_string())
+    for q in queries.queries:
+        for r, summary in _search_and_summarize(q, max_results):
+            response_obj = SearchResponse(
+                content=summary, url=r['url'], title=r['title'])
+            content.append(response_obj.to_string())
 
     return {"content": content}
 
@@ -149,14 +146,11 @@ def research_critique_node(state: AgentState, config):
 
     max_results = config.get('configurable', {}).get('max_results_tavily', 1)
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(
-            _search_and_summarize, q, max_results) for q in queries.queries]
-        for future in concurrent.futures.as_completed(futures):
-            for r, summary in future.result():
-                response_obj = SearchResponse(
-                    content=summary, url=r['url'], title=r['title'])
-                content.append(response_obj.to_string())
+    for q in queries.queries:
+        for r, summary in _search_and_summarize(q, max_results):
+            response_obj = SearchResponse(
+                content=summary, url=r['url'], title=r['title'])
+            content.append(response_obj.to_string())
 
     return {"content": content}
 
