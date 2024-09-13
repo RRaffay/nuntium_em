@@ -41,7 +41,7 @@ def _get_model(model_name: str):
 
 def _search_and_summarize(query, max_results):
     response = tavily_client.search(query=query, max_results=max_results)
-    article_urls = [r['url'] for r in response['results']][:1]
+    article_urls = [r['url'] for r in response['results']]
     summaries = generate_summaries(article_urls)
     return [(r, summary) for r, summary in zip(response['results'], summaries)]
 

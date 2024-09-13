@@ -45,7 +45,7 @@ def async_timed_lru_cache(maxsize=128, expires_after=3600, key_func=None):
 @async_timed_lru_cache(maxsize=100, expires_after=600, key_func=lambda country, area_of_interest, event, *args, **kwargs: f"{country}:{area_of_interest}:{event.id}")
 async def economic_report_event(country: str, area_of_interest: str, event: Event, max_revisions: int = 3, revision_number: int = 1):
 
-    async with httpx.AsyncClient(timeout=280.0) as client:
+    async with httpx.AsyncClient(timeout=450.0) as client:
         try:
             report_server_url = settings.REPORT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
@@ -75,7 +75,7 @@ async def economic_report_event(country: str, area_of_interest: str, event: Even
 
 @async_timed_lru_cache(maxsize=100, expires_after=900, key_func=lambda country, area_of_interest, *args, **kwargs: f"{country}:{area_of_interest}")
 async def economic_report(country: str, area_of_interest: str, max_revisions: int = 3, revision_number: int = 1):
-    async with httpx.AsyncClient(timeout=210.0) as client:
+    async with httpx.AsyncClient(timeout=450.0) as client:
         try:
             report_server_url = settings.REPORT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
