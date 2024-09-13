@@ -37,9 +37,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 360s
-      timeout: 120s
-      retries: 3
+      interval: 900s
+      timeout: 450s
+      retries: 2
 
   news_pipeline_server:
     build:
@@ -57,8 +57,8 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 360s
-      timeout: 120s
-      retries: 3
+      timeout: 180s
+      retries: 2
 
   mongodb:
     image: mongo:latest
@@ -79,9 +79,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
-      interval: 60s
-      timeout: 20s
-      retries: 3
+      interval: 900s
+      timeout: 450s
+      retries: 2
 
   redis:
     image: redis:latest

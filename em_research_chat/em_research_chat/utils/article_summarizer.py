@@ -30,7 +30,7 @@ open_ai_llm = ChatOpenAI(
 )
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 70000) -> str:
+def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -41,7 +41,7 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 70000) -> str
     Parameters:
     url (str): The URL of the online article to summarize.
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
-    max_length (int, optional): The maximum length of the article content. Defaults to 20000 characters.
+    max_length (int, optional): The maximum length of the article content. Defaults to 90000 characters.
     Returns:
     str: The summary of the article. If there was an error loading the article, returns an appropriate message.
     """
