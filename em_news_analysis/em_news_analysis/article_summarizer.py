@@ -1,7 +1,6 @@
 from typing import List
 import concurrent.futures
 import logging
-from concurrent.futures import TimeoutError
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
@@ -44,10 +43,9 @@ def article_summarizer(url: str, objective: str, model: int = 3) -> str:
     url (str): The URL of the online article to summarize.
     objective(str): This provides an objective for the summary of the article, including the relevant meta-data
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
-    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 10 seconds.
 
     Returns:
-    str: The summary of the article. If there was an error loading the article or a timeout occurred, returns an appropriate message.
+    str: The summary of the article. If there was an error loading the article, returns an appropriate message.
     """
 
     loader = WebBaseLoader(url)
@@ -150,7 +148,7 @@ Helpful Answer:
         raise Exception(f"Error in generating summary: {str(e)}")
 
 
-def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 3, timeout: int = 7) -> List[str]:
+def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 3) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
 
@@ -158,7 +156,6 @@ def generate_summaries(article_urls: List[str], objective: str, max_workers: int
     article_urls (List[str]): List of URLs to summarize
     objective (str): Objective for the summary
     max_workers (int): Maximum number of concurrent workers
-    timeout (int): Timeout in seconds for each summary generation
 
     Returns:
     List[str]: List of summaries or error messages
@@ -170,18 +167,13 @@ def generate_summaries(article_urls: List[str], objective: str, max_workers: int
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
             try:
-                summary = future.result(timeout=timeout)
+                summary = future.result()
                 if "ARTICLE COULD NOT BE ACCESSED DUE TO RESTRICTIONS" in summary:
                     summaries.append(
                         f"Article summarization not allowed. Please read article directly.")
                 else:
                     summaries.append(summary)
 
-            except concurrent.futures.TimeoutError:
-                logger.error(
-                    f"Timeout error for {url}: Summary generation took longer than {timeout} seconds")
-                summaries.append(
-                    f"Article summarization failed. Please read article directly.")
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
                 summaries.append(
