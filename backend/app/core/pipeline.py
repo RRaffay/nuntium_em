@@ -27,7 +27,7 @@ class CountryPipelineInputApp(BaseModel):
 
 class PipelineInput(BaseModel):
     input_sentence: str = Field(
-        default="Political Changes")
+        default="Economy Finance Markets")
     country: str
     country_fips_10_4_code: str
     hours: int
