@@ -7,6 +7,8 @@ import { ReportDialog } from '@/components/ReportDialog';
 import { ArticleDialog } from '@/components/ArticleDialog';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import { CountryPageHeader } from '@/components/CountryPageHeader';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from "@/lib/utils";
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -21,6 +23,7 @@ const CountryPage: React.FC = () => {
   const [eventReportErrors, setEventReportErrors] = useState<{ [key: string]: string | null }>({});
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
+  const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,8 +105,18 @@ const CountryPage: React.FC = () => {
     return <div>Loading...</div>;
   }
 
-  // Add this function to sort events by relevance score
-  const sortedEvents = countryData?.events.sort((a, b) => b.relevance_score - a.relevance_score) || [];
+  // Add this function to sort and filter events by relevance score
+  const getFilteredEvents = () => {
+    const highRelevanceEvents = countryData?.events.filter(event => event.relevance_score >= 4) || [];
+    const lowRelevanceEvents = countryData?.events.filter(event => event.relevance_score < 4) || [];
+    
+    return {
+      highRelevanceEvents: highRelevanceEvents.sort((a, b) => b.relevance_score - a.relevance_score),
+      lowRelevanceEvents: lowRelevanceEvents.sort((a, b) => b.relevance_score - a.relevance_score)
+    };
+  };
+
+  const { highRelevanceEvents, lowRelevanceEvents } = getFilteredEvents();
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -121,30 +134,95 @@ const CountryPage: React.FC = () => {
           <Button onClick={handleBackToDashboard} variant="outline" className="w-full sm:w-auto">Back to Dashboard</Button>
         </div>
       </div>
-      <Accordion type="single" collapsible className="w-full">
-        {sortedEvents.map((event) => (
-          <AccordionItem key={event.id} value={event.id}>
-            <AccordionTrigger className="flex justify-between items-center">
-              <span>{event.title}</span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
-              <MarkdownContent content={event.event_summary} />
-              <div className="flex space-x-2 mt-2">
-                <ArticleDialog event={event} />
-                <ReportDialog 
-                  report={eventReports[event.id]} 
-                  isLoading={isGeneratingEventReport[event.id] || false} 
-                  onGenerate={() => handleGenerateEventReport(event.id)}
-                  error={eventReportErrors[event.id] || null}
-                  title={`Event Report: ${event.title}`}
-                  onClose={handleReportDialogClose}
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      {highRelevanceEvents.length > 0 ? (
+        <Accordion type="single" collapsible className="w-full">
+          {highRelevanceEvents.map((event) => (
+            <AccordionItem key={event.id} value={event.id}>
+              <AccordionTrigger className="flex justify-between items-center">
+                <span>{event.title}</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
+                <MarkdownContent content={event.event_summary} />
+                <div className="flex space-x-2 mt-2">
+                  <ArticleDialog event={event} />
+                  <ReportDialog 
+                    report={eventReports[event.id]} 
+                    isLoading={isGeneratingEventReport[event.id] || false} 
+                    onGenerate={() => handleGenerateEventReport(event.id)}
+                    error={eventReportErrors[event.id] || null}
+                    title={`Event Report: ${event.title}`}
+                    onClose={handleReportDialogClose}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      ) : (
+        <div className="text-center py-4">
+          <p>No highly relevant events found for this country.</p>
+          {lowRelevanceEvents.length > 0 && (
+            <p>You can still view events with lower relevance scores below.</p>
+          )}
+        </div>
+      )}
+
+      {lowRelevanceEvents.length > 0 && (
+        <div className="mt-8">
+          <div className="border-t pt-4 mb-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setShowLowRelevanceEvents(!showLowRelevanceEvents)}
+                    variant="secondary"
+                    className={cn(
+                      "w-full font-semibold",
+                      showLowRelevanceEvents
+                        ? "bg-blue-100 hover:bg-blue-200 text-blue-700"
+                        : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    )}
+                  >
+                    {showLowRelevanceEvents ? 'Hide' : 'Show'} Low Relevance Events ({lowRelevanceEvents.length})
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Low relevance events have a relevance score below 4. These events may be less significant or less directly related to the country's current situation.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          {showLowRelevanceEvents && (
+            <Accordion type="single" collapsible className="w-full">
+              {lowRelevanceEvents.map((event) => (
+                <AccordionItem key={event.id} value={event.id}>
+                  <AccordionTrigger className="flex justify-between items-center">
+                    <span>{event.title}</span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
+                    <MarkdownContent content={event.event_summary} />
+                    <div className="flex space-x-2 mt-2">
+                      <ArticleDialog event={event} />
+                      <ReportDialog 
+                        report={eventReports[event.id]} 
+                        isLoading={isGeneratingEventReport[event.id] || false} 
+                        onGenerate={() => handleGenerateEventReport(event.id)}
+                        error={eventReportErrors[event.id] || null}
+                        title={`Event Report: ${event.title}`}
+                        onClose={handleReportDialogClose}
+                      />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </div>
+      )}
+
       {rateLimitError && (
         <div className="p-2 bg-red-100 text-red-700 mb-4">
           {rateLimitError}

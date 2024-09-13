@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle, XCircle } from 'lucide-react'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface UserProfile {
   first_name: string;
@@ -21,7 +20,7 @@ const UserProfilePage: React.FC = () => {
     const [originalProfile, setOriginalProfile] = useState<UserProfile | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isRequestingVerification, setIsRequestingVerification] = useState(false);
-    const { logout, checkVerificationStatus } = useAuth();
+    const { logout } = useAuth();
   
     useEffect(() => {
       const fetchProfile = async () => {
