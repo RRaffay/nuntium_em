@@ -19,7 +19,7 @@ class ChatRequest(BaseModel):
 
 
 async def economic_report_chat(question: str, equity_report: str, messages: List[Tuple[str, str]]):
-    async with httpx.AsyncClient(timeout=280.0) as client:
+    async with httpx.AsyncClient(timeout=330.0) as client:
         try:
             report_server_url = settings.REPORT_CHAT_SERVER_URL
             logger.info(f"This is url {report_server_url}")

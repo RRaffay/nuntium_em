@@ -55,7 +55,7 @@ async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
     Raises:
         HTTPException: If there's an error communicating with the news pipeline server or during execution.
     """
-    async with httpx.AsyncClient(timeout=360.0) as client:
+    async with httpx.AsyncClient(timeout=450.0) as client:
         try:
             news_pipeline_server_url = settings.NEWS_PIPELINE_SERVER_URL
             logger.info(

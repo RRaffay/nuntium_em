@@ -15,7 +15,7 @@ from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsPars
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-
+from tenacity import retry, stop_after_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ open_ai_llm = ChatOpenAI(
 )
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 20000) -> str:
+def article_summarizer(url: str, model: int = 3, max_length: int = 70000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -50,11 +50,14 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 20000) -> str
     try:
         docs = loader.load()
     except Exception as e:
+        logger.error(f"Error in loading doc {str(e)}")
         return f"Error in loading doc {str(e)}"
 
     # Check the length of the article content
     article_content = ''.join([doc.page_content for doc in docs])
     if len(article_content) > max_length:
+        logger.error(
+            f"Article content exceeds the maximum length of {max_length} characters.")
         return f"Article content exceeds the maximum length of {max_length} characters."
 
     if model == 3:
@@ -63,90 +66,23 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 20000) -> str
     else:
         llm = open_ai_llm
 
-    map_question = f"""The following is a portion from an online article."""
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. If the article is inaccessible, return 'INACCESSIBLE'."),
+        ("user", "{input}")
+    ])
 
-    map_template = (
-        map_question
-        + """:
+    chain = prompt | llm | StrOutputParser()
 
-###############################################################
+    input_prompt = f"This is the article content:\n\n<article>\n\n{article_content}\n\n</article>"
 
-{docs}
-
-###############################################################
-
-Based on this portion, please write a summary of the article that can be used with other summaries to create a final, consolidated summary of the article."
-
-
-
-Helpful Answer:"""
-    )
-
-    map_prompt = PromptTemplate.from_template(map_template)
-    map_chain = LLMChain(llm=llm, prompt=map_prompt)
-
-    # Reduce
-    reduce_question_start = f"The following is a set of summaries from different portions of an online article."
-
-    reduce_question_end = f"""Take these and distill it into a final, consolidated summary.
-
-Helpful Answer:
-
-"""
-
-    reduce_template = (
-        reduce_question_start
-        + """:
-
-    ###############################################################
-
-    {doc_summaries}
-
-    ###############################################################
-
-    """
-        + reduce_question_end
-    )
-
-    reduce_prompt = PromptTemplate.from_template(reduce_template)
-    # Run chain
-    reduce_chain = LLMChain(llm=llm, prompt=reduce_prompt)
-
-    # Takes a list of documents, combines them into a single string, and passes this to an LLMChain
-    combine_documents_chain = StuffDocumentsChain(
-        llm_chain=reduce_chain, document_variable_name="doc_summaries"
-    )
-
-    # Combines and iteravely reduces the mapped documents
-    reduce_documents_chain = ReduceDocumentsChain(
-        # This is final chain that is called.
-        combine_documents_chain=combine_documents_chain,
-        # If documents exceed context for `StuffDocumentsChain`
-        collapse_documents_chain=combine_documents_chain,
-        # The maximum number of tokens to group documents into.
-        token_max=10000,
-    )
-
-    map_reduce_chain = MapReduceDocumentsChain(
-        # Map chain
-        llm_chain=map_chain,
-        # Reduce chain
-        reduce_documents_chain=reduce_documents_chain,
-        # The variable name in the llm_chain to put the documents in
-        document_variable_name="docs",
-        # Return the results of the map steps in the output
-        return_intermediate_steps=False,
-    )
-
-    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        chunk_size=10000, chunk_overlap=0
-    )
-    split_docs = text_splitter.split_documents(docs)
+    @retry(stop=stop_after_attempt(3))
+    def invoke_with_retry():
+        return chain.invoke({"input": input_prompt})
 
     try:
-        summary = map_reduce_chain.invoke(split_docs)
-        return summary["output_text"]
+        return invoke_with_retry()
     except Exception as e:
+        logger.error(f"Error in generating summary: {str(e)}")
         raise Exception(f"Error in generating summary: {str(e)}")
 
 
