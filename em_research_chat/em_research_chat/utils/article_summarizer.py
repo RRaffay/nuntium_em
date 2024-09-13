@@ -150,7 +150,7 @@ Helpful Answer:
         raise Exception(f"Error in generating summary: {str(e)}")
 
 
-def generate_summaries(article_urls: List[str], max_workers: int = 5) -> List[str]:
+def generate_summaries(article_urls: List[str], max_workers: int = 3) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
