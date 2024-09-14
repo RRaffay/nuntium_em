@@ -20,7 +20,7 @@ from .embeddings import get_embedding, generate_embeddings
 from .clustering import cluster_embeddings, match_clusters
 from .cluster_summarizer import generate_cluster_summary
 from .article_summarizer import generate_summaries
-from .utils import sample_articles, get_country_name
+from .utils import sample_articles_mmr, get_country_name
 
 
 class GDELTNewsPipeline:
@@ -153,19 +153,33 @@ class GDELTNewsPipeline:
             }
 
             def process_cluster(cluster):
-                cluster_urls = sampled_data.loc[clusters ==
-                                                cluster, 'SOURCEURL'].tolist()
+                cluster_indices = np.where(
+                    sampled_data['cluster'] == cluster)[0]
+                cluster_urls = sampled_data.loc[sampled_data['cluster']
+                                                == cluster, 'SOURCEURL'].tolist()
+                cluster_embeddings = embeddings[cluster_indices]
+
                 if not cluster_urls:
                     self.logger.info(f"Skipping empty cluster {cluster}")
                     return None
-                sampled_urls = sample_articles(
-                    cluster_urls, self.config.max_articles_per_cluster)
+
+                sampled_urls = sample_articles_mmr(
+                    urls=cluster_urls,
+                    cluster_embeddings=cluster_embeddings,
+                    max_articles=self.config.max_articles_per_cluster,
+                    lambda_param=self.config.mmr_lambda_param
+                )
+
                 self.logger.info(
-                    f"Generating summaries for {len(sampled_urls)} articles in cluster {cluster}...")
+                    f"Generating summaries for {len(sampled_urls)} articles in cluster {cluster}..."
+                )
+
                 article_summaries = generate_summaries(
-                    sampled_urls, article_summarizer_objective)
+                    sampled_urls, article_summarizer_objective
+                )
                 event_obj = generate_cluster_summary(
-                    article_summaries, cluster_summarizer_objective)
+                    article_summaries, cluster_summarizer_objective
+                )
                 return cluster, event_obj, article_summaries, sampled_urls
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers_summaries) as executor:

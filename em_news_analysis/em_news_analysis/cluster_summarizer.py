@@ -35,13 +35,13 @@ class Event(BaseModel):
         description="The relevance score of the event from 1 to 5. 1 means the event is unrelated to financial markets. 3 means the event will have minor or negligible impacts to financial markets. 5 means the event is highly likely move markets.", default=0)
 
 
-def combined_summary(summaries_list: List[str], objective: str, model: int = 3, retry_attempts: int = 3) -> str:
+def combined_summary(summaries_list: List[str], objective: str, model: int = 4, retry_attempts: int = 3) -> str:
     """
     Combine multiple summaries into a final summary.
 
     summaries_list List[str]: The summaries to combine.
     objective(str): This provides an objective for the summary of the article, including the relevant meta-data
-    model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
+    model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 4.
 
     Returns:
     str: The combined summary.
