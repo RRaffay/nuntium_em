@@ -29,7 +29,7 @@ services:
   report_server:
     build:
       context: ./em_research_agentic
-      dockerfile: DockerFile
+      dockerfile: Dockerfile
     depends_on:
       - mongodb
     env_file:
