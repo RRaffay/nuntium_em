@@ -71,7 +71,7 @@ services:
   research_chat:
     build:
       context: ./em_research_chat
-      dockerfile: Dockerfile
+      dockerfile: DockerFile
     depends_on:
       - mongodb
     env_file:
