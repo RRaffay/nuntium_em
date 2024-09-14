@@ -1,6 +1,10 @@
-import asyncio
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from config import settings
+
+import logging
+
+settings.setup_logging()
+logger = logging.getLogger(__name__)
 
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME,
@@ -72,10 +76,10 @@ async def test_email_config():
     fm = FastMail(conf)
     try:
         await fm.send_message(message)
-        print("Test email sent successfully!")
+        logger.info("Test email sent successfully!")
         return True
     except Exception as e:
-        print(f"Failed to send test email. Error: {str(e)}")
+        logger.error(f"Failed to send test email. Error: {str(e)}")
         return False
 
 # Uncomment the following lines to run the test when this file is executed directly

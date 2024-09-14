@@ -23,14 +23,9 @@ from auth.auth_routes import auth_router
 
 # Logging
 import logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+from config import settings
 
-
-# Other
+settings.setup_logging()
 logger = logging.getLogger(__name__)
 
 limiter = Limiter(key_func=get_remote_address)

@@ -13,6 +13,7 @@ This project implements a sophisticated news analysis pipeline using GDELT (Glob
 5. **Cluster Matching**: Matches clusters to the input query using cosine similarity.
 6. **Article Sampling**: Selects representative articles from matched clusters.
 7. **Summarization**: Generates summaries for sampled articles and clusters.
+8. **Export Options**: Supports exporting results to local files or MongoDB.
 
 ## Installation
 
@@ -69,12 +70,14 @@ The `Config` class in `em_news_analysis/config.py` allows you to customize vario
 
 ## Output
 
-The pipeline generates two types of output:
+The pipeline can generate two types of output:
 
-1. CSV file: Contains processed GDELT data.
-2. JSON file: Includes cluster summaries and individual article summaries.
+1. Local files:
+   - CSV file: Contains processed GDELT data.
+   - JSON file: Includes cluster summaries and individual article summaries.
 
-These files are saved in the `exported_data` directory by default.
+2. MongoDB:
+   - Stores the processed data and summaries in a MongoDB collection.
 
 ## Docker Support
 
@@ -95,6 +98,7 @@ Key dependencies include:
 - langchain
 - fastapi
 - pymongo
+- hdbscan
 
 For a complete list, refer to the `pyproject.toml` file.
 
