@@ -117,12 +117,13 @@ Remember to generate no more than 5 search queries, focusing on the most crucial
 
 ############################################################################################################
 
-FINAL_REVIEW_PROMPT = """You are an expert financial writer tasked with reviewing a draft report for a financial document. Your goal is to take the final report and make sure that it is polished and client ready.
+FINAL_REVIEW_PROMPT = """You are a senior partner at an investment firm tasked with reviewing the final draft report for a financial document. Your goal is to take the final draft and make sure that it is polished and a client ready report.
 
 1. Carefully review the final report for any errors 
 2. Ensure that the report is polished and professional.
 3. Make sure there are no incomplete sections with placeholder text. If there are, remove them or add a section about further research.
-4. Remove all appendixes, if there are any.
+4. Prioritize the most actionable and rigorous recommendations to the client that are backed by analysis and data
+5. Remove all appendixes, if there are any but keep all the relevant citations
 
 Your goal is to make sure that the report is client ready. 
 

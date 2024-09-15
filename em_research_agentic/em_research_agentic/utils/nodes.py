@@ -78,7 +78,7 @@ def research_plan_node(state: AgentState, config):
     ])
 
     content = state.get('content') or []
-    max_results = config.get('configurable', {}).get('max_results_tavily', 1)
+    max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
     for q in queries.queries:
         for r, summary in _search_and_summarize(q, max_results):
@@ -144,7 +144,7 @@ def research_critique_node(state: AgentState, config):
     ])
     content = state['content'] or []
 
-    max_results = config.get('configurable', {}).get('max_results_tavily', 1)
+    max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
     for q in queries.queries:
         for r, summary in _search_and_summarize(q, max_results):
