@@ -2,17 +2,8 @@ from typing import List
 import concurrent.futures
 import logging
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-
 from langchain_community.document_loaders import WebBaseLoader
-from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.llm import LLMChain
-from langchain.chains import ReduceDocumentsChain, MapReduceDocumentsChain
-from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from tenacity import retry, stop_after_attempt
@@ -33,8 +24,8 @@ open_ai_llm = ChatOpenAI(
 )
 
 
-def clean_text(text: str, level: int = 1) -> str:
-    """Clean the text with different levels of aggressiveness."""
+def clean_text(text: str, level: int = 1, max_words: int = 50000) -> str:
+    """Clean the text with different levels of aggressiveness and truncate if necessary."""
     # Level 1: Basic cleaning
     text = BeautifulSoup(text, "html.parser").get_text()
     text = re.sub(r'\s+', ' ', text).strip()
@@ -52,21 +43,24 @@ def clean_text(text: str, level: int = 1) -> str:
         text = re.sub(r'\S+@\S+', '', text)
         text = re.sub(r'[^a-zA-Z0-9\s.,;:!?()"-]', '', text)
 
+    # Truncate to max_words if necessary
+    words = text.split()
+    if len(words) > max_words:
+        logger.warning(
+            f"Text exceeds the maximum of {max_words} words. Truncating.")
+        text = ' '.join(words[:max_words])
+
     return text
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str:
+def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
-
-    This function loads the article from the provided URL, splits it into chunks, and uses a map-reduce approach
-    to generate a summary. The map step generates summaries for each chunk, and the reduce step combines these
-    summaries into a final, consolidated summary.
 
     Parameters:
     url (str): The URL of the online article to summarize.
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
-    max_length (int, optional): The maximum length of the article content. Defaults to 90000 characters.
+    max_words (int, optional): The maximum number of words in the article content. Defaults to 50000 words.
     Returns:
     str: The summary of the article. If there was an error loading the article, returns an appropriate message.
     """
@@ -78,21 +72,22 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str
         logger.error(f"Error in loading doc {str(e)}")
         return f"Error in loading doc {str(e)}"
 
-    # Clean and check the length of the article content
-    article_content = ''.join([doc.page_content for doc in docs])
-    original_length = len(article_content)
+    # Clean and check the word count of the article content
+    article_content = ' '.join([doc.page_content for doc in docs])
+    original_word_count = len(article_content.split())
 
     for cleaning_level in range(1, 4):
-        article_content = clean_text(article_content, level=cleaning_level)
-        if len(article_content) <= max_length:
+        article_content = clean_text(
+            article_content, level=cleaning_level, max_words=max_words)
+        if len(article_content.split()) <= max_words:
             break
 
-    if len(article_content) > max_length:
+    if len(article_content.split()) > max_words:
         logger.warning(
-            f"Article content still exceeds the maximum length of {max_length} characters after cleaning. "
-            f"Original length: {original_length}, Cleaned length: {len(article_content)}. "
-            f"Truncating to {max_length} characters.")
-        article_content = article_content[:max_length]
+            f"Article content still exceeds the maximum of {max_words} words after cleaning. "
+            f"Original word count: {original_word_count}, Cleaned word count: {len(article_content.split())}. "
+            f"Truncating to {max_words} words.")
+        article_content = ' '.join(article_content.split()[:max_words])
 
     if model == 3:
         llm = open_ai_llm_mini
