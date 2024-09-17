@@ -33,14 +33,25 @@ open_ai_llm = ChatOpenAI(
 )
 
 
-def clean_text(text: str) -> str:
-    """Clean the text by removing HTML tags, extra whitespace, and non-printable characters."""
-    # Remove HTML tags
+def clean_text(text: str, level: int = 1) -> str:
+    """Clean the text with different levels of aggressiveness."""
+    # Level 1: Basic cleaning
     text = BeautifulSoup(text, "html.parser").get_text()
-    # Remove extra whitespace
     text = re.sub(r'\s+', ' ', text).strip()
-    # Remove non-printable characters
     text = ''.join(char for char in text if char.isprintable())
+
+    if level >= 2:
+        # Level 2: Remove common web elements and URLs
+        text = re.sub(r'(Cookie Policy|Privacy Policy|Terms of Service|Copyright ©)',
+                      '', text, flags=re.IGNORECASE)
+        text = re.sub(
+            r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
+
+    if level >= 3:
+        # Level 3: Remove email addresses and special characters
+        text = re.sub(r'\S+@\S+', '', text)
+        text = re.sub(r'[^a-zA-Z0-9\s.,;:!?()"-]', '', text)
+
     return text
 
 
@@ -69,14 +80,19 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str
 
     # Clean and check the length of the article content
     article_content = ''.join([doc.page_content for doc in docs])
+    original_length = len(article_content)
+
+    for cleaning_level in range(1, 4):
+        article_content = clean_text(article_content, level=cleaning_level)
+        if len(article_content) <= max_length:
+            break
+
     if len(article_content) > max_length:
         logger.warning(
-            f"Article content exceeds the maximum length of {max_length} characters.")
-        article_content = clean_text(article_content)
-        if len(article_content) > max_length:
-            logger.error(
-                f"Article content still exceeds the maximum length of {max_length} characters.")
-            article_content = article_content[:max_length]
+            f"Article content still exceeds the maximum length of {max_length} characters after cleaning. "
+            f"Original length: {original_length}, Cleaned length: {len(article_content)}. "
+            f"Truncating to {max_length} characters.")
+        article_content = article_content[:max_length]
 
     if model == 3:
         llm = open_ai_llm_mini
