@@ -2,8 +2,12 @@ from typing import List
 import concurrent.futures
 import logging
 
+# Load the environment variables
+from dotenv import load_dotenv  # noqa
+load_dotenv()  # noqa
+
 from langchain_openai import ChatOpenAI
-from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from tenacity import retry, stop_after_attempt
@@ -65,7 +69,12 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
     str: The summary of the article. If there was an error loading the article, returns an appropriate message.
     """
 
-    loader = WebBaseLoader(url)
+    # Check if the URL is a PDF
+    if url.endswith('.pdf'):
+        loader = PyPDFLoader(url)
+    else:
+        loader = WebBaseLoader(url)
+    docs = loader.load()
     try:
         docs = loader.load()
     except Exception as e:
@@ -115,7 +124,7 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
         raise Exception(f"Error in generating summary: {str(e)}")
 
 
-def generate_summaries(article_urls: List[str], max_workers: int = 3) -> List[str]:
+def generate_summaries(article_urls: List[str], max_workers: int = 2) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
@@ -132,3 +141,8 @@ def generate_summaries(article_urls: List[str], max_workers: int = 3) -> List[st
                 logger.error(f"Error generating summary for {url}: {str(e)}")
                 summaries.append(f"Failed to generate summary for {url}")
     return summaries
+
+
+# if __name__ == "__main__":
+    # print(article_summarizer(
+    #     "https://www.lucky-cement.com/wp-content/uploads/2024/05/Final-report-3rd-Qtr-2024-Luck_Submitted-with-PSX-via-PUCARS.pdf"))

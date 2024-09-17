@@ -3,25 +3,29 @@ from fastapi import HTTPException
 import logging
 from pydantic import BaseModel
 from config import settings
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 REPORT_CHAT_TIMEOUT = settings.REPORT_CHAT_TIMEOUT
+DEBUG = settings.DEBUG
 
 
 class ChatRequest(BaseModel):
     message: str
     encodedReport: str
     messages: List[Tuple[str, str]] = []  # List of (content, sender) tuples
-    debug: bool = settings.DEBUG
+    proMode: bool = False
+    debug: Optional[bool] = DEBUG
 
     def generate_payload(self) -> dict:
         return {
             "task": self.message,
             "equity_report": self.encodedReport,
             "messages": self.messages,
+            "debug": self.debug,
+            "pro": self.proMode
         }
 
 
