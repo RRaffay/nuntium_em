@@ -72,17 +72,15 @@ def research_plan_node(state: AgentState, config):
     ])
 
     content = state.get('content') or []
-    max_results = config.get('configurable', {}).get('max_results_tavily', 2)
+    max_results = config.get('configurable', {}).get('max_results_tavily', 3)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        futures = [executor.submit(
-            _search_and_summarize, q, max_results) for q in queries.queries]
-        for future in concurrent.futures.as_completed(futures):
-            for r, summary in future.result():
-                response_obj = SearchResponse(
-                    content=summary, url=r['url'], title=r['title'])
-                content.append(response_obj.to_string())
-
+    for q in queries.queries:
+        logger.info(f"Searching for {q}")
+        results = _search_and_summarize(q, max_results)
+        for r, summary in results:
+            response_obj = SearchResponse(
+                content=summary, url=r['url'], title=r['title'])
+            content.append(response_obj.to_string())
     return {"content": content}
 
 
@@ -137,12 +135,11 @@ def tool_node(state: AgentState, config):
         tool_args = tool_call['args']
         logger.info(f"\n\n\nTool Args: {tool_args}\n\n\n")
         tool_response_local = financial_calculator(
-            url=tool_args['url'], metric=tool_args['metric'], context=tool_args['context'])
+            urls=tool_args['urls'], metrics=tool_args['metrics'], context=tool_args['context'])
 
     tool_response_old = state.get('tool_response', '')
 
     tool_response = f"Tool Response: {tool_response_old}\n<tool_response>\n{tool_response_local}\n</tool_response>\n\n"
-    logger.info(f"\n\n\nTool Response Global: {tool_response}\n\n\n")
 
     return {"tool_response": tool_response}
 
@@ -169,7 +166,7 @@ def final_review_node(state: AgentState, config):
 
 
 def should_continue(state: AgentState):
-    if state.get("no_tool_calls", 0) > 5:
+    if state.get("no_tool_calls", 0) > 2:
         return "final_review"
     if state.get("tool_calls", None):
         return "tool_node"
