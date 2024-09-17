@@ -8,16 +8,18 @@ import { btoa } from 'abab';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
 
+
 interface ReportChatInterfaceProps {
   report: string;
   onClose: () => void;
+  proMode: boolean;
 }
 
 interface Message extends ChatMessage {
   isLoading?: boolean;
 }
 
-export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report, onClose }) => {
+export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report, onClose, proMode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
@@ -36,7 +38,8 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report
       const response = await api.sendChatMessage(
         inputValue, 
         encodedReport, 
-        messages.filter(m => !m.isLoading)
+        messages.filter(m => !m.isLoading),
+        proMode
       );
       setMessages(prevMessages => [
         ...prevMessages.slice(0, -1),
@@ -85,8 +88,8 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report
           ))}
         </ChatMessageList>
       </div>
-      <div className="p-4 border-t flex">
-        <ChatInput
+      <div className="p-4 border-t flex items-center">
+      <ChatInput
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onSend={handleSendMessage}

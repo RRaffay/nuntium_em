@@ -16,6 +16,9 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import { Toggle } from '@/components/ui/toggle';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from "@/lib/utils";
 
 const downloadReport = (content: string, filename: string) => {
   const blob = new Blob([content], { type: 'text/markdown' });
@@ -43,6 +46,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
   const [progress, setProgress] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatSize, setChatSize] = useState(50);
+  const [proMode, setProMode] = useState(false);
 
   const easeOutQuad = (t: number) => t * (2 - t);
 
@@ -86,7 +90,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
       <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>{title}</DialogTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {report && (
               <>
                 <Button
@@ -103,6 +107,30 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
                 >
                   {isChatOpen ? 'Hide Chat' : 'Show Chat'}
                 </Button>
+                {isChatOpen && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Toggle
+                          aria-label="Toggle pro mode"
+                          pressed={proMode}
+                          onPressedChange={setProMode}
+                          className={cn(
+                            "mt-2 px-3 py-1",
+                            proMode
+                              ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          )}
+                        >
+                          PRO: {proMode ? "Activated" : "Deactivated"}
+                        </Toggle>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Pro mode: {proMode ? "Activated" : "Deactivated"}. Responses might take longer but will be more researched and analysis-heavy when active.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </>
             )}
           </div>
@@ -134,6 +162,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
                 <ReportChatInterface
                   report={report.content}
                   onClose={() => setIsChatOpen(false)}
+                  proMode={proMode}
                 />
               </ResizablePanel>
             </>
