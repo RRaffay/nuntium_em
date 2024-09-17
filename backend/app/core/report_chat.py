@@ -1,8 +1,5 @@
 import httpx
-from datetime import datetime
-from models import Event
 from fastapi import HTTPException
-import os
 import logging
 from pydantic import BaseModel
 from config import settings
@@ -18,20 +15,24 @@ class ChatRequest(BaseModel):
     message: str
     encodedReport: str
     messages: List[Tuple[str, str]] = []  # List of (content, sender) tuples
+    debug: bool = settings.DEBUG
+
+    def generate_payload(self) -> dict:
+        return {
+            "task": self.message,
+            "equity_report": self.encodedReport,
+            "messages": self.messages,
+        }
 
 
-async def economic_report_chat(question: str, equity_report: str, messages: List[Tuple[str, str]]):
+async def economic_report_chat(input: ChatRequest):
     async with httpx.AsyncClient(timeout=REPORT_CHAT_TIMEOUT) as client:
         try:
             report_server_url = settings.REPORT_CHAT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
             response = await client.post(
                 f"{report_server_url}/run_research_chat",
-                json={
-                    "task": question,
-                    "equity_report": equity_report,
-                    "messages": messages,
-                }
+                json=input.generate_payload()
             )
             response.raise_for_status()
             result = response.json()

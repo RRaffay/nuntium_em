@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
-from core.reports import economic_report, economic_report_event
+from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
 from core.report_chat import economic_report_chat, ChatRequest
 from models import CountryData, Report
@@ -148,7 +148,11 @@ async def generate_country_report(request: Request, country: str, user: User = D
 
         area_of_interest = user.area_of_interest
 
-        report_content = await economic_report(country, area_of_interest)
+        report_input = CountryReportInput(
+            country=country,
+            area_of_interest=area_of_interest
+        )
+        report_content = await economic_report(report_input)
 
         return Report(content=report_content, generated_at=datetime.now().isoformat())
     except Exception as e:
@@ -187,7 +191,12 @@ async def generate_event_report(request: Request, country: str, event_id: str, u
 
         area_of_interest = user.area_of_interest
 
-        report_content = await economic_report_event(country, area_of_interest, event)
+        report_input = EventReportInput(
+            country=country,
+            area_of_interest=area_of_interest,
+            event=event
+        )
+        report_content = await economic_report_event(report_input)
 
         return Report(content=report_content, generated_at=datetime.now().isoformat())
     except Exception as e:
