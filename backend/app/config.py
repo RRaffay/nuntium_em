@@ -82,7 +82,7 @@ class DevelopmentConfig(BaseConfig):
     EVENT_REPORT_TIMEOUT: int = 450
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330
-    REPORT_CACHE_TIMEOUT: int = 1200
+    REPORT_CACHE_TIMEOUT: int = 3600
 
 
 class ProductionConfig(BaseConfig):
