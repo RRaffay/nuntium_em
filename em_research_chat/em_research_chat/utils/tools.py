@@ -53,7 +53,7 @@ def financial_calculator(url: Annotated[str, "URL of the data."], metric: Annota
         ):
             """Use this to execute python code where you need to perform calculations. To access the output, you must add a print statement. Not using print statement will not return any output."""
             try:
-                logger.info(f"Executing code: {code}")
+                logger.warning(f"Executing code: {code}")
                 result = repl.run(code)
             except Exception as e:
                 logger.error(f"Error in executing code: {repr(e)}")

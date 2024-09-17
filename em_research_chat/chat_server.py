@@ -33,6 +33,7 @@ async def run_research_chat(input_data: GraphInput):
             "equity_report": input_data.equity_report,
             "messages": input_data.messages,
         }, thread, debug=input_data.debug)
+        logger.info(f"Final answer: {s['final_answer']}")
         return {"final_answer": s['final_answer']}
     except Exception as e:
         logging.error(f"Error in run_graph: {str(e)}")

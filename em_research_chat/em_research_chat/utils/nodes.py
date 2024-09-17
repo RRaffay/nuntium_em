@@ -136,8 +136,13 @@ def tool_node(state: AgentState, config):
     if tool_call['name'] == 'financial_calculator':
         tool_args = tool_call['args']
         logger.info(f"\n\n\nTool Args: {tool_args}\n\n\n")
-        tool_response = financial_calculator(
+        tool_response_local = financial_calculator(
             url=tool_args['url'], metric=tool_args['metric'], context=tool_args['context'])
+
+    tool_response_old = state.get('tool_response', '')
+
+    tool_response = f"Tool Response: {tool_response_old}\n<tool_response>\n{tool_response_local}\n</tool_response>\n\n"
+    logger.info(f"\n\n\nTool Response Global: {tool_response}\n\n\n")
 
     return {"tool_response": tool_response}
 
@@ -150,7 +155,7 @@ def final_review_node(state: AgentState, config):
     input_message = f"The question is:\n\n{state['task']}\n\n.Here is the answer:\n\n{state['draft']}."
 
     if state.get('tool_response'):
-        input_message += f"Tool Response: \n<tool_response>\n{state['tool_response']}\n</tool_response>\n\n"
+        input_message += state['tool_response']
 
     messages = [
         SystemMessage(content=FINAL_REVIEW_PROMPT.format(
@@ -164,7 +169,7 @@ def final_review_node(state: AgentState, config):
 
 
 def should_continue(state: AgentState):
-    if state.get("no_tool_calls", 0) > 3:
+    if state.get("no_tool_calls", 0) > 5:
         return "final_review"
     if state.get("tool_calls", None):
         return "tool_node"

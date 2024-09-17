@@ -82,6 +82,7 @@ class DevelopmentConfig(BaseConfig):
     EVENT_REPORT_TIMEOUT: int = 450
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330
+    REPORT_CACHE_TIMEOUT: int = 1200
 
 
 class ProductionConfig(BaseConfig):
@@ -97,6 +98,7 @@ class ProductionConfig(BaseConfig):
     EVENT_REPORT_TIMEOUT: int = 450
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330
+    REPORT_CACHE_TIMEOUT: int = 600
 
 
 def get_settings():
