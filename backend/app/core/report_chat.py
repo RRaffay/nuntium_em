@@ -11,6 +11,8 @@ from typing import List, Tuple
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+REPORT_CHAT_TIMEOUT = settings.REPORT_CHAT_TIMEOUT
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -19,7 +21,7 @@ class ChatRequest(BaseModel):
 
 
 async def economic_report_chat(question: str, equity_report: str, messages: List[Tuple[str, str]]):
-    async with httpx.AsyncClient(timeout=330.0) as client:
+    async with httpx.AsyncClient(timeout=REPORT_CHAT_TIMEOUT) as client:
         try:
             report_server_url = settings.REPORT_CHAT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
@@ -34,7 +36,7 @@ async def economic_report_chat(question: str, equity_report: str, messages: List
             response.raise_for_status()
             result = response.json()
 
-            content = result['draft']
+            content = result['final_answer']
 
             return content
         except httpx.HTTPStatusError as e:

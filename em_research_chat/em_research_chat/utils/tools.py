@@ -25,11 +25,14 @@ def financial_calculator(url: Annotated[str, "URL of the data."], metric: Annota
     # Do not remove this docstring
     """Use this tool to calculate financial metrics."""
 
+    logger.info(
+        f"Starting financial calculation for metric: {metric}, URL: {url}")
     try:
         @tool("get_content")
         def get_content(url: Annotated[str, "URL of the data."], max_length: int = 90000):
             """Use this tool to get the content of the file. This will return the content of the file."""
             try:
+                logger.info(f"Loading content from URL: {url}")
                 loader = WebBaseLoader(url)
                 docs = loader.load()
                 article_content = ''.join([doc.page_content for doc in docs])
@@ -50,8 +53,10 @@ def financial_calculator(url: Annotated[str, "URL of the data."], metric: Annota
         ):
             """Use this to execute python code where you need to perform calculations. To access the output, you must add a print statement. Not using print statement will not return any output."""
             try:
+                logger.info(f"Executing code: {code}")
                 result = repl.run(code)
             except Exception as e:
+                logger.error(f"Error in executing code: {repr(e)}")
                 return f"Failed to execute. Error: {repr(e)}"
 
             if result == "":
@@ -75,15 +80,18 @@ def financial_calculator(url: Annotated[str, "URL of the data."], metric: Annota
 
         human_message = f"Metric: {metric}. \n\nURL:\n{url}.\n\nContext: {context}"
 
+        logger.info("Invoking agent executor")
         response = agent_executor.invoke(
             {"messages": [SystemMessage(
                 content=system_message), HumanMessage(content=human_message)]}
         )
 
         if response["messages"][-1].content == "":
+            logger.warning("Empty response from agent executor")
             return "Error retrieving file content."
 
+        logger.info("Successfully completed financial calculation")
         return response["messages"][-1].content
     except Exception as e:
-        print(f"Error parsing file: {e}")
+        logger.error(f"Error in financial_calculator: {str(e)}", exc_info=True)
         return f"Error analyzing file {e}"

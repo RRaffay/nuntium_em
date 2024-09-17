@@ -77,6 +77,11 @@ class DevelopmentConfig(BaseConfig):
         "generate_event_report": "30/hour",
         "research_chat": "10/hour"
     }
+    MAX_REVISIONS_REPORT: int = 1
+    REVISION_NUMBER_REPORT: int = 1
+    EVENT_REPORT_TIMEOUT: int = 450
+    COUNTRY_REPORT_TIMEOUT: int = 450
+    REPORT_CHAT_TIMEOUT: int = 330
 
 
 class ProductionConfig(BaseConfig):
@@ -87,6 +92,11 @@ class ProductionConfig(BaseConfig):
         "generate_event_report": "10/hour",
         "research_chat": "20/hour"
     }
+    MAX_REVISIONS_REPORT: int = 3
+    REVISION_NUMBER_REPORT: int = 1
+    EVENT_REPORT_TIMEOUT: int = 450
+    COUNTRY_REPORT_TIMEOUT: int = 450
+    REPORT_CHAT_TIMEOUT: int = 330
 
 
 def get_settings():

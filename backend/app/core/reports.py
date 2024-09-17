@@ -11,6 +11,12 @@ from config import settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+MAX_REVISIONS_REPORT = settings.MAX_REVISIONS_REPORT
+REVISION_NUMBER_REPORT = settings.REVISION_NUMBER_REPORT
+EVENT_REPORT_TIMEOUT = settings.EVENT_REPORT_TIMEOUT
+COUNTRY_REPORT_TIMEOUT = settings.COUNTRY_REPORT_TIMEOUT
+
 # TODO: Fix the cache to use redis and not the local cache
 
 
@@ -43,9 +49,9 @@ def async_timed_lru_cache(maxsize=128, expires_after=3600, key_func=None):
 
 
 @async_timed_lru_cache(maxsize=100, expires_after=600, key_func=lambda country, area_of_interest, event, *args, **kwargs: f"{country}:{area_of_interest}:{event.id}")
-async def economic_report_event(country: str, area_of_interest: str, event: Event, max_revisions: int = 3, revision_number: int = 1):
+async def economic_report_event(country: str, area_of_interest: str, event: Event, max_revisions: int = MAX_REVISIONS_REPORT, revision_number: int = REVISION_NUMBER_REPORT):
 
-    async with httpx.AsyncClient(timeout=450.0) as client:
+    async with httpx.AsyncClient(timeout=EVENT_REPORT_TIMEOUT) as client:
         try:
             report_server_url = settings.REPORT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
@@ -74,8 +80,8 @@ async def economic_report_event(country: str, area_of_interest: str, event: Even
 
 
 @async_timed_lru_cache(maxsize=100, expires_after=900, key_func=lambda country, area_of_interest, *args, **kwargs: f"{country}:{area_of_interest}")
-async def economic_report(country: str, area_of_interest: str, max_revisions: int = 3, revision_number: int = 1):
-    async with httpx.AsyncClient(timeout=450.0) as client:
+async def economic_report(country: str, area_of_interest: str, max_revisions: int = MAX_REVISIONS_REPORT, revision_number: int = REVISION_NUMBER_REPORT):
+    async with httpx.AsyncClient(timeout=COUNTRY_REPORT_TIMEOUT) as client:
         try:
             report_server_url = settings.REPORT_SERVER_URL
             logger.info(f"This is url {report_server_url}")

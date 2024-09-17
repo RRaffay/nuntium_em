@@ -12,3 +12,4 @@ class AgentState(TypedDict):
     no_tool_calls: int
     tool_calls: List[str]
     tool_response: str
+    final_answer: str

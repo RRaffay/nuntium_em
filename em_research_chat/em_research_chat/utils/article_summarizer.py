@@ -16,6 +16,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from tenacity import retry, stop_after_attempt
+import re
+from bs4 import BeautifulSoup
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +31,17 @@ open_ai_llm = ChatOpenAI(
     temperature=0,
     model_name="gpt-4o",
 )
+
+
+def clean_text(text: str) -> str:
+    """Clean the text by removing HTML tags, extra whitespace, and non-printable characters."""
+    # Remove HTML tags
+    text = BeautifulSoup(text, "html.parser").get_text()
+    # Remove extra whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    # Remove non-printable characters
+    text = ''.join(char for char in text if char.isprintable())
+    return text
 
 
 def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str:
@@ -53,12 +67,16 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str
         logger.error(f"Error in loading doc {str(e)}")
         return f"Error in loading doc {str(e)}"
 
-    # Check the length of the article content
+    # Clean and check the length of the article content
     article_content = ''.join([doc.page_content for doc in docs])
     if len(article_content) > max_length:
-        logger.error(
+        logger.warning(
             f"Article content exceeds the maximum length of {max_length} characters.")
-        return f"Article content exceeds the maximum length of {max_length} characters."
+        article_content = clean_text(article_content)
+        if len(article_content) > max_length:
+            logger.error(
+                f"Article content still exceeds the maximum length of {max_length} characters.")
+            article_content = article_content[:max_length]
 
     if model == 3:
         llm = open_ai_llm_mini

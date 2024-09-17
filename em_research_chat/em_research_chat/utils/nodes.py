@@ -7,7 +7,7 @@ from langgraph.graph import END
 from langgraph.prebuilt import ToolNode
 from typing import List, Tuple
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
-from em_research_chat.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT
+from em_research_chat.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT, FINAL_REVIEW_PROMPT
 from em_research_chat.utils.tools import tavily_client
 from em_research_chat.utils.article_summarizer import generate_summaries
 import concurrent.futures
@@ -52,8 +52,6 @@ def _search_and_summarize(query, max_results):
 
 
 # Node for Research Planning
-
-
 def _format_conversation_history(messages: List[Tuple[str, str]]) -> str:
     return "\n".join([f"{sender}: {content}" for content, sender in messages])
 
@@ -89,8 +87,6 @@ def research_plan_node(state: AgentState, config):
 
 
 # Node for Writing
-
-
 def generation_node(state: AgentState, config):
     content = "\n\n".join(state['content'] or [])
 
@@ -145,10 +141,31 @@ def tool_node(state: AgentState, config):
 
     return {"tool_response": tool_response}
 
+# Node for final review
+
+
+def final_review_node(state: AgentState, config):
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
+    input_message = f"The question is:\n\n{state['task']}\n\n.Here is the answer:\n\n{state['draft']}."
+
+    if state.get('tool_response'):
+        input_message += f"Tool Response: \n<tool_response>\n{state['tool_response']}\n</tool_response>\n\n"
+
+    messages = [
+        SystemMessage(content=FINAL_REVIEW_PROMPT.format(
+            current_date=current_date)),
+        HumanMessage(content=input_message)
+    ]
+    model_name = config.get('configurable', {}).get("model_name", "openai")
+    model = _get_model(model_name)
+    response = model.invoke(messages)
+    return {"final_answer": response.content}
+
 
 def should_continue(state: AgentState):
     if state.get("no_tool_calls", 0) > 3:
-        return "end"
+        return "final_review"
     if state.get("tool_calls", None):
         return "tool_node"
-    return "end"
+    return "final_review"
