@@ -1,4 +1,5 @@
 from typing import TypedDict, List, Tuple
+from pydantic import Field
 
 
 class AgentState(TypedDict):
@@ -8,3 +9,6 @@ class AgentState(TypedDict):
     plan: str
     draft: str
     content: List[str]
+    no_tool_calls: int
+    tool_calls: List[str]
+    tool_response: str

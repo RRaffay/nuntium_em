@@ -4,6 +4,8 @@
   "dependencies": [
     "."
   ],
-  "graphs": {},
+  "graphs": {
+    "agent": "./em_research_chat/agent.py:graph"
+  },
   "env": ".env"
 }

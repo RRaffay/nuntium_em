@@ -2,8 +2,9 @@ from functools import lru_cache
 from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 from em_research_chat.utils.state import AgentState
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 from langgraph.graph import END
+from langgraph.prebuilt import ToolNode
 from typing import List, Tuple
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
 from em_research_chat.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT
@@ -11,6 +12,10 @@ from em_research_chat.utils.tools import tavily_client
 from em_research_chat.utils.article_summarizer import generate_summaries
 import concurrent.futures
 from datetime import datetime
+from em_research_chat.utils.tools import financial_calculator
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Queries(BaseModel):
@@ -95,6 +100,9 @@ def generation_node(state: AgentState, config):
 
     user_message = f"Current Question: \n<current_question>\n{state['task']}\n</current_question>\n\n Conversation history:\n<conversation_history>\n{conversation_history}\n</conversation_history>\n\n"
 
+    if state.get('tool_response'):
+        user_message += f"Tool Response: \n<tool_response>\n{state['tool_response']}\n</tool_response>\n\n"
+
     user_message = HumanMessage(
         content=user_message
     )
@@ -106,8 +114,41 @@ def generation_node(state: AgentState, config):
         user_message
     ]
     model_name = config.get('configurable', {}).get("model_name", "openai")
-    model = _get_model(model_name)
+    model = _get_model(model_name).bind_tools([financial_calculator])
     response = model.invoke(messages)
+
+    if response.tool_calls:
+        logger.info("\n\n\nTool Calls:\n")
+        logger.info(response.tool_calls)
+        tool_calls = response.tool_calls
+    else:
+        tool_calls = None
+
     return {
         "draft": response.content,
+        "tool_calls": tool_calls,
+        "no_tool_calls": state.get("no_tool_calls", 0) + 1
     }
+
+
+# Node for tools
+def tool_node(state: AgentState, config):
+    tool_calls = state["tool_calls"]
+    logger.info("\n\n\nTool Calls:\n")
+    logger.info(tool_calls)
+    tool_call = tool_calls[0]
+    if tool_call['name'] == 'financial_calculator':
+        tool_args = tool_call['args']
+        logger.info(f"\n\n\nTool Args: {tool_args}\n\n\n")
+        tool_response = financial_calculator(
+            url=tool_args['url'], metric=tool_args['metric'], context=tool_args['context'])
+
+    return {"tool_response": tool_response}
+
+
+def should_continue(state: AgentState):
+    if state.get("no_tool_calls", 0) > 3:
+        return "end"
+    if state.get("tool_calls", None):
+        return "tool_node"
+    return "end"
