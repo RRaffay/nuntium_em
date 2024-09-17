@@ -126,6 +126,7 @@ def generation_node(state: AgentState, config):
         return {
             "draft": response.content,
             "tool_calls": [],
+            "tool_response": ""
         }
 
 
@@ -153,7 +154,7 @@ def tool_node(state: AgentState, config):
 def final_review_node(state: AgentState, config):
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    input_message = f"The question is:\n\n{state['task']}\n\n.Here is the answer:\n\n{state['draft']}."
+    input_message = f"The question is:\n\n{state['task']}\n\n.Here is the answer:\n\n{state['draft']}. Here is prior conversation history:\n\n{state['messages']}."
 
     if state.get('tool_response'):
         input_message += state['tool_response']
