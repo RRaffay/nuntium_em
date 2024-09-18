@@ -194,7 +194,7 @@ export const api = {
     }
   },
 
-  async sendChatMessage(message: string, encodedReport: string, messages: ChatMessage[]): Promise<string> {
+  async sendChatMessage(message: string, encodedReport: string, messages: ChatMessage[], proMode: boolean): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/research-chat`, {
       method: 'POST',
       headers: {
@@ -204,7 +204,8 @@ export const api = {
       body: JSON.stringify({ 
         message, 
         encodedReport, 
-        messages: messages.map(m => [m.content, m.sender] as [string, string])
+        messages: messages.map(m => [m.content, m.sender] as [string, string]),
+        proMode
       }),
     });
     const handledResponse = await handleResponse(response);

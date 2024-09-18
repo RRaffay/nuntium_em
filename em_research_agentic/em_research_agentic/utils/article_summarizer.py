@@ -15,6 +15,8 @@ from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsPars
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+import re
+from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,18 @@ open_ai_llm = ChatOpenAI(
 )
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 70000) -> str:
+def clean_text(text: str) -> str:
+    """Clean the text by removing HTML tags, extra whitespace, and non-printable characters."""
+    # Remove HTML tags
+    text = BeautifulSoup(text, "html.parser").get_text()
+    # Remove extra whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    # Remove non-printable characters
+    text = ''.join(char for char in text if char.isprintable())
+    return text
+
+
+def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
 
@@ -39,7 +52,7 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 70000) -> str
     Parameters:
     url (str): The URL of the online article to summarize.
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
-    max_length (int, optional): The maximum length of the article content. Defaults to 70000 characters.
+    max_length (int, optional): The maximum length of the article content. Defaults to 90000 characters.
 
     Returns:
     str: The summary of the article. If there was an error loading, returns an appropriate message.
@@ -52,12 +65,16 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 70000) -> str
         logger.error(f"Error in loading doc {str(e)}")
         return f"Error in loading doc {str(e)}"
 
-    # Check the length of the article content
+   # Clean and check the length of the article content
     article_content = ''.join([doc.page_content for doc in docs])
     if len(article_content) > max_length:
-        logger.error(
+        logger.warning(
             f"Article content exceeds the maximum length of {max_length} characters.")
-        return f"Article content exceeds the maximum length of {max_length} characters."
+        article_content = clean_text(article_content)
+        if len(article_content) > max_length:
+            logger.error(
+                f"Article content still exceeds the maximum length of {max_length} characters.")
+            article_content = article_content[:max_length]
 
     if model == 3:
         llm = open_ai_llm_mini
