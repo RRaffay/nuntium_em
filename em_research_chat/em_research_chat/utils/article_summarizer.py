@@ -71,7 +71,22 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
 
     # Check if the URL is a PDF
     if url.endswith('.pdf'):
-        loader = PyPDFLoader(url)
+        try:
+            import requests
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': 'https://www.google.com/'
+            }
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()  # This will raise an exception for HTTP errors
+        except Exception as e:
+            logger.error(f"Error accessing URL: {e}")
+            return "Error accessing URL"
+
+        loader = PyPDFLoader(url, headers=headers)
+
     else:
         loader = WebBaseLoader(url)
     docs = loader.load()
@@ -143,6 +158,6 @@ def generate_summaries(article_urls: List[str], max_workers: int = 2) -> List[st
     return summaries
 
 
-# if __name__ == "__main__":
-    # print(article_summarizer(
-    #     "https://www.lucky-cement.com/wp-content/uploads/2024/05/Final-report-3rd-Qtr-2024-Luck_Submitted-with-PSX-via-PUCARS.pdf"))
+if __name__ == "__main__":
+    print(article_summarizer(
+        "https://www.engrofertilizers.com/documents/240418_Efert_Q1_Results_and_PSX_Annoucement.pdf"))
