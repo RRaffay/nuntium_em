@@ -81,7 +81,7 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report
                 ) : message.sender === 'user' ? (
                   message.content
                 ) : (
-                  <MarkdownContent content={message.content} />
+                  <MarkdownContent content={message.content} useMathPlugins={true} />
                 )}
               </ChatBubbleMessage>
             </ChatBubble>

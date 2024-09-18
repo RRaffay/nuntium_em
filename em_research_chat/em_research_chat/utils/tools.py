@@ -119,7 +119,7 @@ def financial_calculator(urls: Annotated[List[str], "List of URLs of the data (m
             urls = [r['url'] for r in response['results']]
             return urls
 
-        llm = ChatOpenAI(model='gpt-4o-mini')
+        llm = ChatOpenAI(model='gpt-4o')
 
         tools = [python_repl, get_content, get_urls_based_on_query]
         agent_executor = chat_agent_executor.create_tool_calling_executor(

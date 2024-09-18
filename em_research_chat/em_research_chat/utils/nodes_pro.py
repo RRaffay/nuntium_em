@@ -74,7 +74,7 @@ def research_plan_node(state: AgentState, config, max_search_queries: int = 5):
     content = state.get('content') or []
     max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = [executor.submit(
             _search_and_summarize, q, max_results) for q in queries.queries]
         for future in concurrent.futures.as_completed(futures):
@@ -175,6 +175,6 @@ def final_review_node(state: AgentState, config):
 def should_continue(state: AgentState):
     if not state.get("tool_calls"):
         return "final_review"
-    if state.get("no_tool_calls", 0) > 2:
+    if state.get("no_tool_calls", 0) > 1:
         return "final_review"
     return "tool_node"

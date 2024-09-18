@@ -147,7 +147,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
                 <p className="text-red-500">{error}</p>
               ) : report ? (
                 <>
-                  <MarkdownContent content={report.content} />
+                  <MarkdownContent content={report.content} useMathPlugins={false} />
                   <p className="text-sm text-gray-500 mt-4">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
                 </>
               ) : (
