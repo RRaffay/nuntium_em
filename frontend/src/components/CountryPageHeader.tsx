@@ -1,10 +1,17 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CountryData, UserProfile } from '@/services/api';
+import { CountryData, UserProfile, Report } from '@/services/api';
 
 interface CountryPageHeaderProps {
   countryData: CountryData;
   userProfile: UserProfile | null;
+  onGenerateReport: () => Promise<void>;
+  onBackToDashboard: () => void;
+  countryReport: Report | null;
+  isGeneratingCountryReport: boolean;
+  countryReportProgress: number;
+  countryReportError: string | null;
+  isAnyReportGenerating: boolean;
 }
 
 export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryData, userProfile }) => {
