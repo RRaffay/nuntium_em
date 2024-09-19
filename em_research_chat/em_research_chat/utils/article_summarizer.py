@@ -51,7 +51,7 @@ def clean_text(text: str, level: int = 1, max_words: int = 50000) -> str:
     words = text.split()
     if len(words) > max_words:
         logger.warning(
-            f"Text exceeds the maximum of {max_words} words. Truncating.")
+            f"Text exceeds the maximum of {max_words} words. Text length: {len(words)}. Truncating.")
         text = ' '.join(words[:max_words])
 
     return text
@@ -88,7 +88,19 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
         loader = PyPDFLoader(url, headers=headers)
 
     else:
-        loader = WebBaseLoader(url)
+        custom_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Referer": "https://www.google.com/",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Cache-Control": "max-age=0",
+            "Pragma": "no-cache",
+            "Accept-Encoding": "gzip, deflate, br"
+        }
+        loader = WebBaseLoader(url, header_template=custom_headers)
     docs = loader.load()
     try:
         docs = loader.load()

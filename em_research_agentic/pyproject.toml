@@ -20,6 +20,7 @@ langchain_community = "^0.3.0"
 beautifulsoup4 = "^4.12.3"
 fastapi = {extras = ["standard"], version = "^0.114.2"}
 langchain-experimental = "^0.3.0"
+pypdf = "^5.0.0"
 
 
 [build-system]
