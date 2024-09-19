@@ -75,7 +75,8 @@ class DevelopmentConfig(BaseConfig):
         "run_country_pipeline": "20/hour",
         "generate_country_report": "30/hour",
         "generate_event_report": "30/hour",
-        "research_chat": "20/hour"
+        "research_chat": "20/hour",
+        "get_country_metrics": "20/hour"
     }
     MAX_REVISIONS_REPORT: int = 1
     REVISION_NUMBER_REPORT: int = 1
@@ -91,7 +92,8 @@ class ProductionConfig(BaseConfig):
         "run_country_pipeline": "5/hour",
         "generate_country_report": "10/hour",
         "generate_event_report": "10/hour",
-        "research_chat": "20/hour"
+        "research_chat": "20/hour",
+        "get_country_metrics": "10/hour"
     }
     MAX_REVISIONS_REPORT: int = 3
     REVISION_NUMBER_REPORT: int = 1

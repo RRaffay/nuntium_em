@@ -48,6 +48,15 @@ export interface ChatMessage {
   sender: 'user' | 'model';
 }
 
+export interface IndicatorDataPoint {
+  date: string;
+  value: number | null;
+}
+
+export interface CountryMetrics {
+  [key: string]: IndicatorDataPoint[];
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -271,6 +280,17 @@ export const api = {
       const errorData = await handledResponse.json();
       throw new Error(errorData.detail || 'Failed to reset password');
     }
+  },
+
+  async getCountryMetrics(country: string): Promise<CountryMetrics> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}/metrics`, {
+      headers: getAuthHeaders(),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to fetch country metrics');
+    }
+    return handledResponse.json();
   },
 
 };

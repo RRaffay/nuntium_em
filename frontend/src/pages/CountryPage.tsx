@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCountryData } from '@/hooks/useCountryData';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
@@ -6,7 +6,8 @@ import { EventList } from '@/components/EventList';
 import { LowRelevanceEvents } from '@/components/LowRelevanceEvents';
 import { CountryPageHeader } from '@/components/CountryPageHeader';
 import { CountryPageAlertDialog } from '@/components/CountryPageAlertDialog';
-import { Event as ApiEvent } from '@/services/api';
+import { Event as ApiEvent, api, CountryMetrics } from '@/services/api';
+import { EconomicIndicatorsChart } from '@/components/EconomicIndicatorsChart';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -19,7 +20,7 @@ const CountryPage: React.FC = () => {
     handleGenerateEventReport,
     isGeneratingCountryReport,
     isGeneratingEventReport,
-    countryReportProgress,
+    countryReportProgress, 
     eventReportProgress,
     countryReportError,
     eventReportErrors,
@@ -30,6 +31,23 @@ const CountryPage: React.FC = () => {
   } = useReportGeneration(country);
 
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
+  const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita']);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const metricsData = await api.getCountryMetrics(country as string);
+
+        // Format data if necessary
+        setMetrics(metricsData);
+      } catch (error) {
+        console.error('Error fetching country metrics:', error);
+      }
+    };
+
+    fetchMetrics();
+  }, [country]);
 
   const handleBackToDashboard = () => {
     navigate('/');
@@ -44,6 +62,30 @@ const CountryPage: React.FC = () => {
   }
 
   const { highRelevanceEvents, lowRelevanceEvents } = getFilteredEvents(countryData.events);
+
+  const metricOptions = [
+    { value: 'gdp_per_capita', label: 'GDP per Capita' },
+    { value: 'inflation', label: 'Inflation Rate' },
+    { value: 'unemployment', label: 'Unemployment Rate' },
+  ];
+
+  const mergeChartData = (metrics: CountryMetrics, selectedMetrics: string[]) => {
+    const dataMap: { [date: string]: any } = {};
+
+    selectedMetrics.forEach((metricKey) => {
+      const metricData = metrics[metricKey];
+      metricData.forEach((dataPoint) => {
+        if (!dataMap[dataPoint.date]) {
+          dataMap[dataPoint.date] = { date: dataPoint.date };
+        }
+        dataMap[dataPoint.date][metricKey] = dataPoint.value;
+      });
+    });
+
+    return Object.values(dataMap)
+      .filter(d => d.date && !isNaN(parseInt(d.date)))
+      .sort((a, b) => parseInt(a.date) - parseInt(b.date));
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -89,6 +131,14 @@ const CountryPage: React.FC = () => {
           eventReportErrors={eventReportErrors}
           onGenerateEventReport={handleGenerateEventReport}
           isAnyReportGenerating={isAnyReportGenerating}
+        />
+      )}
+
+      {metrics && (
+        <EconomicIndicatorsChart
+          metrics={metrics}
+          selectedMetrics={selectedMetrics}
+          setSelectedMetrics={setSelectedMetrics}
         />
       )}
 

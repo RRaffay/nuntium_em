@@ -1,3 +1,5 @@
+from core.metric import get_country_metrics
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi import APIRouter, HTTPException, Depends, Request
 from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
@@ -261,3 +263,30 @@ async def research_chat(request: Request, chat_request: ChatRequest, user: User 
     except Exception as e:
         logger.error(f"Error in research_chat: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/countries/{country}/metrics")
+@limiter.limit(settings.RATE_LIMITS["get_country_metrics"])
+async def get_country_metrics_route(request: Request, country: str, user: User = Depends(current_active_user)):
+    """
+    Retrieve metrics for a specific country.
+
+    Args:
+        request (Request): The FastAPI request object.
+        country (str): The name of the country.
+        user (User): The current active user.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the metrics data.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        metrics = get_country_metrics(country)
+        return metrics
+    except ValueError as ve:
+        logger.error(
+            f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error in get_country_metrics_route: {e}", exc_info=True)
+        return {"error": "Some metrics may be unavailable due to a temporary issue with the data source."}
