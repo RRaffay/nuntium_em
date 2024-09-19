@@ -10,7 +10,7 @@ from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from tenacity import retry, stop_after_attempt
+from tenacity import retry, stop_after_attempt, wait_fixed
 import re
 from bs4 import BeautifulSoup
 
@@ -120,7 +120,7 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
         llm = open_ai_llm
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. If the article is inaccessible, return 'INACCESSIBLE'."),
+        ("system", "You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. If the article is inaccessible, return 'INACCESSIBLE' Return the summary in English."),
         ("user", "{input}")
     ])
 
@@ -128,7 +128,7 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
 
     input_prompt = f"This is the article content:\n\n<article>\n\n{article_content}\n\n</article>"
 
-    @retry(stop=stop_after_attempt(3))
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     def invoke_with_retry():
         return chain.invoke({"input": input_prompt})
 
@@ -158,6 +158,6 @@ def generate_summaries(article_urls: List[str], max_workers: int = 2) -> List[st
     return summaries
 
 
-if __name__ == "__main__":
-    print(article_summarizer(
-        "https://www.engrofertilizers.com/documents/240418_Efert_Q1_Results_and_PSX_Annoucement.pdf"))
+# if __name__ == "__main__":
+#     print(article_summarizer(
+#         "https://www.engrofertilizers.com/documents/240418_Efert_Q1_Results_and_PSX_Annoucement.pdf"))

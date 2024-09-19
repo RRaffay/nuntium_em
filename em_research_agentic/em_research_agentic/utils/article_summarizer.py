@@ -2,17 +2,9 @@ from typing import List
 import concurrent.futures
 import logging
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-
+from tenacity import retry, stop_after_attempt, wait_fixed
 from langchain_community.document_loaders import WebBaseLoader
-from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.llm import LLMChain
-from langchain.chains import ReduceDocumentsChain, MapReduceDocumentsChain
-from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import re
@@ -30,51 +22,90 @@ open_ai_llm = ChatOpenAI(
 )
 
 
-def clean_text(text: str) -> str:
-    """Clean the text by removing HTML tags, extra whitespace, and non-printable characters."""
-    # Remove HTML tags
+def clean_text(text: str, level: int = 1, max_words: int = 50000) -> str:
+    """Clean the text with different levels of aggressiveness and truncate if necessary."""
+    # Level 1: Basic cleaning
     text = BeautifulSoup(text, "html.parser").get_text()
-    # Remove extra whitespace
     text = re.sub(r'\s+', ' ', text).strip()
-    # Remove non-printable characters
     text = ''.join(char for char in text if char.isprintable())
+
+    if level >= 2:
+        # Level 2: Remove common web elements and URLs
+        text = re.sub(r'(Cookie Policy|Privacy Policy|Terms of Service|Copyright ©)',
+                      '', text, flags=re.IGNORECASE)
+        text = re.sub(
+            r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
+
+    if level >= 3:
+        # Level 3: Remove email addresses and special characters
+        text = re.sub(r'\S+@\S+', '', text)
+        text = re.sub(r'[^a-zA-Z0-9\s.,;:!?()"-]', '', text)
+
+    # Truncate to max_words if necessary
+    words = text.split()
+    if len(words) > max_words:
+        logger.warning(
+            f"Text exceeds the maximum of {max_words} words. Truncating.")
+        text = ' '.join(words[:max_words])
+
     return text
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str:
+def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
-
-    This function loads the article from the provided URL, splits it into chunks, and uses a map-reduce approach
-    to generate a summary. The map step generates summaries for each chunk, and the reduce step combines these
-    summaries into a final, consolidated summary.
 
     Parameters:
     url (str): The URL of the online article to summarize.
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
-    max_length (int, optional): The maximum length of the article content. Defaults to 90000 characters.
-
+    max_words (int, optional): The maximum number of words in the article content. Defaults to 50000 words.
     Returns:
-    str: The summary of the article. If there was an error loading, returns an appropriate message.
+    str: The summary of the article. If there was an error loading the article, returns an appropriate message.
     """
 
-    loader = WebBaseLoader(url)
+    # Check if the URL is a PDF
+    if url.endswith('.pdf'):
+        try:
+            import requests
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': 'https://www.google.com/'
+            }
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()  # This will raise an exception for HTTP errors
+        except Exception as e:
+            logger.error(f"Error accessing URL: {e}")
+            return "Error accessing URL"
+
+        loader = PyPDFLoader(url, headers=headers)
+
+    else:
+        loader = WebBaseLoader(url)
+    docs = loader.load()
     try:
         docs = loader.load()
     except Exception as e:
         logger.error(f"Error in loading doc {str(e)}")
         return f"Error in loading doc {str(e)}"
 
-   # Clean and check the length of the article content
-    article_content = ''.join([doc.page_content for doc in docs])
-    if len(article_content) > max_length:
+    # Clean and check the word count of the article content
+    article_content = ' '.join([doc.page_content for doc in docs])
+    original_word_count = len(article_content.split())
+
+    for cleaning_level in range(1, 4):
+        article_content = clean_text(
+            article_content, level=cleaning_level, max_words=max_words)
+        if len(article_content.split()) <= max_words:
+            break
+
+    if len(article_content.split()) > max_words:
         logger.warning(
-            f"Article content exceeds the maximum length of {max_length} characters.")
-        article_content = clean_text(article_content)
-        if len(article_content) > max_length:
-            logger.error(
-                f"Article content still exceeds the maximum length of {max_length} characters.")
-            article_content = article_content[:max_length]
+            f"Article content still exceeds the maximum of {max_words} words after cleaning. "
+            f"Original word count: {original_word_count}, Cleaned word count: {len(article_content.split())}. "
+            f"Truncating to {max_words} words.")
+        article_content = ' '.join(article_content.split()[:max_words])
 
     if model == 3:
         llm = open_ai_llm_mini
@@ -83,7 +114,7 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str
         llm = open_ai_llm
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. If the article is inaccessible, return 'INACCESSIBLE'."),
+        ("system", "You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. If the article is inaccessible, return 'INACCESSIBLE' Return the summary in English."),
         ("user", "{input}")
     ])
 
@@ -91,8 +122,12 @@ def article_summarizer(url: str, model: int = 3, max_length: int = 90000) -> str
 
     input_prompt = f"This is the article content:\n\n<article>\n\n{article_content}\n\n</article>"
 
-    try:
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+    def invoke_with_retry():
         return chain.invoke({"input": input_prompt})
+
+    try:
+        return invoke_with_retry()
     except Exception as e:
         logger.error(f"Error in generating summary: {str(e)}")
         raise Exception(f"Error in generating summary: {str(e)}")
