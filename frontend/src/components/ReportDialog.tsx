@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// ReportDialog.tsx
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -39,53 +40,49 @@ interface ReportDialogProps {
   error: string | null;
   title: string;
   onClose: () => void;
+  progress: number;
+  autoGenerateOnOpen?: boolean;
+  buttonText: string;
 }
 
-export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, onGenerate, error, title, onClose }) => {
+export const ReportDialog: React.FC<ReportDialogProps> = ({
+  report,
+  isLoading,
+  onGenerate,
+  error,
+  title,
+  onClose,
+  progress,
+  autoGenerateOnOpen = false,
+  buttonText,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatSize, setChatSize] = useState(50);
   const [proMode, setProMode] = useState(false);
 
-  const easeOutQuad = (t: number) => t * (2 - t);
+  useEffect(() => {
+    if (isOpen && autoGenerateOnOpen && !isLoading && !report) {
+      handleGenerate();
+    }
+  }, [isOpen, autoGenerateOnOpen, isLoading, report]);
 
   const handleGenerate = async () => {
-    setProgress(0);
-    setIsOpen(true);
-    const startTime = Date.now();
-    const duration = 210000; // 210 seconds
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
-      setProgress(progressValue);
-
-      if (elapsed >= duration) {
-        clearInterval(interval);
-      }
-    }, 100); // Update every 100ms
-
+    if (isLoading) return;
     await onGenerate();
-    clearInterval(interval);
-    setProgress(100);
   };
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (!open) {
-      // Reset state when dialog is closed
-      setProgress(0);
-      setIsChatOpen(false);
-      setChatSize(50);
-      onClose(); // Call the onClose prop
-    }
+    // Do not reset progress or state when dialog is closed
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button onClick={handleGenerate}>{title}</Button>
+        <Button disabled={isLoading}>
+          {isLoading ? "Generating Report..." : buttonText}
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col">
         <DialogHeader className="flex flex-row items-center justify-between">
@@ -116,17 +113,20 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
                           pressed={proMode}
                           onPressedChange={setProMode}
                           className={cn(
-                            "mt-2 px-3 py-1",
+                            'mt-2 px-3 py-1',
                             proMode
-                              ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                              ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                           )}
                         >
-                          PRO: {proMode ? "Activated" : "Deactivated"}
+                          PRO: {proMode ? 'Activated' : 'Deactivated'}
                         </Toggle>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Pro mode: {proMode ? "Activated" : "Deactivated"}. Responses might take longer but will be more researched and analysis-heavy when active.</p>
+                        <p>
+                          Pro mode: {proMode ? 'Activated' : 'Deactivated'}. Responses might take longer but will be
+                          more researched and analysis-heavy when active.
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -142,16 +142,26 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
                 <div>
                   <p>Generating Report</p>
                   <Progress value={progress} className="mt-2" />
+                  <p>{Math.round(progress)}%</p>
                 </div>
               ) : error ? (
                 <p className="text-red-500">{error}</p>
               ) : report ? (
                 <>
                   <MarkdownContent content={report.content} useMathPlugins={false} />
-                  <p className="text-sm text-gray-500 mt-4">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
+                  <p className="text-sm text-gray-500 mt-4">
+                    Generated at: {new Date(report.generated_at).toLocaleString()}
+                  </p>
                 </>
               ) : (
-                <p>No report generated. Please try again.</p>
+                !autoGenerateOnOpen && (
+                  <div>
+                    <p>No report generated. Please click the button below to generate the report.</p>
+                    <Button onClick={handleGenerate} disabled={isLoading}>
+                      Generate Report
+                    </Button>
+                  </div>
+                )
               )}
             </div>
           </ResizablePanel>
@@ -159,11 +169,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={chatSize} minSize={30} onResize={(size) => setChatSize(size)}>
-                <ReportChatInterface
-                  report={report.content}
-                  onClose={() => setIsChatOpen(false)}
-                  proMode={proMode}
-                />
+                <ReportChatInterface report={report.content} onClose={() => setIsChatOpen(false)} proMode={proMode} />
               </ResizablePanel>
             </>
           )}

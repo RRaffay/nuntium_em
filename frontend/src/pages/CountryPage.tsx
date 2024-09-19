@@ -1,6 +1,8 @@
+// CountryPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { api, CountryData, Report, UserProfile } from '@/services/api';
 import { ReportDialog } from '@/components/ReportDialog';
@@ -24,6 +26,8 @@ const CountryPage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
+  const [countryReportProgress, setCountryReportProgress] = useState<number>(0);
+  const [eventReportProgress, setEventReportProgress] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,9 +50,26 @@ const CountryPage: React.FC = () => {
 
   const handleGenerateCountryReport = async () => {
     if (!country) return;
+    if (isGeneratingCountryReport) return; // Prevent re-triggering
     setIsGeneratingCountryReport(true);
     setCountryReportError(null);
     setRateLimitError(null);
+    setCountryReportProgress(0);
+
+    const startTime = Date.now();
+    const duration = 210000; // 210 seconds
+    const easeOutQuad = (t: number) => t * (2 - t);
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
+      setCountryReportProgress(progressValue);
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+      }
+    }, 100); // Update every 100ms
+
     try {
       const generatedReport = await api.generateCountryReport(country);
       setCountryReport(generatedReport);
@@ -61,28 +82,52 @@ const CountryPage: React.FC = () => {
       }
       setCountryReport(null);
     } finally {
+      clearInterval(interval);
+      setCountryReportProgress(100);
       setIsGeneratingCountryReport(false);
     }
   };
 
   const handleGenerateEventReport = async (eventId: string) => {
     if (!country) return;
-    setIsGeneratingEventReport(prev => ({ ...prev, [eventId]: true }));
-    setEventReportErrors(prev => ({ ...prev, [eventId]: null }));
+    if (isGeneratingEventReport[eventId]) return; // Prevent re-triggering
+    setIsGeneratingEventReport((prev) => ({ ...prev, [eventId]: true }));
+    setEventReportErrors((prev) => ({ ...prev, [eventId]: null }));
     setRateLimitError(null);
+    setEventReportProgress((prev) => ({ ...prev, [eventId]: 0 }));
+
+    const startTime = Date.now();
+    const duration = 210000; // 210 seconds
+    const easeOutQuad = (t: number) => t * (2 - t);
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
+      setEventReportProgress((prev) => ({ ...prev, [eventId]: progressValue }));
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+      }
+    }, 100); // Update every 100ms
+
     try {
       const generatedReport = await api.generateEventReport(country, eventId);
-      setEventReports(prev => ({ ...prev, [eventId]: generatedReport }));
+      setEventReports((prev) => ({ ...prev, [eventId]: generatedReport }));
     } catch (err) {
       console.error('Error generating event report:', err);
       if (err instanceof Error && err.message.includes('Rate limit exceeded')) {
         setRateLimitError(err.message);
       } else {
-        setEventReportErrors(prev => ({ ...prev, [eventId]: 'Failed to generate event report. Please try again.' }));
+        setEventReportErrors((prev) => ({
+          ...prev,
+          [eventId]: 'Failed to generate event report. Please try again.',
+        }));
       }
-      setEventReports(prev => ({ ...prev, [eventId]: null }));
+      setEventReports((prev) => ({ ...prev, [eventId]: null }));
     } finally {
-      setIsGeneratingEventReport(prev => ({ ...prev, [eventId]: false }));
+      clearInterval(interval);
+      setEventReportProgress((prev) => ({ ...prev, [eventId]: 100 }));
+      setIsGeneratingEventReport((prev) => ({ ...prev, [eventId]: false }));
     }
   };
 
@@ -91,10 +136,8 @@ const CountryPage: React.FC = () => {
   };
 
   const handleReportDialogClose = () => {
-    setCountryReport(null);
-    setCountryReportError(null);
-    setEventReports({});
-    setEventReportErrors({});
+    // Do not reset report data when dialog is closed
+    // This allows the user to reopen the dialog and see progress or the completed report
   };
 
   if (error) {
@@ -105,7 +148,7 @@ const CountryPage: React.FC = () => {
     return <div>Loading...</div>;
   }
 
-  // Add this function to sort and filter events by relevance score
+  // Function to sort and filter events by relevance score
   const getFilteredEvents = () => {
     const highRelevanceEvents = countryData?.events.filter(event => event.relevance_score >= 4) || [];
     const lowRelevanceEvents = countryData?.events.filter(event => event.relevance_score < 4) || [];
@@ -122,15 +165,25 @@ const CountryPage: React.FC = () => {
     <div className="p-4 md:p-6 lg:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
         <CountryPageHeader countryData={countryData} userProfile={userProfile} />
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-          <ReportDialog 
-            report={countryReport} 
-            isLoading={isGeneratingCountryReport} 
-            onGenerate={handleGenerateCountryReport}
-            error={countryReportError}
-            title="Country Report"
-            onClose={handleReportDialogClose}
-          />
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+          <div className="relative inline-block">
+            <ReportDialog 
+              report={countryReport} 
+              isLoading={isGeneratingCountryReport} 
+              onGenerate={handleGenerateCountryReport}
+              error={countryReportError}
+              title="Country Report"
+              onClose={handleReportDialogClose}
+              progress={countryReportProgress}
+              buttonText={countryReport ? "View Report" : "Generate Report"}
+            />
+            {isGeneratingCountryReport && (
+              <div className="w-full sm:w-auto mt-2">
+                <Progress className="w-full" value={countryReportProgress} />
+                <span>{Math.round(countryReportProgress)}%</span>
+              </div>
+            )}
+          </div>
           <Button onClick={handleBackToDashboard} variant="outline" className="w-full sm:w-auto">Back to Dashboard</Button>
         </div>
       </div>
@@ -144,16 +197,26 @@ const CountryPage: React.FC = () => {
               <AccordionContent>
                 <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
                 <MarkdownContent content={event.event_summary} />
-                <div className="flex space-x-2 mt-2">
+                <div className="flex space-x-2 mt-2 items-center">
                   <ArticleDialog event={event} />
-                  <ReportDialog 
-                    report={eventReports[event.id]} 
-                    isLoading={isGeneratingEventReport[event.id] || false} 
-                    onGenerate={() => handleGenerateEventReport(event.id)}
-                    error={eventReportErrors[event.id] || null}
-                    title={`Event Report: ${event.title}`}
-                    onClose={handleReportDialogClose}
-                  />
+                  <div className="relative inline-block">
+                    <ReportDialog 
+                      report={eventReports[event.id]} 
+                      isLoading={isGeneratingEventReport[event.id] || false} 
+                      onGenerate={() => handleGenerateEventReport(event.id)}
+                      error={eventReportErrors[event.id] || null}
+                      title={`Event Report`}
+                      onClose={handleReportDialogClose}
+                      progress={eventReportProgress[event.id] || 0}
+                      autoGenerateOnOpen={true}
+                      buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
+                    />
+                    {isGeneratingEventReport[event.id] && (
+                      <div className="w-full sm:w-auto mt-2">
+                        <Progress className="w-full" value={eventReportProgress[event.id] || 0} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -204,16 +267,26 @@ const CountryPage: React.FC = () => {
                   <AccordionContent>
                     <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
                     <MarkdownContent content={event.event_summary} />
-                    <div className="flex space-x-2 mt-2">
+                    <div className="flex space-x-2 mt-2 items-center">
                       <ArticleDialog event={event} />
-                      <ReportDialog 
-                        report={eventReports[event.id]} 
-                        isLoading={isGeneratingEventReport[event.id] || false} 
-                        onGenerate={() => handleGenerateEventReport(event.id)}
-                        error={eventReportErrors[event.id] || null}
-                        title={`Event Report: ${event.title}`}
-                        onClose={handleReportDialogClose}
-                      />
+                      <div className="relative inline-block">
+                        <ReportDialog 
+                          report={eventReports[event.id]} 
+                          isLoading={isGeneratingEventReport[event.id] || false} 
+                          onGenerate={() => handleGenerateEventReport(event.id)}
+                          error={eventReportErrors[event.id] || null}
+                          title={`Event Report`}
+                          onClose={handleReportDialogClose}
+                          progress={eventReportProgress[event.id] || 0}
+                          autoGenerateOnOpen={true}
+                          buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
+                        />
+                        {isGeneratingEventReport[event.id] && (
+                          <div className="w-full sm:w-auto mt-2">
+                            <Progress className="w-full" value={eventReportProgress[event.id] || 0} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
