@@ -4,7 +4,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from typing import List
 
 
-def match_clusters(input_embedding: List[float], embeddings: np.ndarray, clusters: np.ndarray, top_n: int = 5) -> List[int]:
+def match_clusters(input_embedding: List[float], embeddings: np.ndarray, clusters: np.ndarray, top_n: int = 20) -> List[int]:
     """
     Match input embedding to clusters based on cosine similarity.
     Uses an enhanced method that computes average similarity per cluster.

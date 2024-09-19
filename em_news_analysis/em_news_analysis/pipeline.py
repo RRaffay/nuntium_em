@@ -17,7 +17,7 @@ from .config import Config
 from .data_fetcher import fetch_gdelt_data
 from .preprocessor import preprocess_data_summary
 from .embeddings import get_embedding, generate_embeddings
-from .clustering import cluster_embeddings
+from .clustering import cluster_embeddings, optimize_clustering
 from .matching import match_clusters
 from .cluster_summarizer import generate_cluster_summary
 from .article_summarizer import generate_summaries
@@ -106,9 +106,32 @@ class GDELTNewsPipeline:
             sampled_data = sampled_data.iloc[valid_indices].reset_index(
                 drop=True)
 
-            self.logger.info("Clustering embeddings...")
-            clusters = cluster_embeddings(embeddings, self.config)
-            self.logger.info(f"Generated {len(set(clusters))} clusters.")
+            # self.logger.info("Clustering embeddings...")
+            # clusters = cluster_embeddings(embeddings, self.config)
+            # self.logger.info(f"Generated {len(set(clusters))} clusters.")
+
+            # sampled_data['cluster'] = clusters
+            self.logger.info("Optimizing clustering parameters...")
+            # Simplified parameter grid focusing on key hyperparameters
+            param_grid = {
+                'n_components': [20, 50],
+                'min_cluster_size': [5, 10],
+                'min_samples': [1, 2],
+                # Fixed parameters
+                'reduce_dimensionality': [True],
+                'reducer_algorithm': ['umap'],
+                'metric': ['euclidean'],
+                'cluster_selection_epsilon': [0.0],
+            }
+
+            clusters, best_params = optimize_clustering(
+                embeddings=embeddings,
+                param_grid=param_grid
+            )
+
+            self.logger.info(f"Best clustering parameters: {best_params}")
+            num_clusters = len(set(clusters)) - (1 if -1 in clusters else 0)
+            self.logger.info(f"Generated {num_clusters} clusters.")
 
             sampled_data['cluster'] = clusters
 
