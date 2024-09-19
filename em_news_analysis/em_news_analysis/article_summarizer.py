@@ -93,12 +93,6 @@ def article_summarizer(url: str, objective: str, model: int = 3, max_words: int 
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.5",
             "Referer": "https://www.google.com/",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Cache-Control": "max-age=0",
-            "Pragma": "no-cache",
-            "Accept-Encoding": "gzip, deflate, br"
         }
         loader = WebBaseLoader(url, header_template=custom_headers)
     docs = loader.load()
