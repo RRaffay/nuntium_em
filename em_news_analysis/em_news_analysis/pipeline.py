@@ -17,10 +17,12 @@ from .config import Config
 from .data_fetcher import fetch_gdelt_data
 from .preprocessor import preprocess_data_summary
 from .embeddings import get_embedding, generate_embeddings
-from .clustering import cluster_embeddings, match_clusters
+from .clustering import cluster_embeddings
+from .matching import match_clusters
 from .cluster_summarizer import generate_cluster_summary
 from .article_summarizer import generate_summaries
-from .utils import sample_articles_mmr, get_country_name
+from .utils import get_country_name
+from .sampling import sample_data, sample_articles
 
 
 class GDELTNewsPipeline:
@@ -52,9 +54,7 @@ class GDELTNewsPipeline:
         self.logger = logging.getLogger(__name__)
 
     def sample_data(self, df: pd.DataFrame, process_all: bool, sample_size: int) -> pd.DataFrame:
-        if process_all or sample_size >= len(df):
-            return df
-        return df.sample(n=sample_size, random_state=42)
+        return sample_data(df, process_all, sample_size)
 
     def run_pipeline(
         self,
@@ -112,6 +112,13 @@ class GDELTNewsPipeline:
 
             sampled_data['cluster'] = clusters
 
+            # self.logger.info("Enriching user input...")
+            # enriched_input = enrich_user_interest(input_sentence)
+            # self.logger.info(f"Enriched input: {enriched_input}")
+
+            # self.logger.info("Generating input embedding...")
+            # input_embedding = self.get_embedding(enriched_input)
+
             self.logger.info("Matching clusters...")
             input_embedding = self.get_embedding(input_sentence)
             matched_clusters = match_clusters(
@@ -155,17 +162,22 @@ class GDELTNewsPipeline:
             def process_cluster(cluster):
                 cluster_indices = np.where(
                     sampled_data['cluster'] == cluster)[0]
-                cluster_urls = sampled_data.loc[sampled_data['cluster']
-                                                == cluster, 'SOURCEURL'].tolist()
+                cluster_data = sampled_data.loc[sampled_data['cluster'] == cluster]
+                cluster_urls = cluster_data['SOURCEURL'].tolist()
                 cluster_embeddings = embeddings[cluster_indices]
 
                 if not cluster_urls:
                     self.logger.info(f"Skipping empty cluster {cluster}")
                     return None
 
-                sampled_urls = sample_articles_mmr(
+                # Fetch additional article metadata
+                articles_metadata = cluster_data[[
+                    'SOURCEURL', 'SQLDATE', 'AvgTone', 'NumMentions', 'GoldsteinScale']]
+
+                sampled_urls = sample_articles(
                     urls=cluster_urls,
                     cluster_embeddings=cluster_embeddings,
+                    articles_metadata=articles_metadata,
                     max_articles=self.config.max_articles_per_cluster,
                     lambda_param=self.config.mmr_lambda_param
                 )

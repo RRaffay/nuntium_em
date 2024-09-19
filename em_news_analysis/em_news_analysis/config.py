@@ -14,6 +14,8 @@ class Config:
     gdelt_cache_expiry: timedelta = field(
         default_factory=lambda: timedelta(hours=24))
     mmr_lambda_param: float = 0.9
+    n_components: int = 50
+    reducer_algorithm: str = "umap"
 
     def __hash__(self):
         return hash((self.embedding_model, self.cache_size, self.min_cluster_size,
