@@ -282,6 +282,7 @@ async def get_country_metrics_route(request: Request, country: str, user: User =
     limiter.key_func = lambda: str(user.id)
     try:
         metrics = get_country_metrics(country)
+        logger.info(f"Successfully retrieved metrics for {country}")
         return metrics
     except ValueError as ve:
         logger.error(

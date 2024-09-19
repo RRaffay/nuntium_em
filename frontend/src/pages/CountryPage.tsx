@@ -38,8 +38,7 @@ const CountryPage: React.FC = () => {
     const fetchMetrics = async () => {
       try {
         const metricsData = await api.getCountryMetrics(country as string);
-
-        // Format data if necessary
+        console.log('Fetched metrics:', Object.keys(metricsData));
         setMetrics(metricsData);
       } catch (error) {
         console.error('Error fetching country metrics:', error);

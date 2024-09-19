@@ -288,9 +288,12 @@ export const api = {
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {
+      console.error('Failed to fetch country metrics');
       throw new Error('Failed to fetch country metrics');
     }
-    return handledResponse.json();
+    const data = await handledResponse.json();
+    console.log('Retrieved country metrics:', Object.keys(data));
+    return data;
   },
 
 };
