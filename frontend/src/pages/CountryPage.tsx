@@ -11,6 +11,7 @@ import { MarkdownContent } from '@/components/MarkdownContent';
 import { CountryPageHeader } from '@/components/CountryPageHeader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from "@/lib/utils";
+import { CountryPageAlertDialog } from '@/components/CountryPageAlertDialog';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -28,6 +29,8 @@ const CountryPage: React.FC = () => {
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
   const [countryReportProgress, setCountryReportProgress] = useState<number>(0);
   const [eventReportProgress, setEventReportProgress] = useState<{ [key: string]: number }>({});
+  const [isAnyReportGenerating, setIsAnyReportGenerating] = useState(false);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,8 +52,13 @@ const CountryPage: React.FC = () => {
   }, [country]);
 
   const handleGenerateCountryReport = async () => {
+    if (isAnyReportGenerating) {
+      setShowAlertDialog(true);
+      return;
+    }
     if (!country) return;
     if (isGeneratingCountryReport) return; // Prevent re-triggering
+    setIsAnyReportGenerating(true);
     setIsGeneratingCountryReport(true);
     setCountryReportError(null);
     setRateLimitError(null);
@@ -85,12 +93,18 @@ const CountryPage: React.FC = () => {
       clearInterval(interval);
       setCountryReportProgress(100);
       setIsGeneratingCountryReport(false);
+      setIsAnyReportGenerating(false);
     }
   };
 
   const handleGenerateEventReport = async (eventId: string) => {
+    if (isAnyReportGenerating) {
+      setShowAlertDialog(true);
+      return;
+    }
     if (!country) return;
     if (isGeneratingEventReport[eventId]) return; // Prevent re-triggering
+    setIsAnyReportGenerating(true);
     setIsGeneratingEventReport((prev) => ({ ...prev, [eventId]: true }));
     setEventReportErrors((prev) => ({ ...prev, [eventId]: null }));
     setRateLimitError(null);
@@ -128,6 +142,7 @@ const CountryPage: React.FC = () => {
       clearInterval(interval);
       setEventReportProgress((prev) => ({ ...prev, [eventId]: 100 }));
       setIsGeneratingEventReport((prev) => ({ ...prev, [eventId]: false }));
+      setIsAnyReportGenerating(false);
     }
   };
 
@@ -176,6 +191,7 @@ const CountryPage: React.FC = () => {
               onClose={handleReportDialogClose}
               progress={countryReportProgress}
               buttonText={countryReport ? "View Report" : "Generate Report"}
+              canOpen={!isAnyReportGenerating}
             />
             {isGeneratingCountryReport && (
               <div className="w-full sm:w-auto mt-2">
@@ -208,8 +224,9 @@ const CountryPage: React.FC = () => {
                       title={`Event Report`}
                       onClose={handleReportDialogClose}
                       progress={eventReportProgress[event.id] || 0}
-                      autoGenerateOnOpen={true}
+                      autoGenerateOnOpen={false}
                       buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
+                      canOpen={!isAnyReportGenerating}
                     />
                     {isGeneratingEventReport[event.id] && (
                       <div className="w-full sm:w-auto mt-2">
@@ -278,8 +295,9 @@ const CountryPage: React.FC = () => {
                           title={`Event Report`}
                           onClose={handleReportDialogClose}
                           progress={eventReportProgress[event.id] || 0}
-                          autoGenerateOnOpen={true}
+                          autoGenerateOnOpen={false}
                           buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
+                          canOpen={!isAnyReportGenerating}
                         />
                         {isGeneratingEventReport[event.id] && (
                           <div className="w-full sm:w-auto mt-2">
@@ -301,6 +319,13 @@ const CountryPage: React.FC = () => {
           {rateLimitError}
         </div>
       )}
+
+      <CountryPageAlertDialog
+        isOpen={showAlertDialog}
+        onClose={() => setShowAlertDialog(false)}
+        title="Report Generation in Progress"
+        message="Please wait for the current report to finish generating before starting a new one."
+      />
     </div>
   );
 };

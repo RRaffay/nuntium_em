@@ -43,6 +43,7 @@ interface ReportDialogProps {
   progress: number;
   autoGenerateOnOpen?: boolean;
   buttonText: string;
+  canOpen: boolean; // Add this new prop
 }
 
 export const ReportDialog: React.FC<ReportDialogProps> = ({
@@ -55,33 +56,37 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
   progress,
   autoGenerateOnOpen = false,
   buttonText,
+  canOpen, // Add this new prop
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatSize, setChatSize] = useState(50);
   const [proMode, setProMode] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && autoGenerateOnOpen && !isLoading && !report) {
-      handleGenerate();
+  const handleOpenChange = (open: boolean) => {
+    if (canOpen && report) {
+      setIsOpen(open);
+    } else if (!open) {
+      setIsOpen(false);
     }
-  }, [isOpen, autoGenerateOnOpen, isLoading, report]);
-
-  const handleGenerate = async () => {
-    if (isLoading) return;
-    await onGenerate();
   };
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    // Do not reset progress or state when dialog is closed
+  const handleButtonClick = () => {
+    if (report) {
+      setIsOpen(true);
+    } else {
+      onGenerate();
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button disabled={isLoading}>
-          {isLoading ? "Generating Report..." : buttonText}
+        <Button 
+          disabled={isLoading} 
+          onClick={handleButtonClick}
+        >
+          {isLoading ? "Generating..." : buttonText}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col">
@@ -157,7 +162,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
                 !autoGenerateOnOpen && (
                   <div>
                     <p>No report generated. Please click the button below to generate the report.</p>
-                    <Button onClick={handleGenerate} disabled={isLoading}>
+                    <Button onClick={onGenerate} disabled={isLoading}>
                       Generate Report
                     </Button>
                   </div>
