@@ -8,18 +8,23 @@ import { btoa } from 'abab';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
 
-
 interface ReportChatInterfaceProps {
   report: string;
   onClose: () => void;
   proMode: boolean;
+  isMobile: boolean;
 }
 
 interface Message extends ChatMessage {
   isLoading?: boolean;
 }
 
-export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report, onClose, proMode }) => {
+export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ 
+  report, 
+  onClose, 
+  proMode, 
+  isMobile 
+}) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
@@ -60,7 +65,7 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-grow overflow-y-auto">
+      <div className={`flex-grow overflow-y-auto ${isMobile ? 'max-h-[50vh]' : ''}`}>
         <ChatMessageList>
           {messages.map((message, index) => (
             <ChatBubble 
@@ -88,15 +93,17 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({ report
           ))}
         </ChatMessageList>
       </div>
-      <div className="p-4 border-t flex items-center">
-      <ChatInput
+      <div className={`p-2 sm:p-4 border-t flex ${isMobile ? 'flex-col' : 'items-center'}`}>
+        <ChatInput
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onSend={handleSendMessage}
           placeholder="Type your message..."
-          className="flex-grow mr-2"
+          className={`flex-grow ${isMobile ? 'mb-2' : 'mr-2'}`}
         />
-        <Button onClick={handleSendMessage}>Send</Button>
+        <Button onClick={handleSendMessage} className={isMobile ? 'w-full' : ''}>
+          Send
+        </Button>
       </div>
       {rateLimitError && (
         <div className="p-2 bg-red-100 text-red-700 mb-2">

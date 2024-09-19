@@ -62,6 +62,16 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatSize, setChatSize] = useState(50);
   const [proMode, setProMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleOpenChange = (open: boolean) => {
     if (canOpen && report) {
@@ -89,10 +99,10 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
           {isLoading ? "Generating..." : buttonText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between">
+      <DialogContent className="sm:max-w-[95vw] h-[95vh] flex flex-col">
+        <DialogHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
           <DialogTitle>{title}</DialogTitle>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center mt-2 sm:mt-0">
             {report && (
               <>
                 <Button
@@ -140,8 +150,14 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
             )}
           </div>
         </DialogHeader>
-        <ResizablePanelGroup direction="horizontal" className="flex-grow overflow-hidden">
-          <ResizablePanel defaultSize={100 - chatSize} minSize={30}>
+        <ResizablePanelGroup 
+          direction={isMobile ? "vertical" : "horizontal"} 
+          className="flex-grow overflow-hidden"
+        >
+          <ResizablePanel 
+            defaultSize={isMobile ? 50 : (100 - chatSize)} 
+            minSize={30}
+          >
             <div className="h-full overflow-y-auto p-4">
               {isLoading ? (
                 <div>
@@ -173,8 +189,17 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
           {isChatOpen && report && (
             <>
               <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={chatSize} minSize={30} onResize={(size) => setChatSize(size)}>
-                <ReportChatInterface report={report.content} onClose={() => setIsChatOpen(false)} proMode={proMode} />
+              <ResizablePanel 
+                defaultSize={isMobile ? 50 : chatSize} 
+                minSize={30} 
+                onResize={(size) => !isMobile && setChatSize(size)}
+              >
+                <ReportChatInterface 
+                  report={report.content} 
+                  onClose={() => setIsChatOpen(false)} 
+                  proMode={proMode}
+                  isMobile={isMobile}
+                />
               </ResizablePanel>
             </>
           )}
