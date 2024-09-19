@@ -37,10 +37,13 @@ def cluster_embeddings(
         if reduce_dimensionality:
             if config.reducer_algorithm == 'umap':
                 reducer = umap.UMAP(
-                    n_components=config.n_components, random_state=42)
+                    n_components=config.n_components,
+                    random_state=None,
+                    n_jobs=-1
+                )
             elif config.reducer_algorithm == 'pca':
                 reducer = PCA(n_components=config.n_components,
-                              random_state=42)
+                              random_state=None)
             else:
                 raise ValueError(
                     f"Unsupported reducer_algorithm: {config.reducer_algorithm}")

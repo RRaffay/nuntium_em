@@ -75,10 +75,13 @@ def sample_articles(
     # Initialize selected and candidate indices
     selected_indices = []
     candidate_indices = list(range(len(urls)))
+    selected_urls = set()  # Add this line to keep track of selected URLs
 
     for _ in range(min(max_articles, len(urls))):
         mmr_scores = []
         for idx in candidate_indices:
+            if urls[idx] in selected_urls:  # Skip if URL already selected
+                continue
             if not selected_indices:
                 diversity = 0
             else:
@@ -90,11 +93,15 @@ def sample_articles(
             mmr_score = combined_scores[idx] - lambda_param * diversity
             mmr_scores.append((mmr_score, idx))
 
+        if not mmr_scores:  # Break if no more unique URLs available
+            break
+
         # Select the candidate with the highest MMR score
         mmr_scores.sort(reverse=True)
         _, best_idx = mmr_scores[0]
         selected_indices.append(best_idx)
+        selected_urls.add(urls[best_idx])
         candidate_indices.remove(best_idx)
 
-    sampled_urls = [urls[i] for i in selected_indices]
+    sampled_urls = list(selected_urls)  # Convert set to list
     return sampled_urls
