@@ -84,7 +84,7 @@ class DevelopmentConfig(BaseConfig):
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330
     REPORT_CACHE_TIMEOUT: int = 3600  # 1 hour
-    METRIC_CACHE_TIMEOUT: int = 43200  # 12 hours
+    METRIC_CACHE_TIMEOUT: int = 1  # 12 hours
 
 
 class ProductionConfig(BaseConfig):

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCountryData } from '@/hooks/useCountryData';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
+import { EconomicIndicatorsChart } from '@/components/EconomicIndicatorsChart';
 import { EventList } from '@/components/EventList';
 import { LowRelevanceEvents } from '@/components/LowRelevanceEvents';
 import { CountryPageHeader } from '@/components/CountryPageHeader';
 import { CountryPageAlertDialog } from '@/components/CountryPageAlertDialog';
-import { Event as ApiEvent, api, CountryMetrics } from '@/services/api';
-import { EconomicIndicatorsChart } from '@/components/EconomicIndicatorsChart';
+import { Event as ApiEvent } from '@/services/api';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { BarChart, LineChart, LayoutPanelLeft } from 'lucide-react'; // Updated import
+import { BarChart, LineChart, LayoutPanelLeft } from 'lucide-react';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -34,29 +34,7 @@ const CountryPage: React.FC = () => {
   } = useReportGeneration(country);
 
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
-  const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita', 'inflation', 'unemployment']);
   const [viewMode, setViewMode] = useState<string>("events");
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      if (country) {
-        try {
-          const metricsData = await api.getCountryMetrics(country);
-          setMetrics(metricsData);
-          // Set initial selected metrics based on available data
-          const availableMetrics = Object.keys(metricsData);
-          setSelectedMetrics(prevSelected =>
-            prevSelected.filter(metric => availableMetrics.includes(metric))
-          );
-        } catch (error) {
-          console.error('Error fetching country metrics:', error);
-        }
-      }
-    };
-
-    fetchMetrics();
-  }, [country]);
 
   const handleBackToDashboard = () => {
     navigate('/');
@@ -71,12 +49,6 @@ const CountryPage: React.FC = () => {
   }
 
   const { highRelevanceEvents, lowRelevanceEvents } = getFilteredEvents(countryData.events);
-
-  const metricOptions = [
-    { value: 'gdp_per_capita', label: 'GDP per Capita' },
-    { value: 'inflation', label: 'Inflation Rate' },
-    { value: 'unemployment', label: 'Unemployment Rate' },
-  ];
 
   const renderEventsSection = () => {
     return (
@@ -122,15 +94,7 @@ const CountryPage: React.FC = () => {
     return (
       <div className="w-full">
         <h2 className="text-2xl font-bold mb-4">Economic Indicators</h2>
-        {metrics ? (
-          <EconomicIndicatorsChart
-            metrics={metrics}
-            selectedMetrics={selectedMetrics}
-            setSelectedMetrics={setSelectedMetrics}
-          />
-        ) : (
-          <div>Loading economic indicators...</div>
-        )}
+        <EconomicIndicatorsChart country={country!} />
       </div>
     );
   };

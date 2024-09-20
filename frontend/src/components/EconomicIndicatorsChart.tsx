@@ -1,20 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { CountryMetrics } from '@/services/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { CountryMetrics, api } from '@/services/api';
 import { Card, CardContent } from "@/components/ui/card";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format } from 'date-fns';
-import { X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Expand } from 'lucide-react';
 import { DialogTitle, DialogHeader } from "@/components/ui/dialog";
 
 interface EconomicIndicatorsChartProps {
-  metrics: CountryMetrics;
-  selectedMetrics: string[];
-  setSelectedMetrics: React.Dispatch<React.SetStateAction<string[]>>;
+  country: string;
 }
 
 const metricOptions = [
@@ -43,14 +39,44 @@ const colors = [
   '#F78C6C', '#C3E88D', '#FF5370', '#89DDFF', '#F07178'
 ];
 
-export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = ({ metrics, selectedMetrics, setSelectedMetrics }) => {
+export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = ({ country }) => {
+  const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita', 'inflation', 'unemployment']);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (country) {
+        try {
+          setLoading(true);
+          const metricsData = await api.getCountryMetrics(country);
+          setMetrics(metricsData);
+          // Set initial selected metrics based on available data
+          const availableMetrics = Object.keys(metricsData);
+          setSelectedMetrics(prevSelected =>
+            prevSelected.filter(metric => availableMetrics.includes(metric))
+          );
+          setError(null);
+        } catch (error) {
+          console.error('Error fetching country metrics:', error);
+          setError('Failed to load economic indicators');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchMetrics();
+  }, [country]);
+
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
   const [dialogSelectedMetrics, setDialogSelectedMetrics] = useState(selectedMetrics);
 
   const chartData = useMemo(() => {
     const dataMap: { [date: string]: any } = {};
     selectedMetrics.forEach((metricKey) => {
-      const metricData = metrics[metricKey];
+      const metricData = metrics?.[metricKey];
       if (!metricData) return;
       metricData.forEach((dataPoint) => {
         if (!dataMap[dataPoint.date]) {
@@ -142,13 +168,22 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     return null;
   };
 
-  const removeMetric = (metricToRemove: string) => {
-    setSelectedMetrics(selectedMetrics.filter(metric => metric !== metricToRemove));
-  };
 
   const handleDialogApply = (newSelected: string[]) => {
     setSelectedMetrics(newSelected);
   };
+
+  if (loading) {
+    return <div>Loading economic indicators...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
+  if (!metrics) {
+    return <div>No economic data available</div>;
+  }
 
   return (
     <Card className="mt-4">
