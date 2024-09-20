@@ -4,12 +4,18 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 
+interface Option {
+  value: string;
+  label: string;
+}
+
 interface MultiSelectProps {
-  options: { value: string; label: string }[];
+  options: Option[];
   selected: string[];
   onChange: (selected: string[]) => void;
   className?: string;
   maxSelections?: number;
+  minSelections?: number;
   expanded?: boolean;
   onClose?: () => void;
 }
@@ -18,27 +24,29 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   options,
   selected,
   onChange,
-  className,
+  className = '',
   maxSelections = Infinity,
+  minSelections = 0,
   expanded = false,
   onClose
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [localSelected, setLocalSelected] = useState(selected);
+  const [localSelected, setLocalSelected] = useState<string[]>(selected);
 
   useEffect(() => {
     setLocalSelected(selected);
   }, [selected]);
 
   const handleValueChange = (value: string, checked: boolean) => {
-    let newSelected;
-    if (checked && localSelected.length < maxSelections) {
-      newSelected = [...localSelected, value];
-    } else if (!checked) {
-      newSelected = localSelected.filter(item => item !== value);
-    } else {
-      return; // Do nothing if trying to add more than maxSelections
+    let newSelected = checked
+      ? [...localSelected, value].slice(0, maxSelections)
+      : localSelected.filter(item => item !== value);
+
+    // Ensure at least minSelections are selected
+    if (newSelected.length < minSelections) {
+      newSelected = localSelected;
     }
+
     setLocalSelected(newSelected);
     onChange(newSelected);
   };
@@ -49,8 +57,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       .sort((a, b) => {
         const aSelected = localSelected.includes(a.value);
         const bSelected = localSelected.includes(b.value);
-        if (aSelected === bSelected) return a.label.localeCompare(b.label);
-        return aSelected ? -1 : 1;
+        return aSelected === bSelected ? a.label.localeCompare(b.label) : aSelected ? -1 : 1;
       });
   }, [options, localSelected, searchTerm]);
 
@@ -71,7 +78,10 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                 id={option.value}
                 checked={localSelected.includes(option.value)}
                 onCheckedChange={(checked) => handleValueChange(option.value, checked as boolean)}
-                disabled={!localSelected.includes(option.value) && localSelected.length >= maxSelections}
+                disabled={
+                  (!localSelected.includes(option.value) && localSelected.length >= maxSelections) ||
+                  (localSelected.includes(option.value) && localSelected.length <= minSelections)
+                }
               />
               <Label htmlFor={option.value}>{option.label}</Label>
             </div>

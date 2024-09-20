@@ -76,7 +76,7 @@ class DevelopmentConfig(BaseConfig):
         "generate_country_report": "30/hour",
         "generate_event_report": "30/hour",
         "research_chat": "20/hour",
-        "get_country_metrics": "20/hour"
+        "get_country_metrics": "40/hour"
     }
     MAX_REVISIONS_REPORT: int = 1
     REVISION_NUMBER_REPORT: int = 1
@@ -84,7 +84,7 @@ class DevelopmentConfig(BaseConfig):
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330
     REPORT_CACHE_TIMEOUT: int = 3600  # 1 hour
-    METRIC_CACHE_TIMEOUT: int = 1  # 12 hours
+    METRIC_CACHE_TIMEOUT: int = 10  # 12 hours
 
 
 class ProductionConfig(BaseConfig):

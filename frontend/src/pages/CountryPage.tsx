@@ -142,13 +142,13 @@ const CountryPage: React.FC = () => {
       <br />
       {viewMode === "both" ? (
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={25}>
+          <ResizablePanel defaultSize={30}>
             <div className="p-4">
               {renderEventsSection()}
             </div>
           </ResizablePanel>
           <ResizableHandle />
-          <ResizablePanel defaultSize={75}>
+          <ResizablePanel defaultSize={70}>
             <div className="p-4">
               {renderChartsSection()}
             </div>
