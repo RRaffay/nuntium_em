@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CountryMetrics, api } from '@/services/api';
+import { CountryMetrics, MetricInfo, api } from '@/services/api';
 import { Card, CardContent } from "@/components/ui/card";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -8,31 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Expand } from 'lucide-react';
 import { DialogTitle, DialogHeader } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface EconomicIndicatorsChartProps {
   country: string;
 }
-
-const metricOptions = [
-  { value: 'gdp_per_capita', label: 'GDP per Capita', unit: 'USD' },
-  { value: 'gdp_growth', label: 'GDP Growth', unit: '%' },
-  { value: 'inflation', label: 'Inflation Rate', unit: '%' },
-  { value: 'unemployment', label: 'Unemployment Rate', unit: '%' },
-  { value: 'current_account_balance', label: 'Current Account Balance', unit: 'USD' },
-  { value: 'foreign_exchange_reserves', label: 'Foreign Exchange Reserves', unit: 'USD' },
-  { value: 'debt_to_gdp', label: 'Debt to GDP', unit: '%' },
-  { value: 'population', label: 'Population', unit: 'people' },
-  { value: 'exports_of_goods_and_services', label: 'Exports of Goods and Services', unit: '% of GDP' },
-  { value: 'imports_of_goods_and_services', label: 'Imports of Goods and Services', unit: '% of GDP' },
-  { value: 'manufacturing_value_added', label: 'Manufacturing Value Added', unit: '% of GDP' },
-  { value: 'exchange_rate', label: 'Exchange Rate', unit: 'Local Currency/USD' },
-  { value: 'stock_index', label: 'Stock Index', unit: 'points' },
-  { value: 'commodity_price', label: 'Commodity Price', unit: 'USD' },
-  { value: 'trade_balance', label: 'Trade Balance', unit: '% of GDP' },
-  { value: 'stock_market_volatility', label: 'Stock Market Volatility', unit: '%' },
-  { value: 'exchange_rate_volatility', label: 'Exchange Rate Volatility', unit: '%' },
-  { value: 'real_effective_exchange_rate', label: 'Real Effective Exchange Rate', unit: 'index' },
-];
 
 const colors = [
   '#4C9AFF', '#F78C6C', '#82AAFF', '#C792EA', '#7FD1FF',
@@ -41,10 +22,12 @@ const colors = [
 
 export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = ({ country }) => {
   const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita', 'inflation', 'unemployment']);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [showMaxAlert, setShowMaxAlert] = useState(false);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -52,18 +35,29 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         try {
           setLoading(true);
           const metricsData = await api.getCountryMetrics(country);
-          setMetrics(metricsData);
-          // Set available metrics based on data
-          const availableMetrics = Object.keys(metricsData).filter(key => metricsData[key].length > 0);
-          setAvailableMetrics(availableMetrics);
-          // Set initial selected metrics based on available data
-          setSelectedMetrics(prevSelected =>
-            prevSelected.filter(metric => availableMetrics.includes(metric))
-          );
-          setError(null);
+
+          if (metricsData && typeof metricsData === 'object' && Object.keys(metricsData).length > 0) {
+            setMetrics(metricsData);
+            // Set available metrics based on data
+            const availableMetrics = Object.keys(metricsData).filter(key =>
+              metricsData[key] && metricsData[key].data && metricsData[key].data.length > 0
+            );
+            setAvailableMetrics(availableMetrics);
+            // Set initial selected metrics based on available data
+            setSelectedMetrics(prevSelected => {
+              const filtered = prevSelected.filter(metric => availableMetrics.includes(metric));
+              return filtered.length > 0 ? filtered : availableMetrics.slice(0, 3);
+            });
+            setError(null);
+          } else {
+            throw new Error('No valid metrics data received');
+          }
         } catch (error) {
           console.error('Error fetching country metrics:', error);
           setError('Failed to load economic indicators');
+          setMetrics(null);
+          setAvailableMetrics([]);
+          setSelectedMetrics([]);
         } finally {
           setLoading(false);
         }
@@ -77,11 +71,14 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [dialogSelectedMetrics, setDialogSelectedMetrics] = useState(selectedMetrics);
 
   const chartData = useMemo(() => {
+    if (!metrics || !selectedMetrics || selectedMetrics.length === 0) {
+      return [];
+    }
     const dataMap: { [date: string]: any } = {};
     selectedMetrics.forEach((metricKey) => {
-      const metricData = metrics?.[metricKey];
-      if (!metricData) return;
-      metricData.forEach((dataPoint) => {
+      const metricInfo = metrics[metricKey];
+      if (!metricInfo || !metricInfo.data) return;
+      metricInfo.data.forEach((dataPoint) => {
         if (!dataMap[dataPoint.date]) {
           dataMap[dataPoint.date] = { date: new Date(dataPoint.date) };
         }
@@ -91,10 +88,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     return Object.values(dataMap).sort((a, b) => a.date - b.date);
   }, [metrics, selectedMetrics]);
 
-  const formatValue = (value: number, metric: string, forTooltip: boolean = false): string => {
-    const option = metricOptions.find(o => o.value === metric);
-    if (!option) return value.toString();
-    const unit = option.unit;
+  const formatValue = (value: number, metricKey: string, forTooltip: boolean = false): string => {
+    const metricInfo = metrics?.[metricKey];
+    if (!metricInfo) return value.toString();
+    const { unit } = metricInfo;
 
     let formattedValue = value;
     let suffix = '';
@@ -120,10 +117,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     return formattedValue.toFixed(4);
   };
 
-  const formatYAxisTick = (value: number, metric: string): string => {
-    const option = metricOptions.find(o => o.value === metric);
-    if (!option) return value.toString();
-    const unit = option.unit;
+  const formatYAxisTick = (value: number, metricKey: string): string => {
+    const metricInfo = metrics?.[metricKey];
+    if (!metricInfo) return value.toString();
+    const { unit } = metricInfo;
     let formattedValue = value;
     let suffix = '';
 
@@ -157,10 +154,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         <div className="bg-background p-4 border border-border rounded-md shadow-md">
           <p className="font-bold">{format(new Date(label), 'MMM d, yyyy')}</p>
           {payload.map((entry: any, index: number) => {
-            const option = metricOptions.find(o => o.value === entry.dataKey);
+            const metricInfo = metrics?.[entry.dataKey];
             return (
               <p key={index} style={{ color: entry.color }}>
-                {entry.name}: {formatValue(entry.value, entry.dataKey, true)} {option?.unit}
+                {metricInfo?.label}: {formatValue(entry.value, entry.dataKey, true)} {metricInfo?.unit}
               </p>
             );
           })}
@@ -170,9 +167,16 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     return null;
   };
 
-
   const handleDialogApply = (newSelected: string[]) => {
     setSelectedMetrics(newSelected);
+    setDialogSelectedMetrics(newSelected);
+    setShowMaxAlert(newSelected.length === 4);
+  };
+
+  const handleMetricsChange = (newSelectedMetrics: string[]) => {
+    setSelectedMetrics(newSelectedMetrics);
+    setDialogSelectedMetrics(newSelectedMetrics);
+    setShowMaxAlert(newSelectedMetrics.length === 4);
   };
 
   if (loading) {
@@ -183,7 +187,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     return <div className="text-red-500">{error}</div>;
   }
 
-  if (!metrics) {
+  if (!metrics || Object.keys(metrics).length === 0 || selectedMetrics.length === 0) {
     return <div>No economic data available</div>;
   }
 
@@ -195,17 +199,25 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           <div className="flex items-start space-x-2">
             <div className="flex-grow">
               <MultiSelect
-                options={metricOptions.filter(option => availableMetrics.includes(option.value))}
+                options={availableMetrics.map(metricKey => ({
+                  value: metricKey,
+                  label: metrics?.[metricKey]?.label || metricKey
+                }))}
                 selected={selectedMetrics}
-                onChange={setSelectedMetrics}
+                onChange={handleMetricsChange}
                 className="w-full"
                 maxSelections={4}
                 expanded={false}
               />
             </div>
-            <Dialog>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="flex-shrink-0"
+                  onClick={() => setDialogSelectedMetrics(selectedMetrics)}
+                >
                   <Expand className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
@@ -215,7 +227,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                 </DialogHeader>
                 <div className="mt-4">
                   <MultiSelect
-                    options={metricOptions}
+                    options={Object.keys(metrics).map(metricKey => ({
+                      value: metricKey,
+                      label: metrics[metricKey].label
+                    }))}
                     selected={dialogSelectedMetrics}
                     onChange={handleDialogApply}
                     className="w-full"
@@ -223,9 +238,25 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                     expanded={true}
                   />
                 </div>
+                {showMaxAlert && (
+                  <Alert variant="default" className="mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Maximum of 4 metrics selected. Remove a metric to add another.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </DialogContent>
             </Dialog>
           </div>
+          {showMaxAlert && (
+            <Alert variant="default" className="mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Maximum of 4 metrics selected. Remove a metric to add another.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
         <ResponsiveContainer width="100%" height={500}>
           <LineChart data={chartData} margin={{ top: 5, right: 40, left: 40, bottom: 20 }}>
@@ -255,7 +286,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                 dataKey={metricKey}
                 yAxisId={metricKey}
                 stroke={colors[index % colors.length]}
-                name={metricOptions.find(option => option.value === metricKey)?.label}
+                name={metrics?.[metricKey]?.label || metricKey}
                 dot={false}
                 strokeWidth={hoveredMetric === null || hoveredMetric === metricKey ? 2 : 1}
                 opacity={hoveredMetric === null || hoveredMetric === metricKey ? 1 : 0.3}

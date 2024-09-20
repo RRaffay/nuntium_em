@@ -53,8 +53,19 @@ export interface IndicatorDataPoint {
   value: number;
 }
 
+export interface MetricDataPoint {
+  date: string;
+  value: number;
+}
+
+export interface MetricInfo {
+  data: MetricDataPoint[];
+  label: string;
+  unit: string;
+}
+
 export interface CountryMetrics {
-  [key: string]: IndicatorDataPoint[];
+  [key: string]: MetricInfo;
 }
 
 const getAuthHeaders = (): HeadersInit => {

@@ -3,7 +3,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 interface MultiSelectProps {
   options: { value: string; label: string }[];
@@ -12,6 +11,7 @@ interface MultiSelectProps {
   className?: string;
   maxSelections?: number;
   expanded?: boolean;
+  onClose?: () => void;
 }
 
 export const MultiSelect: React.FC<MultiSelectProps> = ({
@@ -20,7 +20,8 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   onChange,
   className,
   maxSelections = Infinity,
-  expanded = false
+  expanded = false,
+  onClose
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [localSelected, setLocalSelected] = useState(selected);
@@ -39,9 +40,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       return; // Do nothing if trying to add more than maxSelections
     }
     setLocalSelected(newSelected);
-    if (!expanded) {
-      onChange(newSelected);
-    }
+    onChange(newSelected);
   };
 
   const filteredAndSortedOptions = useMemo(() => {
@@ -55,14 +54,6 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       });
   }, [options, localSelected, searchTerm]);
 
-  const handleApply = () => {
-    onChange(localSelected);
-  };
-
-  const handleReset = () => {
-    setLocalSelected(selected);
-  };
-
   return (
     <div className={`flex flex-col ${className}`}>
       <Input
@@ -72,7 +63,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-2"
       />
-      <ScrollArea className={`${expanded ? 'h-[200px]' : 'h-[100px]'} mb-4`}>
+      <ScrollArea className={`${expanded ? 'h-[400px]' : 'h-[100px]'} mb-4`}>
         <div className="space-y-2 p-2">
           {filteredAndSortedOptions.map(option => (
             <div key={option.value} className="flex items-center space-x-2">
@@ -87,12 +78,6 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
           ))}
         </div>
       </ScrollArea>
-      {expanded && (
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={handleReset}>Reset</Button>
-          <Button onClick={handleApply}>Apply</Button>
-        </div>
-      )}
     </div>
   );
 };

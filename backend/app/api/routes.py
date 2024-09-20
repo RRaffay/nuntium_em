@@ -279,7 +279,7 @@ async def get_country_metrics_route(request: Request, country: str, user: User =
         user (User): The current active user.
 
     Returns:
-        Dict[str, Any]: A dictionary containing the metrics data.
+        Dict[str, Any]: A dictionary containing the metrics data, labels, and units.
     """
     limiter.key_func = lambda: str(user.id)
     try:
