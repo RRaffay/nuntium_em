@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface MultiSelectProps {
   options: { value: string; label: string }[];
@@ -10,16 +11,36 @@ interface MultiSelectProps {
   onChange: (selected: string[]) => void;
   className?: string;
   maxSelections?: number;
+  expanded?: boolean;
 }
 
-export const MultiSelect: React.FC<MultiSelectProps> = ({ options, selected, onChange, className, maxSelections = Infinity }) => {
+export const MultiSelect: React.FC<MultiSelectProps> = ({
+  options,
+  selected,
+  onChange,
+  className,
+  maxSelections = Infinity,
+  expanded = false
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [localSelected, setLocalSelected] = useState(selected);
+
+  useEffect(() => {
+    setLocalSelected(selected);
+  }, [selected]);
 
   const handleValueChange = (value: string, checked: boolean) => {
-    if (checked && selected.length < maxSelections) {
-      onChange([...selected, value]);
+    let newSelected;
+    if (checked && localSelected.length < maxSelections) {
+      newSelected = [...localSelected, value];
     } else if (!checked) {
-      onChange(selected.filter(item => item !== value));
+      newSelected = localSelected.filter(item => item !== value);
+    } else {
+      return; // Do nothing if trying to add more than maxSelections
+    }
+    setLocalSelected(newSelected);
+    if (!expanded) {
+      onChange(newSelected);
     }
   };
 
@@ -27,12 +48,20 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({ options, selected, onC
     return options
       .filter(option => option.label.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a, b) => {
-        const aSelected = selected.includes(a.value);
-        const bSelected = selected.includes(b.value);
+        const aSelected = localSelected.includes(a.value);
+        const bSelected = localSelected.includes(b.value);
         if (aSelected === bSelected) return a.label.localeCompare(b.label);
         return aSelected ? -1 : 1;
       });
-  }, [options, selected, searchTerm]);
+  }, [options, localSelected, searchTerm]);
+
+  const handleApply = () => {
+    onChange(localSelected);
+  };
+
+  const handleReset = () => {
+    setLocalSelected(selected);
+  };
 
   return (
     <div className={`flex flex-col ${className}`}>
@@ -43,21 +72,27 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({ options, selected, onC
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-2"
       />
-      <ScrollArea className="h-[80px]">
+      <ScrollArea className={`${expanded ? 'h-[200px]' : 'h-[100px]'} mb-4`}>
         <div className="space-y-2 p-2">
           {filteredAndSortedOptions.map(option => (
             <div key={option.value} className="flex items-center space-x-2">
               <Checkbox
                 id={option.value}
-                checked={selected.includes(option.value)}
+                checked={localSelected.includes(option.value)}
                 onCheckedChange={(checked) => handleValueChange(option.value, checked as boolean)}
-                disabled={!selected.includes(option.value) && selected.length >= maxSelections}
+                disabled={!localSelected.includes(option.value) && localSelected.length >= maxSelections}
               />
               <Label htmlFor={option.value}>{option.label}</Label>
             </div>
           ))}
         </div>
       </ScrollArea>
+      {expanded && (
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline" onClick={handleReset}>Reset</Button>
+          <Button onClick={handleApply}>Apply</Button>
+        </div>
+      )}
     </div>
   );
 };

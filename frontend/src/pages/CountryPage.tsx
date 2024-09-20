@@ -36,7 +36,7 @@ const CountryPage: React.FC = () => {
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
   const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita', 'inflation', 'unemployment']);
-  const [viewMode, setViewMode] = useState<string>("both");
+  const [viewMode, setViewMode] = useState<string>("events");
 
   useEffect(() => {
     const fetchMetrics = async () => {
