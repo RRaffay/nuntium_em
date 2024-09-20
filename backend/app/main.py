@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
         ],
     )
     app.state.limiter = limiter
-    # await setup_cache()
+    await setup_cache()
     yield
 
 

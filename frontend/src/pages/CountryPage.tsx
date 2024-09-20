@@ -8,6 +8,9 @@ import { CountryPageHeader } from '@/components/CountryPageHeader';
 import { CountryPageAlertDialog } from '@/components/CountryPageAlertDialog';
 import { Event as ApiEvent, api, CountryMetrics } from '@/services/api';
 import { EconomicIndicatorsChart } from '@/components/EconomicIndicatorsChart';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { BarChart, LineChart, LayoutPanelLeft } from 'lucide-react'; // Updated import
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -20,7 +23,7 @@ const CountryPage: React.FC = () => {
     handleGenerateEventReport,
     isGeneratingCountryReport,
     isGeneratingEventReport,
-    countryReportProgress, 
+    countryReportProgress,
     eventReportProgress,
     countryReportError,
     eventReportErrors,
@@ -32,16 +35,23 @@ const CountryPage: React.FC = () => {
 
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
   const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita']);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita', 'inflation', 'unemployment']);
+  const [viewMode, setViewMode] = useState<string>("both");
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      try {
-        const metricsData = await api.getCountryMetrics(country as string);
-        console.log('Fetched metrics:', Object.keys(metricsData));
-        setMetrics(metricsData);
-      } catch (error) {
-        console.error('Error fetching country metrics:', error);
+      if (country) {
+        try {
+          const metricsData = await api.getCountryMetrics(country);
+          setMetrics(metricsData);
+          // Set initial selected metrics based on available data
+          const availableMetrics = Object.keys(metricsData);
+          setSelectedMetrics(prevSelected =>
+            prevSelected.filter(metric => availableMetrics.includes(metric))
+          );
+        } catch (error) {
+          console.error('Error fetching country metrics:', error);
+        }
       }
     };
 
@@ -68,22 +78,61 @@ const CountryPage: React.FC = () => {
     { value: 'unemployment', label: 'Unemployment Rate' },
   ];
 
-  const mergeChartData = (metrics: CountryMetrics, selectedMetrics: string[]) => {
-    const dataMap: { [date: string]: any } = {};
+  const renderEventsSection = () => {
+    return (
+      <div className="w-full">
+        <h2 className="text-2xl font-bold mb-4">Events</h2>
+        {highRelevanceEvents.length > 0 ? (
+          <EventList
+            events={highRelevanceEvents}
+            eventReports={eventReports}
+            isGeneratingEventReport={isGeneratingEventReport}
+            eventReportProgress={eventReportProgress}
+            eventReportErrors={eventReportErrors}
+            onGenerateEventReport={handleGenerateEventReport}
+            isAnyReportGenerating={isAnyReportGenerating}
+          />
+        ) : (
+          <div className="text-center py-4">
+            <p>No highly relevant events found for this country.</p>
+            {lowRelevanceEvents.length > 0 && (
+              <p>You can still view events with lower relevance scores below.</p>
+            )}
+          </div>
+        )}
 
-    selectedMetrics.forEach((metricKey) => {
-      const metricData = metrics[metricKey];
-      metricData.forEach((dataPoint) => {
-        if (!dataMap[dataPoint.date]) {
-          dataMap[dataPoint.date] = { date: dataPoint.date };
-        }
-        dataMap[dataPoint.date][metricKey] = dataPoint.value;
-      });
-    });
+        {lowRelevanceEvents.length > 0 && (
+          <LowRelevanceEvents
+            events={lowRelevanceEvents}
+            showLowRelevanceEvents={showLowRelevanceEvents}
+            setShowLowRelevanceEvents={setShowLowRelevanceEvents}
+            eventReports={eventReports}
+            isGeneratingEventReport={isGeneratingEventReport}
+            eventReportProgress={eventReportProgress}
+            eventReportErrors={eventReportErrors}
+            onGenerateEventReport={handleGenerateEventReport}
+            isAnyReportGenerating={isAnyReportGenerating}
+          />
+        )}
+      </div>
+    );
+  };
 
-    return Object.values(dataMap)
-      .filter(d => d.date && !isNaN(parseInt(d.date)))
-      .sort((a, b) => parseInt(a.date) - parseInt(b.date));
+  const renderChartsSection = () => {
+    return (
+      <div className="w-full">
+        <h2 className="text-2xl font-bold mb-4">Economic Indicators</h2>
+        {metrics ? (
+          <EconomicIndicatorsChart
+            metrics={metrics}
+            selectedMetrics={selectedMetrics}
+            setSelectedMetrics={setSelectedMetrics}
+          />
+        ) : (
+          <div>Loading economic indicators...</div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -99,46 +148,53 @@ const CountryPage: React.FC = () => {
         countryReportError={countryReportError}
         isAnyReportGenerating={isAnyReportGenerating}
       />
-      <br/>
-      {highRelevanceEvents.length > 0 ? (
-        <EventList
-          events={highRelevanceEvents}
-          eventReports={eventReports}
-          isGeneratingEventReport={isGeneratingEventReport}
-          eventReportProgress={eventReportProgress}
-          eventReportErrors={eventReportErrors}
-          onGenerateEventReport={handleGenerateEventReport}
-          isAnyReportGenerating={isAnyReportGenerating}
-        />
+      <br />
+      <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)} className="justify-center">
+        <ToggleGroupItem
+          value="events"
+          aria-label="Toggle events view"
+          className={`data-[state=on]:bg-primary data-[state=on]:text-primary-foreground`}
+        >
+          <BarChart className="h-4 w-4 mr-2" />
+          Events
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="charts"
+          aria-label="Toggle charts view"
+          className={`data-[state=on]:bg-primary data-[state=on]:text-primary-foreground`}
+        >
+          <LineChart className="h-4 w-4 mr-2" />
+          Charts
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="both"
+          aria-label="Toggle both views"
+          className={`data-[state=on]:bg-primary data-[state=on]:text-primary-foreground`}
+        >
+          <LayoutPanelLeft className="h-4 w-4 mr-2" />
+          Both
+        </ToggleGroupItem>
+      </ToggleGroup>
+      <br />
+      {viewMode === "both" ? (
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={25}>
+            <div className="p-4">
+              {renderEventsSection()}
+            </div>
+          </ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={75}>
+            <div className="p-4">
+              {renderChartsSection()}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       ) : (
-        <div className="text-center py-4">
-          <p>No highly relevant events found for this country.</p>
-          {lowRelevanceEvents.length > 0 && (
-            <p>You can still view events with lower relevance scores below.</p>
-          )}
+        <div className="flex flex-col lg:flex-row lg:space-x-8">
+          {viewMode === "events" && renderEventsSection()}
+          {viewMode === "charts" && renderChartsSection()}
         </div>
-      )}
-
-      {lowRelevanceEvents.length > 0 && (
-        <LowRelevanceEvents
-          events={lowRelevanceEvents}
-          showLowRelevanceEvents={showLowRelevanceEvents}
-          setShowLowRelevanceEvents={setShowLowRelevanceEvents}
-          eventReports={eventReports}
-          isGeneratingEventReport={isGeneratingEventReport}
-          eventReportProgress={eventReportProgress}
-          eventReportErrors={eventReportErrors}
-          onGenerateEventReport={handleGenerateEventReport}
-          isAnyReportGenerating={isAnyReportGenerating}
-        />
-      )}
-
-      {metrics && (
-        <EconomicIndicatorsChart
-          metrics={metrics}
-          selectedMetrics={selectedMetrics}
-          setSelectedMetrics={setSelectedMetrics}
-        />
       )}
 
       {rateLimitError && (
@@ -160,7 +216,7 @@ const CountryPage: React.FC = () => {
 const getFilteredEvents = (events: ApiEvent[]) => {
   const highRelevanceEvents = events.filter(event => event.relevance_score >= 4);
   const lowRelevanceEvents = events.filter(event => event.relevance_score < 4);
-  
+
   return {
     highRelevanceEvents: highRelevanceEvents.sort((a, b) => b.relevance_score - a.relevance_score),
     lowRelevanceEvents: lowRelevanceEvents.sort((a, b) => b.relevance_score - a.relevance_score)

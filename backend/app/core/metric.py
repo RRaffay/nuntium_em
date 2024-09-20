@@ -9,7 +9,7 @@ from typing import Dict, Any, List
 from requests.exceptions import RequestException, HTTPError
 import os
 from dotenv import load_dotenv
-import time
+from config import settings
 
 load_dotenv()
 
@@ -105,6 +105,66 @@ COUNTRY_COMMODITY_DEPENDENCE = {
     "South Africa": "GC=F",
     # Add more mappings as needed
 }
+
+
+def get_country_metrics(country_name: str) -> Dict[str, Any]:
+    """
+    Fetches all indicators for a given country and calculates derivative metrics.
+    This function is now cached with a time limit specified in the config settings.
+
+    Args:
+        country_name (str): The name of the country.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing the indicator data.
+    """
+    country_code = COUNTRY_NAME_TO_ISO2.get(country_name)
+    if not country_code:
+        raise ValueError(f"Country code for {country_name} not found.")
+
+    metrics = {}
+    # Fetch World Bank indicators
+    for metric_name, indicator_code in INDICATORS.items():
+        try:
+            data = fetch_indicator_data(country_code, indicator_code)
+            # Process data to get time series
+            processed_data = []
+            for entry in data:
+                if entry['value'] is not None:
+                    processed_data.append({
+                        'date': entry['date'],
+                        'value': entry['value']
+                    })
+            # Reverse the list to have chronological order
+            metrics[metric_name] = processed_data[::-1]
+            logger.info(f"Successfully calculated metric: {metric_name}")
+        except Exception as e:
+            logger.error(
+                f"Error calculating metric {metric_name} for {country_name}: {e}")
+            metrics[metric_name] = []  # Use an empty list for failed fetches
+
+    # Fetch exchange rate data
+    currency_pair = CURRENCY_PAIRS.get(country_name)
+    if currency_pair:
+        exchange_rate_data = fetch_exchange_rate_series(currency_pair)
+        metrics['exchange_rate'] = exchange_rate_data
+
+    # Fetch stock index data
+    stock_index_symbol = STOCK_INDEX_SYMBOLS.get(country_name)
+    if stock_index_symbol:
+        stock_index_data = fetch_stock_index_series(stock_index_symbol)
+        metrics['stock_index'] = stock_index_data
+
+    # Fetch commodity prices if the country is commodity-dependent
+    commodity_symbol = COUNTRY_COMMODITY_DEPENDENCE.get(country_name)
+    if commodity_symbol:
+        commodity_price_data = fetch_commodity_price(commodity_symbol)
+        metrics['commodity_price'] = commodity_price_data
+
+    # Calculate derivative metrics
+    metrics = calculate_derivative_metrics(metrics, country_name)
+
+    return metrics
 
 
 def fetch_indicator_data(country_code: str, indicator_code: str) -> List[Dict[str, Any]]:
@@ -336,63 +396,4 @@ def calculate_derivative_metrics(metrics: Dict[str, Any], country_name: str) -> 
                 f"Unable to calculate derivative metric: {metric_name}")
 
     metrics.update(derivative_metrics)
-    return metrics
-
-
-def get_country_metrics(country_name: str) -> Dict[str, Any]:
-    """
-    Fetches all indicators for a given country and calculates derivative metrics.
-
-    Args:
-        country_name (str): The name of the country.
-
-    Returns:
-        Dict[str, Any]: A dictionary containing the indicator data.
-    """
-    country_code = COUNTRY_NAME_TO_ISO2.get(country_name)
-    if not country_code:
-        raise ValueError(f"Country code for {country_name} not found.")
-
-    metrics = {}
-    # Fetch World Bank indicators
-    for metric_name, indicator_code in INDICATORS.items():
-        try:
-            data = fetch_indicator_data(country_code, indicator_code)
-            # Process data to get time series
-            processed_data = []
-            for entry in data:
-                if entry['value'] is not None:
-                    processed_data.append({
-                        'date': entry['date'],
-                        'value': entry['value']
-                    })
-            # Reverse the list to have chronological order
-            metrics[metric_name] = processed_data[::-1]
-            logger.info(f"Successfully calculated metric: {metric_name}")
-        except Exception as e:
-            logger.error(
-                f"Error calculating metric {metric_name} for {country_name}: {e}")
-            metrics[metric_name] = []  # Use an empty list for failed fetches
-
-    # Fetch exchange rate data
-    currency_pair = CURRENCY_PAIRS.get(country_name)
-    if currency_pair:
-        exchange_rate_data = fetch_exchange_rate_series(currency_pair)
-        metrics['exchange_rate'] = exchange_rate_data
-
-    # Fetch stock index data
-    stock_index_symbol = STOCK_INDEX_SYMBOLS.get(country_name)
-    if stock_index_symbol:
-        stock_index_data = fetch_stock_index_series(stock_index_symbol)
-        metrics['stock_index'] = stock_index_data
-
-    # Fetch commodity prices if the country is commodity-dependent
-    commodity_symbol = COUNTRY_COMMODITY_DEPENDENCE.get(country_name)
-    if commodity_symbol:
-        commodity_price_data = fetch_commodity_price(commodity_symbol)
-        metrics['commodity_price'] = commodity_price_data
-
-    # Calculate derivative metrics
-    metrics = calculate_derivative_metrics(metrics, country_name)
-
     return metrics

@@ -26,40 +26,42 @@ export const EventList: React.FC<EventListProps> = ({
   isAnyReportGenerating,
 }) => {
   return (
-    <Accordion type="single" collapsible className="w-full">
-      {events.map((event) => (
-        <AccordionItem key={event.id} value={event.id}>
-          <AccordionTrigger className="flex justify-between items-center">
-            <span>{event.title}</span>
-          </AccordionTrigger>
-          <AccordionContent>
-            <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
-            <MarkdownContent content={event.event_summary} />
-            <div className="flex space-x-2 mt-2 items-center">
-              <ArticleDialog event={event} />
-              <div className="relative inline-block">
-                <ReportDialog 
-                  report={eventReports[event.id]} 
-                  isLoading={isGeneratingEventReport[event.id] || false} 
-                  onGenerate={() => onGenerateEventReport(event.id)}
-                  error={eventReportErrors[event.id] || null}
-                  title={`Event Report`}
-                  onClose={() => {}}
-                  progress={eventReportProgress[event.id] || 0}
-                  autoGenerateOnOpen={false}
-                  buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
-                  canOpen={!isAnyReportGenerating}
-                />
-                {isGeneratingEventReport[event.id] && (
-                  <div className="w-full sm:w-auto mt-2">
-                    <Progress className="w-full" value={eventReportProgress[event.id] || 0} />
-                  </div>
-                )}
+    <div className="mt-4">
+      <Accordion type="single" collapsible className="w-full">
+        {events.map((event) => (
+          <AccordionItem key={event.id} value={event.id}>
+            <AccordionTrigger className="flex justify-between items-center">
+              <span>{event.title}</span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
+              <MarkdownContent content={event.event_summary} />
+              <div className="flex space-x-2 mt-4 items-center">
+                <ArticleDialog event={event} />
+                <div className="relative inline-block">
+                  <ReportDialog 
+                    report={eventReports[event.id]} 
+                    isLoading={isGeneratingEventReport[event.id] || false} 
+                    onGenerate={() => onGenerateEventReport(event.id)}
+                    error={eventReportErrors[event.id] || null}
+                    title={`Event Report`}
+                    onClose={() => {}}
+                    progress={eventReportProgress[event.id] || 0}
+                    autoGenerateOnOpen={false}
+                    buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
+                    canOpen={!isAnyReportGenerating}
+                  />
+                  {isGeneratingEventReport[event.id] && (
+                    <div className="w-full sm:w-auto mt-2">
+                      <Progress className="w-full" value={eventReportProgress[event.id] || 0} />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
   );
 };
