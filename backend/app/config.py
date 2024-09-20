@@ -24,6 +24,7 @@ class BaseConfig(BaseSettings):
     MAIL_SERVER: str = "smtp.gmail.com"
     FRONTEND_URL: str = "http://localhost:3000"
     RATE_LIMITS: Dict[str, str]
+    ECONDB_API_KEY: str
 
     # Logging configuration
     LOG_LEVEL: str = "INFO"
@@ -84,7 +85,7 @@ class DevelopmentConfig(BaseConfig):
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330
     REPORT_CACHE_TIMEOUT: int = 3600  # 1 hour
-    METRIC_CACHE_TIMEOUT: int = 300  # 12 hours
+    METRIC_CACHE_TIMEOUT: int = 10
 
 
 class ProductionConfig(BaseConfig):

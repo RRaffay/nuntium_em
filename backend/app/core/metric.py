@@ -1,5 +1,3 @@
-# core/metric.py
-
 import yfinance as yf
 import requests
 import pandas as pd
@@ -7,154 +5,84 @@ import numpy as np
 import logging
 from typing import Dict, Any, List
 from requests.exceptions import RequestException, HTTPError
-import os
 from dotenv import load_dotenv
 from config import settings
+import json
+import os
+import traceback
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# Set your API keys here or use environment variables
-# Remove TradingEconomics API since we're focusing on available data
-# TRADING_ECONOMICS_API_KEY = os.getenv('TRADING_ECONOMICS_API_KEY')
-
 WORLD_BANK_API_URL = "https://api.worldbank.org/v2"
 
-# Map country names to ISO 3166-1 alpha-2 codes
-COUNTRY_NAME_TO_ISO2 = {
-    "Argentina": "AR",
-    "Brazil": "BR",
-    "China": "CN",
-    "India": "IN",
-    "South Africa": "ZA",
-    "Pakistan": "PK",
-    "Indonesia": "ID",
-    "Nigeria": "NG",
-    "Mexico": "MX",
-    "Ethiopia": "ET",
-    "Philippines": "PH",
-    "Egypt": "EG",
-    "Vietnam": "VN",
-    "Democratic Republic of the Congo": "CD",
-    "Russia": "RU",
-    "Saudi Arabia": "SA",
-    # Add more country mappings as needed
-}
 
-# Define the indicators we want to fetch from the World Bank API
-INDICATORS = {
-    "gdp_per_capita": {
-        "code": "NY.GDP.PCAP.CD",
-        "label": "GDP per Capita",
-        "unit": "USD"
-    },
-    "gdp_growth": {
-        "code": "NY.GDP.MKTP.KD.ZG",
-        "label": "GDP Growth",
-        "unit": "%"
-    },
-    "inflation": {
-        "code": "FP.CPI.TOTL.ZG",
-        "label": "Inflation Rate",
-        "unit": "%"
-    },
-    "unemployment": {
-        "code": "SL.UEM.TOTL.ZS",
-        "label": "Unemployment Rate",
-        "unit": "%"
-    },
-    "current_account_balance": {
-        "code": "BN.CAB.XOKA.CD",
-        "label": "Current Account Balance",
-        "unit": "USD"
-    },
-    "foreign_exchange_reserves": {
-        "code": "FI.RES.TOTL.CD",
-        "label": "Foreign Exchange Reserves",
-        "unit": "USD"
-    },
-    "debt_to_gdp": {
-        "code": "GC.DOD.TOTL.GD.ZS",
-        "label": "Debt to GDP Ratio",
-        "unit": "%"
-    },
-    "population": {
-        "code": "SP.POP.TOTL",
-        "label": "Population",
-        "unit": "People"
-    },
-    "exports_of_goods_and_services": {
-        "code": "NE.EXP.GNFS.ZS",
-        "label": "Exports of Goods and Services",
-        "unit": "%"
-    },
-    "imports_of_goods_and_services": {
-        "code": "NE.IMP.GNFS.ZS",
-        "label": "Imports of Goods and Services",
-        "unit": "%"
-    },
-    "manufacturing_value_added": {
-        "code": "NV.IND.MANF.ZS",
-        "label": "Manufacturing Value Added",
-        "unit": "%"
-    },
-    # Add more indicators as needed
-}
+def load_json(filename):
+    # Get the directory of the current file (metric.py)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Map country names to currency pairs for exchange rates
-CURRENCY_PAIRS = {
-    "Argentina": "USDARS=X",
-    "Brazil": "USDBRL=X",
-    "China": "USDCNY=X",
-    "India": "USDINR=X",
-    "South Africa": "USDZAR=X",
-    "Pakistan": "USDPKR=X",
-    "Indonesia": "USDIDR=X",
-    "Nigeria": "USDNGN=X",
-    "Mexico": "USDMXN=X",
-    "Egypt": "USDEGP=X",
-    "Vietnam": "USDVND=X",
-    "Philippines": "USDPHP=X",
-    "Russia": "USDRUB=X",
-    "Saudi Arabia": "USDSAR=X",
-    # Add more mappings as needed
-}
+    # Navigate up to the project root
+    project_root = os.path.abspath(os.path.join(current_dir, '..'))
 
-# Map country names to stock index symbols
-STOCK_INDEX_SYMBOLS = {
-    "Argentina": "^MERV",
-    "Brazil": "^BVSP",
-    "China": "000001.SS",
-    "India": "^BSESN",
-    "South Africa": "^J203.JO",  # Adjusted symbol for South Africa All Share Index
-    "Pakistan": "^KSE",
-    "Indonesia": "^JKSE",
-    "Nigeria": "NGSEINDX",  # Adjusted symbol for Nigeria
-    "Mexico": "^MXX",
-    "Egypt": "^EGX30",
-    "Vietnam": "^VNINDEX",
-    "Philippines": "^PSEI",
-    "Russia": "IMOEX.ME",
-    "Saudi Arabia": "TASI.SR",
-    # Add more mappings as needed
-}
+    # Construct the path to the data file
+    file_path = os.path.join(project_root, 'data_config', filename)
 
-# Map country names to commodity symbols if relevant
-COUNTRY_COMMODITY_DEPENDENCE = {
-    "Saudi Arabia": "CL=F",  # Crude Oil Futures
-    "Russia": "CL=F",
-    "Nigeria": "CL=F",
-    "Australia": "GC=F",  # Gold Futures
-    "South Africa": "GC=F",
-    # Add more mappings as needed
-}
+    with open(file_path, 'r') as f:
+        return json.load(f)
+
+
+def load_econdb_tickers(csv_filename):
+    # Get the directory of the current file (metric.py)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Navigate up to the project root
+    project_root = os.path.abspath(os.path.join(current_dir, '..'))
+
+    # Construct the path to the data file
+    file_path = os.path.join(project_root, 'data_config', csv_filename)
+
+    # Read the CSV file
+    df = pd.read_csv(file_path)
+    return df
+
+
+def build_country_series_mapping(df):
+    country_series_mapping = {}
+
+    for _, row in df.iterrows():
+        country = row['entity']
+        metric_name = row['description'].lower().replace(' ', '_')
+        series_code = row['short_ticker']
+        unit = row['scale']  # You might need to adjust this based on the data
+        label = row['description']
+
+        if country not in country_series_mapping:
+            country_series_mapping[country] = {}
+
+        country_series_mapping[country][metric_name] = {
+            'series_code': series_code,
+            'label': label,
+            'unit': unit
+        }
+
+    return country_series_mapping
+
+
+COUNTRY_NAME_TO_ISO2 = load_json('country_codes.json')
+INDICATORS = load_json('world_bank_indicators.json')
+CURRENCY_PAIRS = load_json('currency_pairs.json')
+STOCK_INDEX_SYMBOLS = load_json('stock_indicies_symbols.json')
+COUNTRY_COMMODITY_DEPENDENCE = load_json('country_commodity_dependency.json')
+
+# Load Econdb tickers and build the country-series mapping
+econdb_df = load_econdb_tickers('main_tickers.csv')
+ECONDB_COUNTRY_SERIES_MAPPING = build_country_series_mapping(econdb_df)
 
 
 def get_country_metrics(country_name: str) -> Dict[str, Any]:
     """
     Fetches all indicators for a given country and calculates derivative metrics.
-    This function is now cached with a time limit specified in the config settings.
 
     Args:
         country_name (str): The name of the country.
@@ -194,6 +122,37 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
                     'data': [],
                     'label': indicator_info['label'],
                     'unit': indicator_info['unit']
+                }
+
+        # Fetch additional indicators from Econdb
+        country_series_codes = ECONDB_COUNTRY_SERIES_MAPPING.get(
+            country_name, {})
+        for metric_name, metric_info in country_series_codes.items():
+            try:
+                series_code = metric_info['series_code']
+                data = fetch_econdb_data(series_code)
+                # Process data to get time series
+                processed_data = []
+                for entry in data:
+                    if entry['value'] is not None:
+                        processed_data.append({
+                            'date': entry['date'],
+                            'value': entry['value']
+                        })
+                # Reverse the list to have chronological order
+                metrics[metric_name] = {
+                    'data': processed_data[::-1],
+                    'label': metric_info['label'],
+                    'unit': metric_info['unit']
+                }
+                logger.info(f"Successfully fetched metric: {metric_name}")
+            except Exception as e:
+                logger.error(
+                    f"Error fetching metric {metric_name} for {country_name}: {e}")
+                metrics[metric_name] = {
+                    'data': [],
+                    'label': metric_info['label'],
+                    'unit': metric_info['unit']
                 }
 
         # Fetch exchange rate data
@@ -282,6 +241,45 @@ def fetch_indicator_data(country_code: str, indicator_code: str) -> List[Dict[st
             return []
     except RequestException as e:
         logger.error(f"Error fetching data from World Bank API: {e}")
+        return []
+
+
+def fetch_econdb_data(series_code: str) -> List[Dict[str, Any]]:
+    """
+    Fetches data from Econdb API for a given series code.
+
+    Args:
+        series_code (str): The Econdb series code.
+
+    Returns:
+        List[Dict[str, Any]]: A list of data points.
+    """
+    api_key = settings.ECONDB_API_KEY
+    if not api_key:
+        logger.error("Econdb API key is not set.")
+        return []
+    url = f"https://www.econdb.com/api/series/{series_code}/?format=json&token={api_key}"
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        if 'data' in data:
+            data_points = []
+            dates = data['data']['dates']
+            values = data['data']['values']
+            for date, value in zip(dates, values):
+                data_points.append({
+                    'date': date,
+                    'value': value
+                })
+            return data_points
+        else:
+            return []
+    except RequestException as e:
+        logger.error(f"Error fetching data from Econdb API: {e}")
         return []
 
 
@@ -394,7 +392,7 @@ def calculate_derivative_metrics(metrics: Dict[str, Any], country_name: str) -> 
 
         # Stock market index
         stock_market_index = metrics.get(
-            'stock_market_index', {}).get('data', [])
+            'stock_index', {}).get('data', [])
         if stock_market_index:
             df = pd.DataFrame(stock_market_index)
             if 'value' in df.columns:
@@ -433,77 +431,80 @@ def calculate_derivative_metrics(metrics: Dict[str, Any], country_name: str) -> 
         # Example: Exchange Rate Volatility
         exchange_rate = metrics.get('exchange_rate', {})
         if exchange_rate:
-            df = pd.DataFrame(exchange_rate['data'])
-            df['value'] = pd.to_numeric(df['value'], errors='coerce')
-            df['returns'] = df['value'].pct_change()
-            volatility = df['returns'].rolling(window=30).std() * np.sqrt(252)
-            df['volatility'] = volatility
-            volatility_series = df[['date', 'volatility']
-                                   ].dropna().to_dict('records')
-            if volatility_series:
-                derivative_metrics['exchange_rate_volatility'] = {
-                    'data': [
-                        {'date': item['date'], 'value': item['volatility']}
-                        for item in volatility_series
-                    ],
-                    'label': 'Exchange Rate Volatility',
-                    'unit': '%'
-                }
-                logger.info(
-                    f"Successfully calculated exchange rate volatility with {len(volatility_series)} data points")
-            else:
-                logger.warning(
-                    "Unable to calculate exchange rate volatility: no data points after processing")
+            try:
+                df = pd.DataFrame(exchange_rate['data'])
+                df['value'] = pd.to_numeric(df['value'], errors='coerce')
+                df['returns'] = df['value'].pct_change()
+                volatility = df['returns'].rolling(
+                    window=30).std() * np.sqrt(252)
+                df['volatility'] = volatility
+                volatility_series = df[['date', 'volatility']].dropna(
+                ).to_dict('records')
+                if volatility_series:
+                    derivative_metrics['exchange_rate_volatility'] = {
+                        'data': [
+                            {'date': str(item['date']),
+                             'value': item['volatility']}
+                            for item in volatility_series
+                        ],
+                        'label': 'Exchange Rate Volatility',
+                        'unit': '%'
+                    }
+                    logger.info(
+                        f"Successfully calculated exchange rate volatility with {len(volatility_series)} data points")
+                else:
+                    logger.warning(
+                        "Unable to calculate exchange rate volatility: no data points after processing")
+            except Exception as e:
+                logger.error(
+                    f"Error calculating exchange rate volatility: {str(e)}")
 
-        # Example: Real Effective Exchange Rate (Proxy)
-        exchange_rate = metrics.get('exchange_rate', {})
-        inflation = metrics.get('inflation', {})
-        if exchange_rate and inflation:
-            exchange_df = pd.DataFrame(exchange_rate['data'])
-            inflation_df = pd.DataFrame(inflation['data'])
-            logger.debug(
-                f"Exchange rate data points: {len(exchange_df)}, Inflation data points: {len(inflation_df)}")
+        # Real Interest Rate
+        interest_rate = metrics.get('interest_rate', {})
+        inflation_rate = metrics.get('inflation', {})
+        if interest_rate and inflation_rate and interest_rate.get('data') and inflation_rate.get('data'):
+            try:
+                interest_df = pd.DataFrame(interest_rate['data'])
+                inflation_df = pd.DataFrame(inflation_rate['data'])
 
-            # Convert date strings to datetime objects
-            exchange_df['date'] = pd.to_datetime(exchange_df['date'])
-            inflation_df['date'] = pd.to_datetime(inflation_df['date'])
+                # Ensure 'date' and 'value' columns exist
+                if 'date' in interest_df.columns and 'value' in interest_df.columns and \
+                   'date' in inflation_df.columns and 'value' in inflation_df.columns:
 
-            # Resample both dataframes to monthly frequency
-            exchange_df.set_index('date', inplace=True)
-            inflation_df.set_index('date', inplace=True)
-            exchange_monthly = exchange_df.resample('M').last()
-            inflation_monthly = inflation_df.resample('M').last()
+                    interest_df['date'] = pd.to_datetime(interest_df['date'])
+                    inflation_df['date'] = pd.to_datetime(inflation_df['date'])
 
-            # Merge the resampled dataframes
-            merged_df = pd.merge(exchange_monthly, inflation_monthly, left_index=True,
-                                 right_index=True, suffixes=('_exchange', '_inflation'))
-            logger.debug(f"Merged data points: {len(merged_df)}")
-
-            # Calculate REER
-            merged_df['real_exchange_rate'] = merged_df['value_exchange'] / \
-                (1 + merged_df['value_inflation']/100)
-            merged_df.reset_index(inplace=True)
-            reer_series = merged_df[[
-                'date', 'real_exchange_rate']].dropna().to_dict('records')
-
-            if reer_series:
-                derivative_metrics['real_effective_exchange_rate'] = {
-                    'data': [
-                        {'date': item['date'].strftime(
-                            '%Y-%m-%d'), 'value': item['real_exchange_rate']}
-                        for item in reer_series
-                    ],
-                    'label': 'Real Effective Exchange Rate',
-                    'unit': 'Index'
-                }
-                logger.info(
-                    f"Successfully calculated REER with {len(reer_series)} data points")
-            else:
-                logger.warning(
-                    "Unable to calculate REER: no data points after processing")
+                    merged_df = pd.merge(
+                        interest_df, inflation_df, on='date', suffixes=('_interest', '_inflation'))
+                    merged_df['value'] = merged_df['value_interest'] - \
+                        merged_df['value_inflation']
+                    real_interest_rate_series = merged_df[[
+                        'date', 'value']].to_dict('records')
+                    derivative_metrics['real_interest_rate'] = {
+                        'data': [
+                            {'date': item['date'].strftime(
+                                '%Y-%m-%d'), 'value': item['value']}
+                            for item in real_interest_rate_series
+                        ],
+                        'label': 'Real Interest Rate',
+                        'unit': '%'
+                    }
+                    logger.info(
+                        f"Successfully calculated real interest rate for {country_name}")
+                else:
+                    logger.warning(
+                        f"Missing required columns for real interest rate calculation for {country_name}")
+            except Exception as e:
+                logger.error(
+                    f"Error calculating real interest rate for {country_name}: {str(e)}")
         else:
             logger.warning(
-                f"Unable to calculate REER: missing data (exchange rate: {bool(exchange_rate)}, inflation: {bool(inflation)})")
+                f"Insufficient data for real interest rate calculation for {country_name}")
+
+        # Example: Debt to GDP Ratio (if both debt and GDP are available)
+        debt_to_gdp = metrics.get('debt_to_gdp', {})
+        if debt_to_gdp and 'data' in debt_to_gdp and debt_to_gdp['data']:
+            derivative_metrics['debt_to_gdp'] = debt_to_gdp
 
         # Add more derivative metrics as needed
 
@@ -520,4 +521,5 @@ def calculate_derivative_metrics(metrics: Dict[str, Any], country_name: str) -> 
     except Exception as e:
         logger.error(
             f"Error calculating derivative metrics for {country_name}: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return metrics
