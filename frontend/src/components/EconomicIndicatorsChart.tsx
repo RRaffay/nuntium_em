@@ -44,6 +44,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['gdp_per_capita', 'inflation', 'unemployment']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -52,8 +53,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           setLoading(true);
           const metricsData = await api.getCountryMetrics(country);
           setMetrics(metricsData);
+          // Set available metrics based on data
+          const availableMetrics = Object.keys(metricsData).filter(key => metricsData[key].length > 0);
+          setAvailableMetrics(availableMetrics);
           // Set initial selected metrics based on available data
-          const availableMetrics = Object.keys(metricsData);
           setSelectedMetrics(prevSelected =>
             prevSelected.filter(metric => availableMetrics.includes(metric))
           );
@@ -82,8 +85,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         if (!dataMap[dataPoint.date]) {
           dataMap[dataPoint.date] = { date: new Date(dataPoint.date) };
         }
-        const value = Number(dataPoint.value);
-        dataMap[dataPoint.date][metricKey] = isNaN(value) ? null : value;
+        dataMap[dataPoint.date][metricKey] = dataPoint.value;
       });
     });
     return Object.values(dataMap).sort((a, b) => a.date - b.date);
@@ -193,7 +195,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           <div className="flex items-start space-x-2">
             <div className="flex-grow">
               <MultiSelect
-                options={metricOptions}
+                options={metricOptions.filter(option => availableMetrics.includes(option.value))}
                 selected={selectedMetrics}
                 onChange={setSelectedMetrics}
                 className="w-full"

@@ -50,7 +50,7 @@ export interface ChatMessage {
 
 export interface IndicatorDataPoint {
   date: string;
-  value: number | null;
+  value: number;
 }
 
 export interface CountryMetrics {
@@ -291,9 +291,7 @@ export const api = {
       console.error('Failed to fetch country metrics');
       throw new Error('Failed to fetch country metrics');
     }
-    const data = await handledResponse.json();
-    console.log('Retrieved country metrics:', Object.keys(data));
-    return data;
+    return handledResponse.json();
   },
 
 };

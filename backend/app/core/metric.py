@@ -164,7 +164,24 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
     # Calculate derivative metrics
     metrics = calculate_derivative_metrics(metrics, country_name)
 
-    return metrics
+    # Process and format the data
+    processed_metrics = process_metrics(metrics)
+
+    return processed_metrics
+
+
+def process_metrics(metrics: Dict[str, Any]) -> Dict[str, Any]:
+    processed_metrics = {}
+    for metric_name, data in metrics.items():
+        processed_data = []
+        for point in data:
+            if point['value'] is not None:
+                processed_data.append({
+                    'date': point['date'],
+                    'value': float(point['value'])
+                })
+        processed_metrics[metric_name] = processed_data
+    return processed_metrics
 
 
 def fetch_indicator_data(country_code: str, indicator_code: str) -> List[Dict[str, Any]]:
