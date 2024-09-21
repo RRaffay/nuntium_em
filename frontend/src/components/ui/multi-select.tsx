@@ -78,7 +78,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-2"
       />
-      <ScrollArea className={`${expanded ? 'h-[600px]' : 'h-[100px]'} mb-4`}>
+      <ScrollArea className={`${expanded ? 'h-[70vh]' : 'h-[100px]'} mb-4`}>
         <div className="space-y-2 p-2">
           {filteredAndSortedOptions.map(option => (
             <div key={option.value} className="flex items-center space-x-2">

@@ -17,6 +17,14 @@ import { AlertCircle } from "lucide-react";
 import { Tooltip as TooltipUI } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from 'lucide-react';
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarTrigger,
+} from "@/components/ui/menubar"
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -349,40 +357,33 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           )}
         </div>
 
-        <div className="mt-4">
-          <label htmlFor="display-mode" className="block mb-2">Display Mode:</label>
-          <select
-            id="display-mode"
-            value={displayMode}
-            onChange={(e) => setDisplayMode(e.target.value as 'single' | 'multiple')}
-            className="border p-2 rounded mb-4"
-          >
-            <option value="single">Single Chart</option>
-            <option value="multiple">Multiple Charts</option>
-          </select>
-          <label htmlFor="chart-type" className="block mb-2">Chart Type:</label>
-          <select
-            id="chart-type"
-            value={chartType}
-            onChange={(e) => setChartType(e.target.value as 'Line' | 'Area' | 'Bar')}
-            className="border p-2 rounded mb-4"
-          >
-            <option value="Line">Line</option>
-            <option value="Area">Area</option>
-            <option value="Bar">Bar</option>
-          </select>
-          <label htmlFor="data-transformation" className="block mb-2">Data Transformation:</label>
-          <select
-            id="data-transformation"
-            value={dataTransformation}
-            onChange={(e) => setDataTransformation(e.target.value as 'none' | 'normalize' | 'percentChange')}
-            className="border p-2 rounded mb-4"
-          >
-            <option value="none">None</option>
-            <option value="normalize">Normalize (Index to 100)</option>
-            <option value="percentChange">Percentage Change</option>
-          </select>
-        </div>
+        <Menubar className="mb-4">
+          <MenubarMenu>
+            <MenubarTrigger>Display Mode: {displayMode === 'single' ? 'Single Chart' : 'Multiple Charts'}</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem onClick={() => setDisplayMode('single')}>Single Chart</MenubarItem>
+              <MenubarItem onClick={() => setDisplayMode('multiple')}>Multiple Charts</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+
+          <MenubarMenu>
+            <MenubarTrigger>Chart Type: {chartType}</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem onClick={() => setChartType('Line')}>Line</MenubarItem>
+              <MenubarItem onClick={() => setChartType('Area')}>Area</MenubarItem>
+              <MenubarItem onClick={() => setChartType('Bar')}>Bar</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+
+          <MenubarMenu>
+            <MenubarTrigger>Data Transformation: {dataTransformation === 'none' ? 'None' : dataTransformation === 'normalize' ? 'Normalize' : 'Percentage Change'}</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem onClick={() => setDataTransformation('none')}>None</MenubarItem>
+              <MenubarItem onClick={() => setDataTransformation('normalize')}>Normalize (Index to 100)</MenubarItem>
+              <MenubarItem onClick={() => setDataTransformation('percentChange')}>Percentage Change</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
 
         {displayMode === 'single' ? (
           <ResponsiveContainer width="100%" height={500}>
