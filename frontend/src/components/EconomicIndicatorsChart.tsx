@@ -10,6 +10,9 @@ import { Expand } from 'lucide-react';
 import { DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { Tooltip as TooltipUI } from "@/components/ui/tooltip";
+import { TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from 'lucide-react';
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -150,9 +153,12 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           {payload.map((entry: any, index: number) => {
             const metricInfo = metrics?.[entry.dataKey];
             return (
-              <p key={index} style={{ color: entry.color }}>
-                {metricInfo?.label}: {formatValue(entry.value, entry.dataKey, true)} {metricInfo?.unit}
-              </p>
+              <div key={index}>
+                <p style={{ color: entry.color }}>
+                  {metricInfo?.label}: {formatValue(entry.value, entry.dataKey, true)} {metricInfo?.unit}
+                </p>
+                <p className="text-xs text-muted-foreground">Source: {metricInfo?.source}</p>
+              </div>
             );
           })}
         </div>
@@ -197,7 +203,22 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
               <MultiSelect
                 options={availableMetrics.map(metricKey => ({
                   value: metricKey,
-                  label: metrics?.[metricKey]?.label || metricKey
+                  label: (
+                    <div className="flex items-center">
+                      <span>{metrics?.[metricKey]?.label || metricKey}</span>
+                      <TooltipProvider>
+                        <TooltipUI>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 ml-2 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{metrics?.[metricKey]?.description}</p>
+                            <p className="text-xs mt-1">Source: {metrics?.[metricKey]?.source}</p>
+                          </TooltipContent>
+                        </TooltipUI>
+                      </TooltipProvider>
+                    </div>
+                  )
                 }))}
                 selected={selectedMetrics}
                 onChange={handleMetricsChange}
@@ -218,7 +239,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                   <Expand className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[625px]">
                 <DialogHeader>
                   <DialogTitle>Select Metrics</DialogTitle>
                 </DialogHeader>
@@ -226,7 +247,12 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                   <MultiSelect
                     options={Object.keys(metrics).map(metricKey => ({
                       value: metricKey,
-                      label: metrics[metricKey].label
+                      label: (
+                        <div>
+                          <div>{metrics[metricKey].label}</div>
+                          <div className="text-xs text-muted-foreground">Source: {metrics[metricKey].source}</div>
+                        </div>
+                      )
                     }))}
                     selected={dialogSelectedMetrics}
                     onChange={handleDialogApply}

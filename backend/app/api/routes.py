@@ -1,5 +1,4 @@
-from core.metric import get_country_metrics
-from fastapi import APIRouter, HTTPException, Depends
+from core.metric import get_country_metrics, sanitize_data
 from fastapi import APIRouter, HTTPException, Depends, Request
 from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
@@ -15,6 +14,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from config import settings
 from fastapi_cache.decorator import cache
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
@@ -272,25 +274,26 @@ async def research_chat(request: Request, chat_request: ChatRequest, user: User 
 async def get_country_metrics_route(request: Request, country: str, user: User = Depends(current_active_user)):
     """
     Retrieve metrics for a specific country.
-
-    Args:
-        request (Request): The FastAPI request object.
-        country (str): The name of the country.
-        user (User): The current active user.
-
-    Returns:
-        Dict[str, Any]: A dictionary containing the metrics data, labels, and units.
     """
     limiter.key_func = lambda: str(user.id)
     try:
         logger.info(f"Fetching metrics for {country}")
         metrics = get_country_metrics(country)
+        # Sanitize the metrics data
+        sanitized_metrics = sanitize_data(metrics)
         logger.info(f"Successfully retrieved metrics for {country}")
-        return metrics
+        return JSONResponse(content=sanitized_metrics)
     except ValueError as ve:
         logger.error(
             f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         logger.error(f"Error in get_country_metrics_route: {e}", exc_info=True)
-        return {"error": "Some metrics may be unavailable due to a temporary issue with the data source."}
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "An error occurred while processing the metrics.",
+                "details": str(e),
+                "message": "Some metrics may be unavailable due to a temporary issue with the data source."
+            }
+        )

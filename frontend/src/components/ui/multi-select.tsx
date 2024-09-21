@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, ReactNode } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 
 interface Option {
   value: string;
-  label: string;
+  label: string | ReactNode;
 }
 
 interface MultiSelectProps {
@@ -53,11 +53,19 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
 
   const filteredAndSortedOptions = useMemo(() => {
     return options
-      .filter(option => option.label.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter(option =>
+        typeof option.label === 'string'
+          ? option.label.toLowerCase().includes(searchTerm.toLowerCase())
+          : true // Always include options with ReactNode labels in search results
+      )
       .sort((a, b) => {
         const aSelected = localSelected.includes(a.value);
         const bSelected = localSelected.includes(b.value);
-        return aSelected === bSelected ? a.label.localeCompare(b.label) : aSelected ? -1 : 1;
+        return aSelected === bSelected
+          ? (typeof a.label === 'string' && typeof b.label === 'string'
+            ? a.label.localeCompare(b.label)
+            : 0)
+          : aSelected ? -1 : 1;
       });
   }, [options, localSelected, searchTerm]);
 
@@ -70,7 +78,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-2"
       />
-      <ScrollArea className={`${expanded ? 'h-[400px]' : 'h-[100px]'} mb-4`}>
+      <ScrollArea className={`${expanded ? 'h-[600px]' : 'h-[100px]'} mb-4`}>
         <div className="space-y-2 p-2">
           {filteredAndSortedOptions.map(option => (
             <div key={option.value} className="flex items-center space-x-2">

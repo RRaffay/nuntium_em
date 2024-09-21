@@ -62,6 +62,8 @@ export interface MetricInfo {
   data: MetricDataPoint[];
   label: string;
   unit: string;
+  source: string;
+  description: string;
 }
 
 export interface CountryMetrics {

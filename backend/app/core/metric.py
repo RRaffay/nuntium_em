@@ -1,3 +1,6 @@
+# core/metric.py
+
+import math
 import yfinance as yf
 import requests
 import pandas as pd
@@ -10,6 +13,7 @@ from config import settings
 import json
 import os
 import traceback
+import datetime
 
 load_dotenv()
 
@@ -56,6 +60,8 @@ def build_country_series_mapping(df):
         series_code = row['short_ticker']
         unit = row['scale']  # You might need to adjust this based on the data
         label = row['description']
+        source = row['source']
+        description = row['description']
 
         if country not in country_series_mapping:
             country_series_mapping[country] = {}
@@ -63,7 +69,9 @@ def build_country_series_mapping(df):
         country_series_mapping[country][metric_name] = {
             'series_code': series_code,
             'label': label,
-            'unit': unit
+            'unit': unit,
+            'source': source,
+            'description': description
         }
 
     return country_series_mapping
@@ -72,8 +80,8 @@ def build_country_series_mapping(df):
 COUNTRY_NAME_TO_ISO2 = load_json('country_codes.json')
 INDICATORS = load_json('world_bank_indicators.json')
 CURRENCY_PAIRS = load_json('currency_pairs.json')
-STOCK_INDEX_SYMBOLS = load_json('stock_indicies_symbols.json')
-COUNTRY_COMMODITY_DEPENDENCE = load_json('country_commodity_dependency.json')
+STOCK_INDEX_SYMBOLS = load_json('stock_indices_symbols.json')
+COUNTRY_COMMODITY_DEPENDENCE = load_json('country_commodity_dependence.json')
 
 # Load Econdb tickers and build the country-series mapping
 econdb_df = load_econdb_tickers('main_tickers.csv')
@@ -96,6 +104,7 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
             raise ValueError(f"Country code for {country_name} not found.")
 
         metrics = {}
+        # Fetch World Bank indicators
         for metric_name, indicator_info in INDICATORS.items():
             try:
                 data = fetch_indicator_data(
@@ -112,16 +121,20 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
                 metrics[metric_name] = {
                     'data': processed_data[::-1],
                     'label': indicator_info['label'],
-                    'unit': indicator_info['unit']
+                    'unit': indicator_info['unit'],
+                    'source': indicator_info.get('source', 'World Bank'),
+                    'description': indicator_info.get('description', indicator_info['label'])
                 }
-                logger.info(f"Successfully calculated metric: {metric_name}")
+                logger.info(f"Successfully fetched metric: {metric_name}")
             except Exception as e:
                 logger.error(
-                    f"Error calculating metric {metric_name} for {country_name}: {e}")
+                    f"Error fetching metric {metric_name} for {country_name}: {e}")
                 metrics[metric_name] = {
                     'data': [],
                     'label': indicator_info['label'],
-                    'unit': indicator_info['unit']
+                    'unit': indicator_info['unit'],
+                    'source': indicator_info.get('source', 'World Bank'),
+                    'description': indicator_info.get('description', indicator_info['label'])
                 }
 
         # Fetch additional indicators from Econdb
@@ -143,7 +156,9 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
                 metrics[metric_name] = {
                     'data': processed_data[::-1],
                     'label': metric_info['label'],
-                    'unit': metric_info['unit']
+                    'unit': metric_info['unit'],
+                    'source': metric_info.get('source', 'Econdb'),
+                    'description': metric_info.get('description', metric_info['label'])
                 }
                 logger.info(f"Successfully fetched metric: {metric_name}")
             except Exception as e:
@@ -152,38 +167,28 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
                 metrics[metric_name] = {
                     'data': [],
                     'label': metric_info['label'],
-                    'unit': metric_info['unit']
+                    'unit': metric_info['unit'],
+                    'source': metric_info.get('source', 'Econdb'),
+                    'description': metric_info.get('description', metric_info['label'])
                 }
 
         # Fetch exchange rate data
         currency_pair = CURRENCY_PAIRS.get(country_name)
         if currency_pair:
             exchange_rate_data = fetch_exchange_rate_series(currency_pair)
-            metrics['exchange_rate'] = {
-                'data': exchange_rate_data,
-                'label': 'Exchange Rate',
-                'unit': 'USD'
-            }
+            metrics['exchange_rate'] = exchange_rate_data
 
         # Fetch stock index data
         stock_index_symbol = STOCK_INDEX_SYMBOLS.get(country_name)
         if stock_index_symbol:
             stock_index_data = fetch_stock_index_series(stock_index_symbol)
-            metrics['stock_index'] = {
-                'data': stock_index_data,
-                'label': 'Stock Index',
-                'unit': 'Index'
-            }
+            metrics['stock_index'] = stock_index_data
 
         # Fetch commodity prices if the country is commodity-dependent
         commodity_symbol = COUNTRY_COMMODITY_DEPENDENCE.get(country_name)
         if commodity_symbol:
             commodity_price_data = fetch_commodity_price(commodity_symbol)
-            metrics['commodity_price'] = {
-                'data': commodity_price_data,
-                'label': 'Commodity Price',
-                'unit': 'USD'
-            }
+            metrics['commodity_price'] = commodity_price_data
 
         # Calculate derivative metrics
         metrics = calculate_derivative_metrics(metrics, country_name)
@@ -198,22 +203,58 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
         return {}
 
 
+def sanitize_data(data):
+    if isinstance(data, dict):
+        return {k: sanitize_data(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_data(v) for v in data]
+    elif isinstance(data, float):
+        if not math.isfinite(data):
+            return None
+        else:
+            return float(data)
+    elif isinstance(data, (pd.Timestamp, datetime.datetime, datetime.date)):
+        return data.strftime('%Y-%m-%d')
+    elif isinstance(data, np.number):
+        return float(data)
+    else:
+        return data
+
+
 def process_metrics(metrics: Dict[str, Any]) -> Dict[str, Any]:
     processed_metrics = {}
     for metric_name, data in metrics.items():
         processed_data = []
         for point in data['data']:
-            if point['value'] is not None:
-                processed_data.append({
-                    'date': point['date'],
-                    'value': float(point['value'])
-                })
+            # Process date
+            date = point.get('date', '')
+            if isinstance(date, (pd.Timestamp, datetime.datetime, datetime.date)):
+                date = date.strftime('%Y-%m-%d')
+            else:
+                date = str(date)
+
+            # Process value
+            value = point.get('value')
+            if value is None or not isinstance(value, (int, float, np.number)) or not math.isfinite(float(value)):
+                value = None
+            else:
+                value = float(value)
+                value = round(value, 10)
+
+            processed_data.append({
+                'date': date,
+                'value': value
+            })
+
         processed_metrics[metric_name] = {
             'data': processed_data,
             'label': data['label'],
-            'unit': data['unit']
+            'unit': data['unit'],
+            'source': data.get('source', ''),
+            'description': data.get('description', '')
         }
-    return processed_metrics
+    # Sanitize the metric data
+    return sanitize_data(processed_metrics)
 
 
 def fetch_indicator_data(country_code: str, indicator_code: str) -> List[Dict[str, Any]]:
@@ -302,10 +343,22 @@ def fetch_exchange_rate_series(currency_pair: str) -> List[Dict[str, Any]]:
                 'date': row['Date'].strftime('%Y-%m-%d'),
                 'value': float(row['Close']) if not pd.isnull(row['Close']) else None
             })
-        return data_points
+        return {
+            'data': data_points,
+            'label': f'Exchange Rate ({currency_pair})',
+            'unit': 'Exchange Rate',
+            'source': 'Yahoo Finance',
+            'description': f'Historical exchange rate data for {currency_pair}'
+        }
     except Exception as e:
         logger.error(f"Error fetching exchange rate series data: {e}")
-        return []
+        return {
+            'data': [],
+            'label': f'Exchange Rate ({currency_pair})',
+            'unit': 'Exchange Rate',
+            'source': 'Yahoo Finance',
+            'description': f'Historical exchange rate data for {currency_pair}'
+        }
 
 
 def fetch_stock_index_series(symbol: str) -> List[Dict[str, Any]]:
@@ -327,10 +380,22 @@ def fetch_stock_index_series(symbol: str) -> List[Dict[str, Any]]:
                 'date': row['Date'].strftime('%Y-%m-%d'),
                 'value': float(row['Close']) if not pd.isnull(row['Close']) else None
             })
-        return data_points
+        return {
+            'data': data_points,
+            'label': f'Stock Index ({symbol})',
+            'unit': 'Index Value',
+            'source': 'Yahoo Finance',
+            'description': f'Historical stock index data for {symbol}'
+        }
     except Exception as e:
         logger.error(f"Error fetching stock index series data: {e}")
-        return []
+        return {
+            'data': [],
+            'label': f'Stock Index ({symbol})',
+            'unit': 'Index Value',
+            'source': 'Yahoo Finance',
+            'description': f'Historical stock index data for {symbol}'
+        }
 
 
 def fetch_commodity_price(commodity_symbol: str) -> List[Dict[str, Any]]:
@@ -352,27 +417,29 @@ def fetch_commodity_price(commodity_symbol: str) -> List[Dict[str, Any]]:
                 'date': row['Date'].strftime('%Y-%m-%d'),
                 'value': float(row['Close']) if not pd.isnull(row['Close']) else None
             })
-        return data_points
+        return {
+            'data': data_points,
+            'label': f'Commodity Price ({commodity_symbol})',
+            'unit': 'USD',
+            'source': 'Yahoo Finance',
+            'description': f'Historical commodity price data for {commodity_symbol}'
+        }
     except Exception as e:
         logger.error(f"Error fetching commodity price data: {e}")
-        return []
+        return {
+            'data': [],
+            'label': f'Commodity Price ({commodity_symbol})',
+            'unit': 'USD',
+            'source': 'Yahoo Finance',
+            'description': f'Historical commodity price data for {commodity_symbol}'
+        }
 
 
 def calculate_derivative_metrics(metrics: Dict[str, Any], country_name: str) -> Dict[str, Any]:
-    """
-    Calculates derivative metrics from existing data.
-
-    Args:
-        metrics (Dict[str, Any]): The metrics dictionary containing raw data.
-        country_name (str): The name of the country.
-
-    Returns:
-        Dict[str, Any]: A dictionary with derivative metrics added.
-    """
     try:
         derivative_metrics = {}
 
-        # Example: Trade Balance = Exports - Imports
+        # Trade Balance = Exports - Imports
         exports = metrics.get('exports_of_goods_and_services', {})
         imports = metrics.get('imports_of_goods_and_services', {})
         trade_balance = []
@@ -383,16 +450,22 @@ def calculate_derivative_metrics(metrics: Dict[str, Any], country_name: str) -> 
                                  suffixes=('_exports', '_imports'))
             merged_df['value'] = merged_df['value_exports'] - \
                 merged_df['value_imports']
+            # Replace NaN values
+            merged_df = merged_df.replace({np.nan: None})
+            # Ensure dates are strings
+            merged_df['date'] = merged_df['date'].apply(lambda x: x.strftime(
+                '%Y-%m-%d') if isinstance(x, (pd.Timestamp, datetime.datetime, datetime.date)) else str(x))
             trade_balance = merged_df[['date', 'value']].to_dict('records')
         derivative_metrics['trade_balance'] = {
             'data': trade_balance,
             'label': 'Trade Balance',
-            'unit': 'USD'
+            'unit': 'USD',
+            'source': 'Calculated',
+            'description': 'Trade Balance calculated as Exports minus Imports'
         }
 
-        # Stock market index
-        stock_market_index = metrics.get(
-            'stock_index', {}).get('data', [])
+        # Stock market metrics
+        stock_market_index = metrics.get('stock_index', {}).get('data', [])
         if stock_market_index:
             df = pd.DataFrame(stock_market_index)
             if 'value' in df.columns:
@@ -400,126 +473,105 @@ def calculate_derivative_metrics(metrics: Dict[str, Any], country_name: str) -> 
                 df['date'] = pd.to_datetime(df['date'])
                 df = df.sort_values('date')
 
-                # Calculate daily returns
                 df['daily_return'] = df['value'].pct_change()
-
-                # Calculate volatility (30-day rolling standard deviation of returns)
                 df['volatility'] = df['daily_return'].rolling(
-                    window=30).std() * np.sqrt(252)  # Annualized
+                    window=30).std() * np.sqrt(252)
 
-                # Calculate metrics
-                current_value = df['value'].iloc[-1]
-                year_high = df['value'].max()
-                year_low = df['value'].min()
-                volatility = df['volatility'].iloc[-1]
+                # Replace NaN values
+                df = df.replace({np.nan: None})
 
-                derivative_metrics['stock_market_current'] = {'data': [{'date': df['date'].iloc[-1].strftime(
-                    '%Y-%m-%d'), 'value': current_value}], 'label': 'Current Stock Market Index', 'unit': 'index'}
-                derivative_metrics['stock_market_year_high'] = {'data': [
-                    {'date': df['date'].iloc[-1].strftime('%Y-%m-%d'), 'value': year_high}], 'label': 'Year High', 'unit': 'index'}
-                derivative_metrics['stock_market_year_low'] = {'data': [
-                    {'date': df['date'].iloc[-1].strftime('%Y-%m-%d'), 'value': year_low}], 'label': 'Year Low', 'unit': 'index'}
-                derivative_metrics['stock_market_volatility'] = {'data': [{'date': df['date'].iloc[-1].strftime(
-                    '%Y-%m-%d'), 'value': volatility}], 'label': 'Stock Market Volatility', 'unit': '%'}
-            else:
-                logger.warning(
-                    f"'value' column not found in stock market data for {country_name}")
-        else:
-            logger.warning(
-                f"No stock market data available for {country_name}")
+                current_value = df['value'].iloc[-1] if df['value'].iloc[-1] is not None else None
+                year_high = df['value'].max(
+                ) if df['value'].max() is not None else None
+                year_low = df['value'].min(
+                ) if df['value'].min() is not None else None
+                volatility = df['volatility'].iloc[-1] if df['volatility'].iloc[-1] is not None else None
 
-        # Example: Exchange Rate Volatility
+                last_date = df['date'].iloc[-1].strftime('%Y-%m-%d')
+
+                derivative_metrics['stock_market_current'] = {
+                    'data': [{'date': last_date, 'value': current_value}],
+                    'label': 'Current Stock Market Index',
+                    'unit': 'Index',
+                    'source': 'Calculated from Stock Index',
+                    'description': 'Current value of the stock market index'
+                }
+                derivative_metrics['stock_market_year_high'] = {
+                    'data': [{'date': last_date, 'value': year_high}],
+                    'label': 'Year High',
+                    'unit': 'Index',
+                    'source': 'Calculated from Stock Index',
+                    'description': 'Highest value of the stock market index over the past year'
+                }
+                derivative_metrics['stock_market_year_low'] = {
+                    'data': [{'date': last_date, 'value': year_low}],
+                    'label': 'Year Low',
+                    'unit': 'Index',
+                    'source': 'Calculated from Stock Index',
+                    'description': 'Lowest value of the stock market index over the past year'
+                }
+                derivative_metrics['stock_market_volatility'] = {
+                    'data': [{'date': last_date, 'value': volatility}],
+                    'label': 'Stock Market Volatility',
+                    'unit': '%',
+                    'source': 'Calculated from Stock Index',
+                    'description': 'Annualized volatility of the stock market index'
+                }
+
+        # Exchange Rate Volatility
         exchange_rate = metrics.get('exchange_rate', {})
         if exchange_rate:
-            try:
-                df = pd.DataFrame(exchange_rate['data'])
-                df['value'] = pd.to_numeric(df['value'], errors='coerce')
-                df['returns'] = df['value'].pct_change()
-                volatility = df['returns'].rolling(
-                    window=30).std() * np.sqrt(252)
-                df['volatility'] = volatility
-                volatility_series = df[['date', 'volatility']].dropna(
-                ).to_dict('records')
-                if volatility_series:
-                    derivative_metrics['exchange_rate_volatility'] = {
-                        'data': [
-                            {'date': str(item['date']),
-                             'value': item['volatility']}
-                            for item in volatility_series
-                        ],
-                        'label': 'Exchange Rate Volatility',
-                        'unit': '%'
-                    }
-                    logger.info(
-                        f"Successfully calculated exchange rate volatility with {len(volatility_series)} data points")
-                else:
-                    logger.warning(
-                        "Unable to calculate exchange rate volatility: no data points after processing")
-            except Exception as e:
-                logger.error(
-                    f"Error calculating exchange rate volatility: {str(e)}")
+            df = pd.DataFrame(exchange_rate['data'])
+            df['value'] = pd.to_numeric(df['value'], errors='coerce')
+            df['returns'] = df['value'].pct_change()
+            df['volatility'] = df['returns'].rolling(
+                window=30).std() * np.sqrt(252)
+            # Replace NaN values
+            df = df.replace({np.nan: None})
+            df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
+            volatility_series = df[['date', 'volatility']
+                                   ].dropna(subset=['volatility']).to_dict('records')
+            if volatility_series:
+                derivative_metrics['exchange_rate_volatility'] = {
+                    'data': volatility_series,
+                    'label': 'Exchange Rate Volatility',
+                    'unit': '%',
+                    'source': 'Calculated from Exchange Rate',
+                    'description': 'Annualized volatility of the exchange rate'
+                }
 
         # Real Interest Rate
         interest_rate = metrics.get('interest_rate', {})
         inflation_rate = metrics.get('inflation', {})
         if interest_rate and inflation_rate and interest_rate.get('data') and inflation_rate.get('data'):
-            try:
-                interest_df = pd.DataFrame(interest_rate['data'])
-                inflation_df = pd.DataFrame(inflation_rate['data'])
+            interest_df = pd.DataFrame(interest_rate['data'])
+            inflation_df = pd.DataFrame(inflation_rate['data'])
 
-                # Ensure 'date' and 'value' columns exist
-                if 'date' in interest_df.columns and 'value' in interest_df.columns and \
-                   'date' in inflation_df.columns and 'value' in inflation_df.columns:
+            if 'date' in interest_df.columns and 'value' in interest_df.columns and \
+               'date' in inflation_df.columns and 'value' in inflation_df.columns:
+                interest_df['date'] = pd.to_datetime(interest_df['date'])
+                inflation_df['date'] = pd.to_datetime(inflation_df['date'])
 
-                    interest_df['date'] = pd.to_datetime(interest_df['date'])
-                    inflation_df['date'] = pd.to_datetime(inflation_df['date'])
-
-                    merged_df = pd.merge(
-                        interest_df, inflation_df, on='date', suffixes=('_interest', '_inflation'))
-                    merged_df['value'] = merged_df['value_interest'] - \
-                        merged_df['value_inflation']
-                    real_interest_rate_series = merged_df[[
-                        'date', 'value']].to_dict('records')
-                    derivative_metrics['real_interest_rate'] = {
-                        'data': [
-                            {'date': item['date'].strftime(
-                                '%Y-%m-%d'), 'value': item['value']}
-                            for item in real_interest_rate_series
-                        ],
-                        'label': 'Real Interest Rate',
-                        'unit': '%'
-                    }
-                    logger.info(
-                        f"Successfully calculated real interest rate for {country_name}")
-                else:
-                    logger.warning(
-                        f"Missing required columns for real interest rate calculation for {country_name}")
-            except Exception as e:
-                logger.error(
-                    f"Error calculating real interest rate for {country_name}: {str(e)}")
-        else:
-            logger.warning(
-                f"Insufficient data for real interest rate calculation for {country_name}")
-
-        # Example: Debt to GDP Ratio (if both debt and GDP are available)
-        debt_to_gdp = metrics.get('debt_to_gdp', {})
-        if debt_to_gdp and 'data' in debt_to_gdp and debt_to_gdp['data']:
-            derivative_metrics['debt_to_gdp'] = debt_to_gdp
-
-        # Add more derivative metrics as needed
-
-        for metric_name, metric_data in derivative_metrics.items():
-            if metric_data['data']:
-                logger.info(
-                    f"Successfully calculated derivative metric: {metric_name}")
-            else:
-                logger.warning(
-                    f"Unable to calculate derivative metric: {metric_name}")
+                merged_df = pd.merge(
+                    interest_df, inflation_df, on='date', suffixes=('_interest', '_inflation'))
+                merged_df['value'] = merged_df['value_interest'] - \
+                    merged_df['value_inflation']
+                # Replace NaN values
+                merged_df = merged_df.replace({np.nan: None})
+                merged_df['date'] = merged_df['date'].dt.strftime('%Y-%m-%d')
+                real_interest_rate_series = merged_df[[
+                    'date', 'value']].to_dict('records')
+                derivative_metrics['real_interest_rate'] = {
+                    'data': real_interest_rate_series,
+                    'label': 'Real Interest Rate',
+                    'unit': '%',
+                    'source': 'Calculated from Interest Rate and Inflation',
+                    'description': 'Real interest rate calculated as nominal interest rate minus inflation rate'
+                }
 
         metrics.update(derivative_metrics)
         return metrics
     except Exception as e:
-        logger.error(
-            f"Error calculating derivative metrics for {country_name}: {str(e)}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
+        logger.error(f"Error in calculate_derivative_metrics: {str(e)}")
+        traceback.print_exc()
         return metrics
