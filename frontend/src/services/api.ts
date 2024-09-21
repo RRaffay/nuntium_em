@@ -307,14 +307,18 @@ export const api = {
     return handledResponse.json();
   },
 
-  async submitDataQuestion(country: string, data: CountryMetrics, question: string): Promise<{ answer: string }> {
+  async submitDataQuestion(country: string, data: CountryMetrics, question: string, messages: ChatMessage[]): Promise<{ answer: string }> {
     const response = await fetch(`${API_BASE_URL}/countries/${country}/data-question`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ data, question }),
+      body: JSON.stringify({ 
+        data, 
+        question,
+        messages: messages.map(m => ({ content: m.content, sender: m.sender }))
+      }),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {

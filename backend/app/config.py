@@ -77,7 +77,8 @@ class DevelopmentConfig(BaseConfig):
         "generate_country_report": "30/hour",
         "generate_event_report": "30/hour",
         "research_chat": "20/hour",
-        "get_country_metrics": "40/hour"
+        "get_country_metrics": "40/hour",
+        "data_question": "20/minute"
     }
     MAX_REVISIONS_REPORT: int = 1
     REVISION_NUMBER_REPORT: int = 1
@@ -95,7 +96,8 @@ class ProductionConfig(BaseConfig):
         "generate_country_report": "10/hour",
         "generate_event_report": "10/hour",
         "research_chat": "20/hour",
-        "get_country_metrics": "10/hour"
+        "get_country_metrics": "10/hour",
+        "data_question": "5/minute"
     }
     MAX_REVISIONS_REPORT: int = 3
     REVISION_NUMBER_REPORT: int = 1

@@ -43,12 +43,12 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [userQuestion, setUserQuestion] = useState('');
-  const [answer, setAnswer] = useState<string | null>(null);
   const [loadingAnswer, setLoadingAnswer] = useState(false);
   const [startYear, setStartYear] = useState<number | undefined>(undefined);
   const [startMonth, setStartMonth] = useState<number | undefined>(undefined);
   const [endYear, setEndYear] = useState<number | undefined>(undefined);
   const [endMonth, setEndMonth] = useState<number | undefined>(undefined);
+  const [messages, setMessages] = useState<{ content: string; sender: 'user' | 'model'; isLoading?: boolean }[]>([]);
 
   const fetchMetrics = useCallback(async () => {
     if (!country) return;
@@ -250,7 +250,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const handleSubmitQuestion = async () => {
     if (!userQuestion.trim()) return;
     setLoadingAnswer(true);
-    setAnswer(null);
+    const userMessage: { content: string; sender: 'user' } = { content: userQuestion, sender: 'user' };
+    const loadingMessage: { content: string; sender: 'model'; isLoading: boolean } = { content: '', sender: 'model', isLoading: true };
+    setMessages(prevMessages => [...prevMessages, userMessage, loadingMessage]);
+    setUserQuestion('');
 
     try {
       const selectedData = selectedMetrics.reduce((acc, metricKey) => {
@@ -272,11 +275,17 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         return acc;
       }, {} as CountryMetrics);
 
-      const response = await api.submitDataQuestion(country, selectedData, userQuestion);
-      setAnswer(response.answer);
+      const response = await api.submitDataQuestion(country, selectedData, userQuestion, messages);
+      setMessages(prevMessages => [
+        ...prevMessages.slice(0, -1),
+        { content: response.answer, sender: 'model' }
+      ]);
     } catch (error) {
       console.error('Error submitting question:', error);
-      setAnswer('An error occurred while processing your question.');
+      setMessages(prevMessages => [
+        ...prevMessages.slice(0, -1),
+        { content: 'An error occurred while processing your question.', sender: 'model' }
+      ]);
     } finally {
       setLoadingAnswer(false);
     }
@@ -383,11 +392,11 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         )}
 
         <QuestionSection
+          messages={messages}
           userQuestion={userQuestion}
           setUserQuestion={setUserQuestion}
           handleSubmitQuestion={handleSubmitQuestion}
           loadingAnswer={loadingAnswer}
-          answer={answer}
         />
       </CardContent>
     </Card>

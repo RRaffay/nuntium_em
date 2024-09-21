@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
 from core.report_chat import economic_report_chat, ChatRequest
-from models import CountryData, Report
+from models import CountryData, Report, ChatMessage
 from db.data import fetch_country_data, addable_countries, delete_country_data
 from datetime import datetime
 from auth.users import current_active_user
@@ -16,9 +16,8 @@ from config import settings
 from fastapi_cache.decorator import cache
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 from core.data_qa import process_question_with_data
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -297,16 +296,32 @@ async def get_country_metrics_route(request: Request, country: str, user: User =
 
 
 @router.post("/countries/{country}/data-question")
-async def handle_data_question(country: str, payload: Dict[str, Any], user: User = Depends(current_active_user)):
+@limiter.limit(settings.RATE_LIMITS["data_question"])
+async def handle_data_question(request: Request, country: str, payload: Dict[str, Any], user: User = Depends(current_active_user)):
+    limiter.key_func = lambda: str(user.id)
     data = payload.get('data')
     question = payload.get('question')
+    messages = payload.get('messages', [])
+
     if not data or not question:
         raise HTTPException(
             status_code=400, detail="Data and question are required.")
+
+    if not isinstance(messages, list):
+        raise HTTPException(status_code=400, detail="Messages must be a list.")
+
+    try:
+        # Convert messages to ChatMessage objects
+        chat_messages = [ChatMessage(**msg) for msg in messages]
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid message format: {str(e)}")
+
     logger.info(
         f"Received data question for {country}: {question}. Data: {data}")
-    # Process the question and data
-    # For example, use a machine learning model or any logic to generate an answer
-    answer = process_question_with_data(question, data)
+    logger.info(f"Message history: {chat_messages}")
+
+    # Process the question and data, including the message history
+    answer = process_question_with_data(question, data, chat_messages)
 
     return {"answer": answer}
