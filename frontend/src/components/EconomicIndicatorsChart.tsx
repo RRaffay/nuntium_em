@@ -313,6 +313,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     }
   }, [startYear, startMonth, endYear, endMonth]);
 
+  const clearChatHistory = useCallback(() => {
+    setMessages([]);
+  }, []);
+
   if (loading) {
     return <div>Loading economic indicators...</div>;
   }
@@ -397,6 +401,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           setUserQuestion={setUserQuestion}
           handleSubmitQuestion={handleSubmitQuestion}
           loadingAnswer={loadingAnswer}
+          clearChatHistory={clearChatHistory}
         />
       </CardContent>
     </Card>

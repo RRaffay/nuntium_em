@@ -5,6 +5,7 @@ import { ChatInput } from '@/components/ui/chat/chat-input';
 import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
+import { Trash2 } from 'lucide-react'; // Import the trash icon
 
 interface Message {
     content: string;
@@ -18,6 +19,7 @@ interface QuestionSectionProps {
     setUserQuestion: (question: string) => void;
     handleSubmitQuestion: () => void;
     loadingAnswer: boolean;
+    clearChatHistory: () => void; // Add this new prop
 }
 
 export const QuestionSection: React.FC<QuestionSectionProps> = ({
@@ -26,6 +28,7 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
     setUserQuestion,
     handleSubmitQuestion,
     loadingAnswer,
+    clearChatHistory, // Add this new prop
 }) => {
     return (
         <div className="mt-6 border rounded-lg overflow-hidden">
@@ -65,8 +68,11 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
                     placeholder="Ask a question about the selected data..."
                     className="flex-grow mr-2"
                 />
-                <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim() || loadingAnswer}>
+                <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim() || loadingAnswer} className="mr-2">
                     Send
+                </Button>
+                <Button onClick={clearChatHistory} variant="outline" size="icon">
+                    <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
         </div>
