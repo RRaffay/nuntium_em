@@ -28,11 +28,11 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
     setUserQuestion,
     handleSubmitQuestion,
     loadingAnswer,
-    clearChatHistory, // Add this new prop
+    clearChatHistory,
 }) => {
     return (
-        <div className="mt-6 border rounded-lg overflow-hidden">
-            <div className="h-64 overflow-y-auto p-4">
+        <div className="flex flex-col h-full border-l">
+            <div className="flex-grow overflow-y-auto p-4">
                 <ChatMessageList>
                     {messages.map((message, index) => (
                         <ChatBubble
@@ -60,20 +60,22 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
                     ))}
                 </ChatMessageList>
             </div>
-            <div className="p-4 border-t flex items-center">
+            <div className="p-4 border-t">
                 <ChatInput
                     value={userQuestion}
                     onChange={(e) => setUserQuestion(e.target.value)}
                     onSend={handleSubmitQuestion}
-                    placeholder="Ask a question about the selected data..."
-                    className="flex-grow mr-2"
+                    placeholder="Ask about the data..."
+                    className="mb-2"
                 />
-                <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim() || loadingAnswer} className="mr-2">
-                    Send
-                </Button>
-                <Button onClick={clearChatHistory} variant="outline" size="icon">
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-between">
+                    <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim() || loadingAnswer}>
+                        Send
+                    </Button>
+                    <Button onClick={clearChatHistory} variant="outline" size="icon">
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
         </div>
     );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CountryMetrics, MetricInfo, api } from '@/services/api';
 import { Card, CardContent } from "@/components/ui/card";
-import { format } from 'date-fns';
+import { format, startOfYear, endOfYear, eachMonthOfInterval, getYear } from 'date-fns';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import {
@@ -16,9 +16,13 @@ import { ChartOptions } from '@/components/chart-components/ChartOptions';
 import { SingleChart } from '@/components/chart-components/SingleChart';
 import { MultipleCharts } from '@/components/chart-components/MultipleCharts';
 import { QuestionSection } from '@/components/chart-components/QuestionSection';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import { Button } from "@/components/ui/button"
+import { MessageCircle } from "lucide-react"
 
 interface EconomicIndicatorsChartProps {
   country: string;
+  enableChat: boolean;
 }
 
 const MAX_METRICS = 4;
@@ -27,7 +31,7 @@ const COLORS = [
   '#F78C6C', '#C3E88D', '#FF5370', '#89DDFF', '#F07178'
 ];
 
-export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = ({ country }) => {
+export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = ({ country, enableChat }) => {
   const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +53,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [endYear, setEndYear] = useState<number | undefined>(undefined);
   const [endMonth, setEndMonth] = useState<number | undefined>(undefined);
   const [messages, setMessages] = useState<{ content: string; sender: 'user' | 'model'; isLoading?: boolean }[]>([]);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const fetchMetrics = useCallback(async () => {
     if (!country) return;
@@ -291,30 +296,25 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     }
   };
 
+  const clearChatHistory = useCallback(() => {
+    setMessages([]);
+  }, []);
+
   const years = useMemo(() => {
-    if (!metrics) return [];
+    if (!metrics || Object.keys(metrics).length === 0) return [];
     const allDates = Object.values(metrics).flatMap(metric => metric.data.map(d => new Date(d.date)));
-    const minYear = Math.min(...allDates.map(d => d.getFullYear()));
-    const maxYear = new Date().getFullYear();
+    const minYear = Math.min(...allDates.map(d => getYear(d)));
+    const maxYear = Math.max(...allDates.map(d => getYear(d)));
     return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
   }, [metrics]);
 
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  useEffect(() => {
-    if (startYear && startMonth) {
-      setStartDate(new Date(startYear, startMonth - 1, 1));
-    }
-    if (endYear && endMonth) {
-      setEndDate(new Date(endYear, endMonth, 0)); // Last day of the month
-    }
-  }, [startYear, startMonth, endYear, endMonth]);
-
-  const clearChatHistory = useCallback(() => {
-    setMessages([]);
+  const months = useMemo(() => {
+    const now = new Date();
+    const monthsInYear = eachMonthOfInterval({
+      start: startOfYear(now),
+      end: endOfYear(now)
+    });
+    return monthsInYear.map(date => format(date, 'MMMM'));
   }, []);
 
   if (loading) {
@@ -330,79 +330,108 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   }
 
   return (
-    <Card className="mt-4">
-      <CardContent>
-        <div className="mb-4">
-          <label className="block mb-2">Display Mode:</label>
-          <Select onValueChange={(value) => setDisplayMode(value as 'single' | 'multiple')}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select display mode" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="single">Single Chart</SelectItem>
-              <SelectItem value="multiple">Multiple Charts</SelectItem>
-            </SelectContent>
-          </Select>
+    <Card className="mt-4 relative h-[calc(100vh-200px)]">
+      <CardContent className="p-0 h-full flex flex-col">
+        <div className="p-4 flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Economic Indicators</h2>
+          {enableChat && (
+            <Button
+              size="sm"
+              onClick={() => setIsChatOpen(!isChatOpen)}
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              {isChatOpen ? 'Close Chat' : 'Open Chat'}
+            </Button>
+          )}
         </div>
+        <ResizablePanelGroup direction="horizontal" className="flex-grow">
+          <ResizablePanel defaultSize={isChatOpen ? 75 : 100} minSize={50}>
+            <div className="p-4 h-full overflow-y-auto">
+              <div className="mb-4">
+                <label className="block mb-2">Display Mode:</label>
+                <Select onValueChange={(value) => setDisplayMode(value as 'single' | 'multiple')}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select display mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single Chart</SelectItem>
+                    <SelectItem value="multiple">Multiple Charts</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <MetricSelector
-          availableMetrics={availableMetrics}
-          selectedMetrics={selectedMetrics}
-          metrics={metrics}
-          handleMetricsChange={handleMetricsChange}
-          dialogOpen={dialogOpen}
-          setDialogOpen={setDialogOpen}
-          dialogSelectedMetrics={dialogSelectedMetrics}
-          setDialogSelectedMetrics={setDialogSelectedMetrics}
-          handleDialogApply={handleDialogApply}
-          showMaxAlert={showMaxAlert}
-        />
+              <MetricSelector
+                availableMetrics={availableMetrics}
+                selectedMetrics={selectedMetrics}
+                metrics={metrics}
+                handleMetricsChange={handleMetricsChange}
+                dialogOpen={dialogOpen}
+                setDialogOpen={setDialogOpen}
+                dialogSelectedMetrics={dialogSelectedMetrics}
+                setDialogSelectedMetrics={setDialogSelectedMetrics}
+                handleDialogApply={handleDialogApply}
+                showMaxAlert={showMaxAlert}
+              />
 
-        {displayMode === 'single' && (
-          <>
-            <ChartOptions
-              chartType={chartType}
-              setChartType={setChartType}
-              dataTransformation={dataTransformation}
-              setDataTransformation={setDataTransformation}
-              years={years}
-              months={months}
-              setStartYear={setStartYear}
-              setStartMonth={setStartMonth}
-              setEndYear={setEndYear}
-              setEndMonth={setEndMonth}
-            />
+              {displayMode === 'single' && (
+                <>
+                  <ChartOptions
+                    chartType={chartType}
+                    setChartType={setChartType}
+                    dataTransformation={dataTransformation}
+                    setDataTransformation={setDataTransformation}
+                    years={years}
+                    months={months}
+                    setStartYear={setStartYear}
+                    setStartMonth={setStartMonth}
+                    setEndYear={setEndYear}
+                    setEndMonth={setEndMonth}
+                  />
 
-            <SingleChart
-              chartData={chartData}
-              chartType={chartType}
-              selectedMetrics={selectedMetrics}
-              metrics={metrics}
-              formatYAxisTick={formatYAxisTick}
-              CustomTooltip={CustomTooltip}
-              hoveredMetric={hoveredMetric}
-              setHoveredMetric={setHoveredMetric}
-            />
-          </>
-        )}
+                  <SingleChart
+                    chartData={chartData}
+                    chartType={chartType}
+                    selectedMetrics={selectedMetrics}
+                    metrics={metrics}
+                    formatYAxisTick={formatYAxisTick}
+                    CustomTooltip={CustomTooltip}
+                    hoveredMetric={hoveredMetric}
+                    setHoveredMetric={setHoveredMetric}
+                  />
+                </>
+              )}
 
-        {displayMode === 'multiple' && (
-          <MultipleCharts
-            selectedMetrics={selectedMetrics}
-            metrics={metrics}
-            years={years}
-            months={months}
-          />
-        )}
+              {displayMode === 'multiple' && (
+                <MultipleCharts
+                  selectedMetrics={selectedMetrics}
+                  metrics={metrics}
+                  years={years}
+                  months={months}
+                />
+              )}
+            </div>
+          </ResizablePanel>
 
-        <QuestionSection
-          messages={messages}
-          userQuestion={userQuestion}
-          setUserQuestion={setUserQuestion}
-          handleSubmitQuestion={handleSubmitQuestion}
-          loadingAnswer={loadingAnswer}
-          clearChatHistory={clearChatHistory}
-        />
+          {isChatOpen && enableChat && (
+            <>
+              <ResizableHandle />
+              <ResizablePanel defaultSize={25} minSize={20}>
+                <div className="flex flex-col h-full">
+                  <div className="flex-grow overflow-y-auto mb-4">
+                    <QuestionSection
+                      messages={messages}
+                      userQuestion={userQuestion}
+                      setUserQuestion={setUserQuestion}
+                      handleSubmitQuestion={handleSubmitQuestion}
+                      loadingAnswer={loadingAnswer}
+                      clearChatHistory={clearChatHistory}
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
       </CardContent>
     </Card>
   );

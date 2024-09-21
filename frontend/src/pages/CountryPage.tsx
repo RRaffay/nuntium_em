@@ -94,7 +94,10 @@ const CountryPage: React.FC = () => {
     return (
       <div className="w-full">
         <h2 className="text-2xl font-bold mb-4">Economic Indicators</h2>
-        <EconomicIndicatorsChart country={country!} />
+        <EconomicIndicatorsChart
+          country={country!}
+          enableChat={viewMode === "charts"} // Pass this prop to EconomicIndicatorsChart
+        />
       </div>
     );
   };
