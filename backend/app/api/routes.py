@@ -1,4 +1,4 @@
-from core.metric import get_country_metrics, sanitize_data
+from core.metric import get_country_metrics
 from fastapi import APIRouter, HTTPException, Depends, Request
 from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
@@ -269,20 +269,14 @@ async def research_chat(request: Request, chat_request: ChatRequest, user: User 
 
 
 @router.get("/countries/{country}/metrics")
-@cache(expire=settings.METRIC_CACHE_TIMEOUT)
+# @cache(expire=settings.METRIC_CACHE_TIMEOUT)
 @limiter.limit(settings.RATE_LIMITS["get_country_metrics"])
 async def get_country_metrics_route(request: Request, country: str, user: User = Depends(current_active_user)):
-    """
-    Retrieve metrics for a specific country.
-    """
-    limiter.key_func = lambda: str(user.id)
     try:
         logger.info(f"Fetching metrics for {country}")
         metrics = get_country_metrics(country)
-        # Sanitize the metrics data
-        sanitized_metrics = sanitize_data(metrics)
         logger.info(f"Successfully retrieved metrics for {country}")
-        return JSONResponse(content=sanitized_metrics)
+        return JSONResponse(content=jsonable_encoder(metrics))
     except ValueError as ve:
         logger.error(
             f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
