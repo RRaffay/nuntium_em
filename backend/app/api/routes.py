@@ -269,7 +269,7 @@ async def research_chat(request: Request, chat_request: ChatRequest, user: User 
 
 
 @router.get("/countries/{country}/metrics")
-# @cache(expire=settings.METRIC_CACHE_TIMEOUT)
+@cache(expire=settings.METRIC_CACHE_TIMEOUT)
 @limiter.limit(settings.RATE_LIMITS["get_country_metrics"])
 async def get_country_metrics_route(request: Request, country: str, user: User = Depends(current_active_user)):
     try:
