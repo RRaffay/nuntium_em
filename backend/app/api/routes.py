@@ -303,7 +303,8 @@ async def handle_data_question(country: str, payload: Dict[str, Any], user: User
     if not data or not question:
         raise HTTPException(
             status_code=400, detail="Data and question are required.")
-    logger.info(f"Received data question for {country}: {question}")
+    logger.info(
+        f"Received data question for {country}: {question}. Data: {data}")
     # Process the question and data
     # For example, use a machine learning model or any logic to generate an answer
     answer = process_question_with_data(question, data)
