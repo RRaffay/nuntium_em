@@ -1,4 +1,5 @@
 // EconomicIndicatorsChart.tsx
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CountryMetrics, MetricInfo, api } from '@/services/api';
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +25,15 @@ import {
   MenubarMenu,
   MenubarSeparator,
   MenubarTrigger,
-} from "@/components/ui/menubar"
+} from "@/components/ui/menubar";
+import { Calendar as CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -49,6 +58,11 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [showMaxAlert, setShowMaxAlert] = useState(false);
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
   const [dialogSelectedMetrics, setDialogSelectedMetrics] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [userQuestion, setUserQuestion] = useState('');
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [loadingAnswer, setLoadingAnswer] = useState(false);
 
   const fetchMetrics = useCallback(async () => {
     if (!country) return;
@@ -101,6 +115,13 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
       }
     };
 
+    const isInRange = (date: Date) => {
+      const dateTime = date.getTime();
+      const startTime = startDate ? startDate.getTime() : -Infinity;
+      const endTime = endDate ? endDate.getTime() : Infinity;
+      return dateTime >= startTime && dateTime <= endTime;
+    };
+
     if (displayMode === 'single') {
       const dataMap: { [date: string]: any } = {};
       selectedMetrics.forEach((metricKey) => {
@@ -108,10 +129,13 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         if (!metricInfo?.data) return;
         const transformedData = transformData(metricInfo.data);
         transformedData.forEach((dataPoint) => {
-          if (!dataMap[dataPoint.date]) {
-            dataMap[dataPoint.date] = { date: new Date(dataPoint.date) };
+          const dataPointDate = new Date(dataPoint.date);
+          if (isInRange(dataPointDate)) {
+            if (!dataMap[dataPoint.date]) {
+              dataMap[dataPoint.date] = { date: dataPointDate };
+            }
+            dataMap[dataPoint.date][metricKey] = dataPoint.value;
           }
-          dataMap[dataPoint.date][metricKey] = dataPoint.value;
         });
       });
       return Object.values(dataMap).sort((a, b) => a.date - b.date);
@@ -120,14 +144,18 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
       selectedMetrics.forEach((metricKey) => {
         const metricInfo = metrics[metricKey];
         if (!metricInfo?.data) return;
-        dataPerMetric[metricKey] = transformData(metricInfo.data.map((dataPoint) => ({
-          date: new Date(dataPoint.date),
-          value: dataPoint.value,
-        })));
+        dataPerMetric[metricKey] = transformData(
+          metricInfo.data
+            .map((dataPoint) => ({
+              date: new Date(dataPoint.date),
+              value: dataPoint.value,
+            }))
+            .filter((dp) => isInRange(dp.date))
+        );
       });
       return Object.entries(dataPerMetric).map(([key, value]) => ({ metricKey: key, data: value }));
     }
-  }, [metrics, selectedMetrics, displayMode, dataTransformation]);
+  }, [metrics, selectedMetrics, displayMode, dataTransformation, startDate, endDate]);
 
   const formatValue = useCallback((value: number, metricKey: string, forTooltip: boolean = false): string => {
     if (value == null) return 'N/A';
@@ -252,6 +280,43 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
       setShowMaxAlert(newSelectedMetrics.length === MAX_METRICS);
     }
   }, []);
+
+  const handleSubmitQuestion = async () => {
+    if (!userQuestion.trim()) return;
+    setLoadingAnswer(true);
+    setAnswer(null);
+
+    try {
+      // Prepare the data to send
+      const selectedData = selectedMetrics.reduce((acc, metricKey) => {
+        const metricData = metrics?.[metricKey]?.data || [];
+        const filteredData = metricData.filter((dp) => {
+          const dpDate = new Date(dp.date);
+          const startTime = startDate ? startDate.getTime() : -Infinity;
+          const endTime = endDate ? endDate.getTime() : Infinity;
+          return dpDate.getTime() >= startTime && dpDate.getTime() <= endTime;
+        });
+        acc[metricKey] = {
+          ...metrics?.[metricKey],
+          data: filteredData,
+          label: metrics?.[metricKey]?.label || '',
+          unit: metrics?.[metricKey]?.unit || '',
+          source: metrics?.[metricKey]?.source || '',
+          description: metrics?.[metricKey]?.description || '',
+        };
+        return acc;
+      }, {} as CountryMetrics);
+
+      // Send to backend
+      const response = await api.submitDataQuestion(country, selectedData, userQuestion);
+      setAnswer(response.answer);
+    } catch (error) {
+      console.error('Error submitting question:', error);
+      setAnswer('An error occurred while processing your question.');
+    } finally {
+      setLoadingAnswer(false);
+    }
+  };
 
   if (loading) {
     return <div>Loading economic indicators...</div>;
@@ -385,6 +450,57 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           </MenubarMenu>
         </Menubar>
 
+        {/* Date Range Selection */}
+        <div className="flex space-x-4 mb-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !startDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {startDate ? format(startDate, "PPP") : <span>Pick start date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={setStartDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !endDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {endDate ? format(endDate, "PPP") : <span>Pick end date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={setEndDate}
+                initialFocus
+                disabled={(date) =>
+                  date < (startDate || new Date()) || date > new Date()
+                }
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {displayMode === 'single' ? (
           <ResponsiveContainer width="100%" height={500}>
             <ChartComponent data={chartData as any[]} margin={{ top: 5, right: 40, left: 40, bottom: 20 }}>
@@ -455,6 +571,30 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
               </ResponsiveContainer>
             </div>
           ))
+        )}
+
+        {/* Question Submission Section */}
+        <div className="mt-6">
+          <label htmlFor="user-question" className="block mb-2">Ask a question about the selected data:</label>
+          <textarea
+            id="user-question"
+            value={userQuestion}
+            onChange={(e) => setUserQuestion(e.target.value)}
+            rows={4}
+            className="w-full border p-2 rounded mb-2"
+            placeholder="Type your question here..."
+          />
+          <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim()}>
+            Submit Question
+          </Button>
+        </div>
+
+        {loadingAnswer && <div className="mt-4">Processing your question...</div>}
+        {answer && (
+          <div className="mt-4">
+            <h4 className="font-semibold mb-2">Answer:</h4>
+            <p>{answer}</p>
+          </div>
         )}
       </CardContent>
     </Card>

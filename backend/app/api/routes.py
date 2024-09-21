@@ -17,6 +17,8 @@ from fastapi_cache.decorator import cache
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from core.data_qa import process_question_with_data
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -272,6 +274,7 @@ async def research_chat(request: Request, chat_request: ChatRequest, user: User 
 @cache(expire=settings.METRIC_CACHE_TIMEOUT)
 @limiter.limit(settings.RATE_LIMITS["get_country_metrics"])
 async def get_country_metrics_route(request: Request, country: str, user: User = Depends(current_active_user)):
+    limiter.key_func = lambda: str(user.id)
     try:
         logger.info(f"Fetching metrics for {country}")
         metrics = get_country_metrics(country)
@@ -291,3 +294,18 @@ async def get_country_metrics_route(request: Request, country: str, user: User =
                 "message": "Some metrics may be unavailable due to a temporary issue with the data source."
             }
         )
+
+
+@router.post("/countries/{country}/data-question")
+async def handle_data_question(country: str, payload: Dict[str, Any], user: User = Depends(current_active_user)):
+    data = payload.get('data')
+    question = payload.get('question')
+    if not data or not question:
+        raise HTTPException(
+            status_code=400, detail="Data and question are required.")
+
+    # Process the question and data
+    # For example, use a machine learning model or any logic to generate an answer
+    answer = process_question_with_data(question, data)
+
+    return {"answer": answer}
