@@ -109,7 +109,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({ metricKey, metricInfo,
             } else if (unit === 'people') {
                 return `${formattedValue}${suffix}`;
             } else {
-                return `${formattedValue}${suffix} ${unit}`;
+                return `${formattedValue}${suffix}`;
             }
         }
     };
