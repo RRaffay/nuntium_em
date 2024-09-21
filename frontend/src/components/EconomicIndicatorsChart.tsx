@@ -26,14 +26,13 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar";
-import { Calendar as CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -63,6 +62,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [userQuestion, setUserQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
   const [loadingAnswer, setLoadingAnswer] = useState(false);
+  const [startYear, setStartYear] = useState<number | undefined>(undefined);
+  const [startMonth, setStartMonth] = useState<number | undefined>(undefined);
+  const [endYear, setEndYear] = useState<number | undefined>(undefined);
+  const [endMonth, setEndMonth] = useState<number | undefined>(undefined);
 
   const fetchMetrics = useCallback(async () => {
     if (!country) return;
@@ -318,6 +321,29 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     }
   };
 
+  // Generate array of years from the earliest data point to current year
+  const years = useMemo(() => {
+    if (!metrics) return [];
+    const allDates = Object.values(metrics).flatMap(metric => metric.data.map(d => new Date(d.date)));
+    const minYear = Math.min(...allDates.map(d => d.getFullYear()));
+    const maxYear = new Date().getFullYear();
+    return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+  }, [metrics]);
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  useEffect(() => {
+    if (startYear && startMonth) {
+      setStartDate(new Date(startYear, startMonth - 1, 1));
+    }
+    if (endYear && endMonth) {
+      setEndDate(new Date(endYear, endMonth, 0)); // Last day of the month
+    }
+  }, [startYear, startMonth, endYear, endMonth]);
+
   if (loading) {
     return <div>Loading economic indicators...</div>;
   }
@@ -452,53 +478,56 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
 
         {/* Date Range Selection */}
         <div className="flex space-x-4 mb-4">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !startDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, "PPP") : <span>Pick start date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={setStartDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "PPP") : <span>Pick end date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                initialFocus
-                disabled={(date) =>
-                  date < (startDate || new Date()) || date > new Date()
-                }
-              />
-            </PopoverContent>
-          </Popover>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Start Date</label>
+            <div className="mt-1 flex">
+              <Select onValueChange={(value) => setStartYear(Number(value))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select onValueChange={(value) => setStartMonth(Number(value))}>
+                <SelectTrigger className="w-[120px] ml-2">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, index) => (
+                    <SelectItem key={month} value={(index + 1).toString()}>{month}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">End Date</label>
+            <div className="mt-1 flex">
+              <Select onValueChange={(value) => setEndYear(Number(value))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select onValueChange={(value) => setEndMonth(Number(value))}>
+                <SelectTrigger className="w-[120px] ml-2">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, index) => (
+                    <SelectItem key={month} value={(index + 1).toString()}>{month}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         {displayMode === 'single' ? (
