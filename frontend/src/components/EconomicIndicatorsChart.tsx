@@ -330,10 +330,10 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   }
 
   return (
-    <Card className="mt-4 relative h-[calc(100vh-200px)]">
+    <Card className="mt-4 relative h-full">
       <CardContent className="p-0 h-full flex flex-col">
         <div className="p-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Economic Indicators</h2>
+          <h2 className="text-xl font-semibold">Visualizations</h2>
           {enableChat && (
             <Button
               size="sm"
