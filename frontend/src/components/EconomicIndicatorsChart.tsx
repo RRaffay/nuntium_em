@@ -422,7 +422,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
               <ResizableHandle />
               <ResizablePanel defaultSize={25} minSize={20}>
                 <div className="flex flex-col h-full overflow-hidden">
-                  <div className="flex-grow overflow-y-auto p-4">
+                  <div className="flex-grow overflow-y-auto">
                     <QuestionSection
                       messages={messages}
                       userQuestion={userQuestion}
