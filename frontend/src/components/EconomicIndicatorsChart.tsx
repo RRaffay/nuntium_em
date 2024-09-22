@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CountryMetrics, MetricInfo, api } from '@/services/api';
 import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfYear, endOfYear, eachMonthOfInterval, getYear } from 'date-fns';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -26,10 +24,6 @@ interface EconomicIndicatorsChartProps {
 }
 
 const MAX_METRICS = 4;
-const COLORS = [
-  '#4C9AFF', '#F78C6C', '#82AAFF', '#C792EA', '#7FD1FF',
-  '#F78C6C', '#C3E88D', '#FF5370', '#89DDFF', '#F07178'
-];
 
 export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = ({ country, enableChat }) => {
   const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
@@ -330,7 +324,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   }
 
   return (
-    <Card className="mt-4 relative h-full">
+    <Card className="mt-4 relative h-[calc(90vh)]">
       <CardContent className="p-0 h-full flex flex-col">
         <div className="p-4 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Visualizations</h2>
@@ -344,7 +338,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
             </Button>
           )}
         </div>
-        <ResizablePanelGroup direction="horizontal" className="flex-grow">
+        <ResizablePanelGroup direction="horizontal" className="flex-grow overflow-hidden">
           <ResizablePanel defaultSize={isChatOpen ? 75 : 100} minSize={50}>
             <div className="p-4 h-full overflow-y-auto">
               <div className="mb-4">
@@ -416,8 +410,8 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={25} minSize={20}>
-                <div className="flex flex-col h-full">
-                  <div className="flex-grow overflow-y-auto mb-4">
+                <div className="flex flex-col h-full overflow-hidden">
+                  <div className="flex-grow overflow-y-auto p-4">
                     <QuestionSection
                       messages={messages}
                       userQuestion={userQuestion}
