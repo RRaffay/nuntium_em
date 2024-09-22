@@ -112,7 +112,7 @@ econdb_df = load_econdb_tickers('main_tickers.csv')
 ECONDB_COUNTRY_SERIES_MAPPING = build_country_series_mapping(econdb_df)
 
 
-def get_country_metrics(country_name: str) -> Dict[str, Any]:
+def get_country_metrics(country_name: str, start_date: str = "1910") -> Dict[str, Any]:
     metrics: Dict[str, MetricData] = {}
     country_code = COUNTRY_NAME_TO_ISO2.get(country_name)
     if not country_code:
@@ -122,7 +122,7 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
     for metric_name, indicator_info in INDICATORS.items():
         try:
             data_points = fetch_indicator_data(
-                country_code, indicator_info['code'])
+                country_code, indicator_info['code'], start_date)
             metric_data = MetricData(
                 data=data_points,
                 label=indicator_info['label'],
@@ -203,19 +203,29 @@ def get_country_metrics(country_name: str) -> Dict[str, Any]:
     return processed_metrics
 
 
-def fetch_indicator_data(country_code: str, indicator_code: str) -> List[DataPoint]:
-    url = f"{WORLD_BANK_API_URL}/country/{country_code}/indicator/{indicator_code}?format=json&per_page=1000"
+def fetch_indicator_data(country_code: str, indicator_code: str, start_date: str = "2000") -> List[DataPoint]:
+    base_url = f"{WORLD_BANK_API_URL}/country/{country_code}/indicator/{indicator_code}"
+    params = {
+        "format": "json",
+        "per_page": 1000,
+        "date": f"{start_date}:{datetime.now().year}"
+    }
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
+    all_data = []
+
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        if len(data) >= 2:
-            data_list = data[1]
-            data_points = []
-            for entry in data_list:
+        while True:
+            response = requests.get(
+                base_url, params=params, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            if len(data) < 2 or not data[1]:
+                break
+
+            for entry in data[1]:
                 if entry['value'] is not None:
                     try:
                         date_obj = datetime.strptime(entry['date'], '%Y')
@@ -225,10 +235,16 @@ def fetch_indicator_data(country_code: str, indicator_code: str) -> List[DataPoi
                             entry['date'], '%Y-%m-%d').date()
                     value = float(entry['value'])
                     data_point = DataPoint(date=date_val, value=value)
-                    data_points.append(data_point)
-            return data_points[::-1]  # Reverse to chronological order
-        else:
-            return []
+                    all_data.append(data_point)
+
+            if len(data[1]) < params['per_page']:
+                break
+
+            params['page'] = data[0]['page'] + 1
+
+        # Sort in chronological order
+        return sorted(all_data, key=lambda x: x.date)
+
     except RequestException as e:
         logger.error(f"Error fetching data from World Bank API: {e}")
         return []

@@ -20,6 +20,7 @@ interface MetricSelectorProps {
     setDialogSelectedMetrics: (metrics: string[]) => void;
     handleDialogApply: (newSelected: string[]) => void;
     showMaxAlert: boolean;
+    latestDates: { [key: string]: string };
 }
 
 const MAX_METRICS = 4;
@@ -35,32 +36,45 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
     setDialogSelectedMetrics,
     handleDialogApply,
     showMaxAlert,
+    latestDates,
 }) => {
+    const sortedMetrics = availableMetrics.sort((a, b) => {
+        const dateA = new Date(latestDates[a] || 0);
+        const dateB = new Date(latestDates[b] || 0);
+        return dateB.getTime() - dateA.getTime();
+    });
+
+    const createMetricOption = (metricKey: string) => ({
+        value: metricKey,
+        label: (
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center">
+                    <span>{metrics?.[metricKey]?.label || metricKey}</span>
+                    <TooltipProvider>
+                        <TooltipUI>
+                            <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 ml-2 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{metrics?.[metricKey]?.description}</p>
+                                <p className="text-xs mt-1">Source: {metrics?.[metricKey]?.source}</p>
+                                <p className="text-xs mt-1">Latest data: {new Date(latestDates[metricKey]).toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                            </TooltipContent>
+                        </TooltipUI>
+                    </TooltipProvider>
+                </div>
+            </div>
+        ),
+        latestDate: latestDates[metricKey]
+    });
+
     return (
         <div className="mb-6">
             <label htmlFor="metrics-select" className="block mb-2 mt-2">Select Metrics to Display (max {MAX_METRICS}):</label>
             <div className="flex items-start space-x-2">
                 <div className="flex-grow">
                     <MultiSelect
-                        options={availableMetrics.map(metricKey => ({
-                            value: metricKey,
-                            label: (
-                                <div className="flex items-center">
-                                    <span>{metrics?.[metricKey]?.label || metricKey}</span>
-                                    <TooltipProvider>
-                                        <TooltipUI>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-4 w-4 ml-2 text-muted-foreground" />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{metrics?.[metricKey]?.description}</p>
-                                                <p className="text-xs mt-1">Source: {metrics?.[metricKey]?.source}</p>
-                                            </TooltipContent>
-                                        </TooltipUI>
-                                    </TooltipProvider>
-                                </div>
-                            )
-                        }))}
+                        options={sortedMetrics.map(createMetricOption)}
                         selected={selectedMetrics}
                         onChange={handleMetricsChange}
                         className="w-full"
@@ -86,15 +100,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                         </DialogHeader>
                         <div className="mt-4">
                             <MultiSelect
-                                options={Object.keys(metrics).map(metricKey => ({
-                                    value: metricKey,
-                                    label: (
-                                        <div>
-                                            <div>{metrics[metricKey].label}</div>
-                                            <div className="text-xs text-muted-foreground">Source: {metrics[metricKey].source}</div>
-                                        </div>
-                                    )
-                                }))}
+                                options={sortedMetrics.map(createMetricOption)}
                                 selected={dialogSelectedMetrics}
                                 onChange={handleDialogApply}
                                 className="w-full"

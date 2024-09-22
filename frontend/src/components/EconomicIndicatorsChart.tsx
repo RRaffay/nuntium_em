@@ -48,6 +48,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [endMonth, setEndMonth] = useState<number | undefined>(undefined);
   const [messages, setMessages] = useState<{ content: string; sender: 'user' | 'model'; isLoading?: boolean }[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [latestDates, setLatestDates] = useState<{ [key: string]: string }>({});
 
   const fetchMetrics = useCallback(async () => {
     if (!country) return;
@@ -64,6 +65,15 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         setAvailableMetrics(availableMetrics);
         setSelectedMetrics(availableMetrics.slice(0, 1));
         setError(null);
+
+        const latestDatesObj = Object.keys(metricsData).reduce((acc, key) => {
+          const data = metricsData[key]?.data;
+          if (data && data.length > 0) {
+            acc[key] = data[data.length - 1].date;
+          }
+          return acc;
+        }, {} as { [key: string]: string });
+        setLatestDates(latestDatesObj);
       } else {
         throw new Error('No valid metrics data received');
       }
@@ -365,6 +375,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                 setDialogSelectedMetrics={setDialogSelectedMetrics}
                 handleDialogApply={handleDialogApply}
                 showMaxAlert={showMaxAlert}
+                latestDates={latestDates}
               />
 
               {displayMode === 'single' && (
