@@ -244,7 +244,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           )}
         </div>
         <ResizablePanelGroup direction="horizontal" className="flex-grow overflow-hidden">
-          <ResizablePanel defaultSize={isChatOpen ? 75 : 100} minSize={50}>
+          <ResizablePanel defaultSize={isChatOpen ? 70 : 100} minSize={50}>
             <div className="p-4 h-full overflow-y-auto">
               <div className="mb-4">
                 <label className="block mb-2">Display Mode:</label>
@@ -315,7 +315,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
           {isChatOpen && enableChat && (
             <>
               <ResizableHandle />
-              <ResizablePanel defaultSize={25} minSize={20}>
+              <ResizablePanel defaultSize={30} minSize={20}>
                 <div className="flex flex-col h-full overflow-hidden">
                   <div className="flex-grow overflow-y-auto">
                     <QuestionSection
