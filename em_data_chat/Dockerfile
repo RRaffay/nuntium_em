@@ -9,4 +9,4 @@ RUN poetry install --no-root
 
 COPY . .
 
-CMD ["poetry", "run", "python", "chat_server.py"]
+CMD ["poetry", "run", "python", "data_chat_server.py"]
