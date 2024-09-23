@@ -24,7 +24,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryDat
             <TooltipTrigger asChild>
               <p className="text-base">Last updated: <strong>{new Date(countryData.timestamp).toLocaleString()} UTC</strong></p>
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent align="start">
               <p>The most recent time the data was refreshed</p>
             </TooltipContent>
           </Tooltip>
@@ -32,7 +32,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryDat
             <TooltipTrigger asChild>
               <p className="text-base">Hours of data: <strong>{countryData.hours}</strong></p>
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent align="start">
               <p>The time range of collected data in hours</p>
             </TooltipContent>
           </Tooltip>
@@ -40,7 +40,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryDat
             <TooltipTrigger asChild>
               <p className="text-base">Events Found: <strong>{countryData.no_relevant_events}</strong></p>
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent align="start">
               <p>The number of relevant events detected in this time period</p>
             </TooltipContent>
           </Tooltip>
@@ -49,7 +49,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryDat
               <TooltipTrigger asChild>
                 <p className="text-base">Your Area of Interest: <strong>{userProfile.area_of_interest}</strong></p>
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent align="start">
                 <p>Your specified area of interest to be used for generating reports. To change, update your profile.</p>
               </TooltipContent>
             </Tooltip>

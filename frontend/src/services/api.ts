@@ -48,6 +48,28 @@ export interface ChatMessage {
   sender: 'user' | 'model';
 }
 
+export interface IndicatorDataPoint {
+  date: string;
+  value: number;
+}
+
+export interface MetricDataPoint {
+  date: string;
+  value: number;
+}
+
+export interface MetricInfo {
+  data: MetricDataPoint[];
+  label: string;
+  unit: string;
+  source: string;
+  description: string;
+}
+
+export interface CountryMetrics {
+  [key: string]: MetricInfo;
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -271,6 +293,40 @@ export const api = {
       const errorData = await handledResponse.json();
       throw new Error(errorData.detail || 'Failed to reset password');
     }
+  },
+
+  async getCountryMetrics(country: string): Promise<CountryMetrics> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}/metrics`, {
+      headers: getAuthHeaders(),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      console.error('Failed to fetch country metrics');
+      throw new Error('Failed to fetch country metrics');
+    }
+    return handledResponse.json();
+  },
+
+  async submitDataQuestion(country: string, data: CountryMetrics, question: string, messages: ChatMessage[], proMode: boolean): Promise<{ answer: string }> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}/data-question`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        country,
+        data, 
+        question,
+        messages: messages.map(m => ({ content: m.content, sender: m.sender })),
+        proMode
+      }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to submit question');
+    }
+    return handledResponse.json();
   },
 
 };

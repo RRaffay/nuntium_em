@@ -128,7 +128,7 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
 
     input_prompt = f"This is the article content:\n\n<article>\n\n{article_content}\n\n</article>"
 
-    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
     def invoke_with_retry():
         return chain.invoke({"input": input_prompt})
 
@@ -139,7 +139,7 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
         raise Exception(f"Error in generating summary: {str(e)}")
 
 
-def generate_summaries(article_urls: List[str], max_workers: int = 5) -> List[str]:
+def generate_summaries(article_urls: List[str], max_workers: int = 3) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """

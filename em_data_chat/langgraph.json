@@ -1,0 +1,11 @@
+{
+  "python_version": "3.11",
+  "dockerfile_lines": [],
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "agent": "./em_data_chat/agent.py:graph"
+  },
+  "env": ".env"
+}

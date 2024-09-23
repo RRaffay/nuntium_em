@@ -25,6 +25,7 @@ while [[ $# -gt 0 ]]; do
         --report) SERVICES="$SERVICES report_server";;
         --news) SERVICES="$SERVICES news_pipeline_server";;
         --chat) SERVICES="$SERVICES research_chat";;
+        --datachat) SERVICES="$SERVICES data_chat";;
         --db) SERVICES="$SERVICES mongodb";;
         --redis) SERVICES="$SERVICES redis";;
         --nginx) SERVICES="$SERVICES nginx";;
