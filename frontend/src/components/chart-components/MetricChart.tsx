@@ -19,6 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface MetricChartProps {
     metricKey: string;
@@ -38,6 +39,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({ metricKey, metricInfo,
     const [startMonth, setStartMonth] = useState<number | undefined>(undefined);
     const [endYear, setEndYear] = useState<number | undefined>(undefined);
     const [endMonth, setEndMonth] = useState<number | undefined>(undefined);
+    const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
     useEffect(() => {
         if (startYear && startMonth) {
@@ -135,9 +137,11 @@ export const MetricChart: React.FC<MetricChartProps> = ({ metricKey, metricInfo,
     return (
         <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">{metricInfo.label || metricKey}</h3>
-            <Menubar className="mb-4">
+            <Menubar className="mb-4 flex-wrap">
                 <MenubarMenu>
-                    <MenubarTrigger>Chart Type: {chartType}</MenubarTrigger>
+                    <MenubarTrigger className={isSmallScreen ? 'text-xs py-1 px-2' : ''}>
+                        Chart: {chartType}
+                    </MenubarTrigger>
                     <MenubarContent>
                         <MenubarItem onClick={() => setChartType('Line')}>Line</MenubarItem>
                         <MenubarItem onClick={() => setChartType('Area')}>Area</MenubarItem>
@@ -146,22 +150,24 @@ export const MetricChart: React.FC<MetricChartProps> = ({ metricKey, metricInfo,
                 </MenubarMenu>
 
                 <MenubarMenu>
-                    <MenubarTrigger>Data Transformation: {dataTransformation === 'none' ? 'None' : dataTransformation === 'normalize' ? 'Normalize' : 'Percentage Change'}</MenubarTrigger>
+                    <MenubarTrigger className={isSmallScreen ? 'text-xs py-1 px-2' : ''}>
+                        Transform: {dataTransformation === 'none' ? 'None' : dataTransformation === 'normalize' ? 'Norm.' : '% Change'}
+                    </MenubarTrigger>
                     <MenubarContent>
                         <MenubarItem onClick={() => setDataTransformation('none')}>None</MenubarItem>
-                        <MenubarItem onClick={() => setDataTransformation('normalize')}>Normalize (Index to 100)</MenubarItem>
-                        <MenubarItem onClick={() => setDataTransformation('percentChange')}>Percentage Change</MenubarItem>
+                        <MenubarItem onClick={() => setDataTransformation('normalize')}>Normalize</MenubarItem>
+                        <MenubarItem onClick={() => setDataTransformation('percentChange')}>% Change</MenubarItem>
                     </MenubarContent>
                 </MenubarMenu>
 
                 <MenubarMenu>
-                    <MenubarTrigger>Date Range</MenubarTrigger>
+                    <MenubarTrigger className={isSmallScreen ? 'text-xs py-1 px-2' : ''}>Date Range</MenubarTrigger>
                     <MenubarContent>
-                        <div className="p-4">
-                            <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                            <div className="mt-1 flex">
+                        <div className={`p-4 ${isSmallScreen ? 'flex flex-col' : ''}`}>
+                            <label className="block text-sm font-medium text-gray-700">Start</label>
+                            <div className={`mt-1 flex ${isSmallScreen ? 'flex-col' : ''}`}>
                                 <Select onValueChange={(value) => setStartYear(Number(value))}>
-                                    <SelectTrigger className="w-[120px]">
+                                    <SelectTrigger className={isSmallScreen ? 'w-full mb-2' : 'w-[120px]'}>
                                         <SelectValue placeholder="Year" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -171,7 +177,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({ metricKey, metricInfo,
                                     </SelectContent>
                                 </Select>
                                 <Select onValueChange={(value) => setStartMonth(Number(value))}>
-                                    <SelectTrigger className="w-[120px] ml-2">
+                                    <SelectTrigger className={isSmallScreen ? 'w-full' : 'w-[120px] ml-2'}>
                                         <SelectValue placeholder="Month" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -182,10 +188,10 @@ export const MetricChart: React.FC<MetricChartProps> = ({ metricKey, metricInfo,
                                 </Select>
                             </div>
 
-                            <label className="block text-sm font-medium text-gray-700 mt-4">End Date</label>
-                            <div className="mt-1 flex">
+                            <label className="block text-sm font-medium text-gray-700 mt-4">End</label>
+                            <div className={`mt-1 flex ${isSmallScreen ? 'flex-col' : ''}`}>
                                 <Select onValueChange={(value) => setEndYear(Number(value))}>
-                                    <SelectTrigger className="w-[120px]">
+                                    <SelectTrigger className={isSmallScreen ? 'w-full mb-2' : 'w-[120px]'}>
                                         <SelectValue placeholder="Year" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -195,7 +201,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({ metricKey, metricInfo,
                                     </SelectContent>
                                 </Select>
                                 <Select onValueChange={(value) => setEndMonth(Number(value))}>
-                                    <SelectTrigger className="w-[120px] ml-2">
+                                    <SelectTrigger className={isSmallScreen ? 'w-full' : 'w-[120px] ml-2'}>
                                         <SelectValue placeholder="Month" />
                                     </SelectTrigger>
                                     <SelectContent>

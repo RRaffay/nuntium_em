@@ -8,6 +8,7 @@ import { AlertCircle, Expand, Info } from "lucide-react";
 import { Tooltip as TooltipUI } from "@/components/ui/tooltip";
 import { TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CountryMetrics } from '@/services/api';
+import { Label } from "@/components/ui/label";
 
 interface MetricSelectorProps {
     availableMetrics: string[];
@@ -70,7 +71,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
 
     return (
         <div className="mb-6">
-            <label htmlFor="metrics-select" className="block mb-2 mt-2">Select Metrics to Display (max {MAX_METRICS}):</label>
+            <Label htmlFor="metrics-select" className="block mb-2 mt-2">Select Metrics to Display (max {MAX_METRICS}):</Label>
             <div className="flex items-start space-x-2">
                 <div className="flex-grow">
                     <MultiSelect

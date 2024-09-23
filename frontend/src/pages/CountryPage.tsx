@@ -52,7 +52,7 @@ const CountryPage: React.FC = () => {
 
   const renderEventsSection = () => {
     return (
-      <div className="w-full pl-6 pr-6">
+      <div className="w-full">
         <h2 className="text-2xl font-bold mb-4">Events</h2>
         {highRelevanceEvents.length > 0 ? (
           <EventList
@@ -104,6 +104,7 @@ const CountryPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-2 lg:p-4">
+
       <CountryPageHeader
         countryData={countryData}
         userProfile={userProfile}

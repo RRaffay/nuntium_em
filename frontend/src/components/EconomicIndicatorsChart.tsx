@@ -2,13 +2,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfYear, endOfYear, eachMonthOfInterval, getYear } from 'date-fns';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { MetricSelector } from '@/components/chart-components/MetricSelector';
 import { ChartOptions } from '@/components/chart-components/ChartOptions';
 import { SingleChart } from '@/components/chart-components/SingleChart';
@@ -20,6 +13,9 @@ import { MessageCircle } from "lucide-react";
 import { useMetricsData } from '@/hooks/useMetricsData';
 import { useChat } from '@/hooks/useChat';
 import { useChartData } from '@/hooks/useChartData';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -64,6 +60,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   const [startMonth, setStartMonth] = useState<number | undefined>(undefined);
   const [endYear, setEndYear] = useState<number | undefined>(undefined);
   const [endMonth, setEndMonth] = useState<number | undefined>(undefined);
+  const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
   const chartData = useChartData({
     metrics,
@@ -236,27 +233,28 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
       <CardContent className="p-0 h-full flex flex-col">
         <div className="p-4 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Visualizations</h2>
-          {enableChat && (
+          {enableChat && !isSmallScreen && (
             <Button size="sm" onClick={() => setIsChatOpen(!isChatOpen)}>
               <MessageCircle className="mr-2 h-4 w-4" />
               {isChatOpen ? 'Close Chat' : 'Open Chat'}
             </Button>
           )}
         </div>
-        <ResizablePanelGroup direction="horizontal" className="flex-grow overflow-hidden">
-          <ResizablePanel defaultSize={isChatOpen ? 70 : 100} minSize={50}>
+        <ResizablePanelGroup direction={isSmallScreen ? 'vertical' : 'horizontal'} className="flex-grow overflow-hidden">
+          <ResizablePanel defaultSize={isChatOpen && !isSmallScreen ? 70 : 100} minSize={50}>
             <div className="p-4 h-full overflow-y-auto">
               <div className="mb-4">
-                <label className="block mb-2">Display Mode:</label>
-                <Select onValueChange={(value) => setDisplayMode(value as 'single' | 'multiple')}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select display mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single Chart</SelectItem>
-                    <SelectItem value="multiple">Multiple Charts</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="mb-2 block text-sm font-medium">Display Mode</Label>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="display-mode"
+                    checked={displayMode === 'multiple'}
+                    onCheckedChange={(checked) => setDisplayMode(checked ? 'multiple' : 'single')}
+                  />
+                  <Label htmlFor="display-mode">
+                    {displayMode === 'single' ? 'Single Chart' : 'Multiple Charts'}
+                  </Label>
+                </div>
               </div>
 
               <MetricSelector
@@ -312,34 +310,59 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
             </div>
           </ResizablePanel>
 
-          {isChatOpen && enableChat && (
+          {isChatOpen && enableChat && !isSmallScreen && (
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={30} minSize={20}>
-                <div className="flex flex-col h-full overflow-hidden">
-                  <div className="flex-grow overflow-y-auto">
-                    <QuestionSection
-                      messages={messages}
-                      userQuestion={userQuestion}
-                      setUserQuestion={setUserQuestion}
-                      handleSubmitQuestion={() =>
-                        handleSubmitQuestion({
-                          country,
-                          selectedMetrics,
-                          metrics,
-                          startDate,
-                          endDate,
-                        })
-                      }
-                      loadingAnswer={loadingAnswer}
-                      clearChatHistory={clearChatHistory}
-                    />
-                  </div>
-                </div>
+                <QuestionSection
+                  messages={messages}
+                  userQuestion={userQuestion}
+                  setUserQuestion={setUserQuestion}
+                  handleSubmitQuestion={() =>
+                    handleSubmitQuestion({
+                      country,
+                      selectedMetrics,
+                      metrics,
+                      startDate,
+                      endDate,
+                    })
+                  }
+                  loadingAnswer={loadingAnswer}
+                  clearChatHistory={clearChatHistory}
+                />
               </ResizablePanel>
             </>
           )}
         </ResizablePanelGroup>
+        {isSmallScreen && enableChat && (
+          <div className="border-t">
+            <Button
+              className="w-full"
+              onClick={() => setIsChatOpen(!isChatOpen)}
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              {isChatOpen ? 'Close Chat' : 'Open Chat'}
+            </Button>
+            {isChatOpen && (
+              <QuestionSection
+                messages={messages}
+                userQuestion={userQuestion}
+                setUserQuestion={setUserQuestion}
+                handleSubmitQuestion={() =>
+                  handleSubmitQuestion({
+                    country,
+                    selectedMetrics,
+                    metrics,
+                    startDate,
+                    endDate,
+                  })
+                }
+                loadingAnswer={loadingAnswer}
+                clearChatHistory={clearChatHistory}
+              />
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

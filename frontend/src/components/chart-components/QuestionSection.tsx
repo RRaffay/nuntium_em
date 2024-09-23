@@ -6,6 +6,7 @@ import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
 import { Trash2 } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface Message {
     content: string;
@@ -30,8 +31,10 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
     loadingAnswer,
     clearChatHistory,
 }) => {
+    const isSmallScreen = useMediaQuery('(max-width: 768px)');
+
     return (
-        <div className="flex flex-col h-full border-l">
+        <div className={`flex flex-col ${isSmallScreen ? 'h-[50vh]' : 'h-full'} ${isSmallScreen ? '' : 'border-l'}`}>
             <div className="flex-grow overflow-y-auto p-4">
                 <ChatMessageList>
                     {messages.map((message, index) => (
