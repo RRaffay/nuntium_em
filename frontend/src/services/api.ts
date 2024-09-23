@@ -315,6 +315,7 @@ export const api = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
+        country,
         data, 
         question,
         messages: messages.map(m => ({ content: m.content, sender: m.sender }))

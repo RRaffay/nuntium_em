@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { CountryMetrics, MetricInfo, api } from '@/services/api';
+// EconomicIndicatorsChart.tsx
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfYear, endOfYear, eachMonthOfInterval, getYear } from 'date-fns';
 import {
@@ -8,15 +8,18 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import { MetricSelector } from '@/components/chart-components/MetricSelector';
 import { ChartOptions } from '@/components/chart-components/ChartOptions';
 import { SingleChart } from '@/components/chart-components/SingleChart';
 import { MultipleCharts } from '@/components/chart-components/MultipleCharts';
 import { QuestionSection } from '@/components/chart-components/QuestionSection';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { Button } from "@/components/ui/button"
-import { MessageCircle } from "lucide-react"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
+import { useMetricsData } from '@/hooks/useMetricsData';
+import { useChat } from '@/hooks/useChat';
+import { useChartData } from '@/hooks/useChartData';
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -26,123 +29,50 @@ interface EconomicIndicatorsChartProps {
 const MAX_METRICS = 4;
 
 export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = ({ country, enableChat }) => {
-  const [metrics, setMetrics] = useState<CountryMetrics | null>(null);
+  const { metrics, loading, error, availableMetrics, latestDates } = useMetricsData(country);
+
+  const {
+    userQuestion,
+    setUserQuestion,
+    loadingAnswer,
+    messages,
+    handleSubmitQuestion,
+    clearChatHistory,
+    isChatOpen,
+    setIsChatOpen,
+  } = useChat();
+
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
+  const [dialogSelectedMetrics, setDialogSelectedMetrics] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (availableMetrics.length > 0 && selectedMetrics.length === 0) {
+      setSelectedMetrics(availableMetrics.slice(0, 1)); // Select the first metric by default
+      setDialogSelectedMetrics(availableMetrics.slice(0, 1));
+    }
+  }, [availableMetrics]);
+
   const [displayMode, setDisplayMode] = useState<'single' | 'multiple'>('single');
   const [chartType, setChartType] = useState<'Line' | 'Area' | 'Bar'>('Line');
   const [dataTransformation, setDataTransformation] = useState<'none' | 'normalize' | 'percentChange'>('none');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showMaxAlert, setShowMaxAlert] = useState(false);
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
-  const [dialogSelectedMetrics, setDialogSelectedMetrics] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [userQuestion, setUserQuestion] = useState('');
-  const [loadingAnswer, setLoadingAnswer] = useState(false);
   const [startYear, setStartYear] = useState<number | undefined>(undefined);
   const [startMonth, setStartMonth] = useState<number | undefined>(undefined);
   const [endYear, setEndYear] = useState<number | undefined>(undefined);
   const [endMonth, setEndMonth] = useState<number | undefined>(undefined);
-  const [messages, setMessages] = useState<{ content: string; sender: 'user' | 'model'; isLoading?: boolean }[]>([]);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [latestDates, setLatestDates] = useState<{ [key: string]: string }>({});
 
-  const fetchMetrics = useCallback(async () => {
-    if (!country) return;
-
-    try {
-      setLoading(true);
-      const metricsData = await api.getCountryMetrics(country);
-
-      if (metricsData && typeof metricsData === 'object' && Object.keys(metricsData).length > 0) {
-        setMetrics(metricsData);
-        const availableMetrics = Object.keys(metricsData).filter(key =>
-          metricsData[key]?.data?.length > 0
-        );
-        setAvailableMetrics(availableMetrics);
-        setSelectedMetrics(availableMetrics.slice(0, 1));
-        setError(null);
-
-        const latestDatesObj = Object.keys(metricsData).reduce((acc, key) => {
-          const data = metricsData[key]?.data;
-          if (data && data.length > 0) {
-            acc[key] = data[data.length - 1].date;
-          }
-          return acc;
-        }, {} as { [key: string]: string });
-        setLatestDates(latestDatesObj);
-      } else {
-        throw new Error('No valid metrics data received');
-      }
-    } catch (error) {
-      console.error('Error fetching country metrics:', error);
-      setError('Failed to load economic indicators');
-      setMetrics(null);
-      setAvailableMetrics([]);
-      setSelectedMetrics([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [country]);
-
-  useEffect(() => {
-    fetchMetrics();
-  }, [fetchMetrics]);
-
-  const chartData = useMemo(() => {
-    if (!metrics || selectedMetrics.length === 0) return [];
-
-    const transformData = (dataPoints: any[]) => {
-      if (dataTransformation === 'normalize') {
-        const firstValue = dataPoints.find(dp => dp.value != null)?.value || 1;
-        return dataPoints.map(dp => ({ ...dp, value: dp.value != null ? (dp.value / firstValue) * 100 : null }));
-      } else if (dataTransformation === 'percentChange') {
-        return dataPoints.map((dp, index, arr) => {
-          if (index === 0 || dp.value == null || arr[index - 1].value == null) return { ...dp, value: null };
-          const percentChange = ((dp.value - arr[index - 1].value) / arr[index - 1].value) * 100;
-          return { ...dp, value: percentChange };
-        });
-      } else {
-        return dataPoints;
-      }
-    };
-
-    const isInRange = (date: Date) => {
-      const dateTime = date.getTime();
-      const startTime = startDate ? startDate.getTime() : -Infinity;
-      const endTime = endDate ? endDate.getTime() : Infinity;
-      return dateTime >= startTime && dateTime <= endTime;
-    };
-
-    if (displayMode === 'single') {
-      const dataMap: { [date: string]: any } = {};
-      selectedMetrics.forEach((metricKey) => {
-        const metricInfo = metrics[metricKey];
-        if (!metricInfo?.data) return;
-        const transformedData = transformData(metricInfo.data);
-        transformedData.forEach((dataPoint) => {
-          const dataPointDate = new Date(dataPoint.date);
-          if (isInRange(dataPointDate)) {
-            if (!dataMap[dataPoint.date]) {
-              dataMap[dataPoint.date] = { date: dataPointDate };
-            }
-            dataMap[dataPoint.date][metricKey] = dataPoint.value;
-          }
-        });
-      });
-      return Object.values(dataMap).sort((a, b) => a.date - b.date);
-    } else {
-      return selectedMetrics.map(metricKey => ({
-        metricKey,
-        data: metrics[metricKey]?.data
-          ?.map(dp => ({ ...dp, date: new Date(dp.date) }))
-          .filter(dp => isInRange(dp.date)) || [],
-      }));
-    }
-  }, [metrics, selectedMetrics, displayMode, dataTransformation, startDate, endDate]);
+  const chartData = useChartData({
+    metrics,
+    selectedMetrics,
+    displayMode,
+    dataTransformation,
+    startDate,
+    endDate,
+  });
 
   const formatValue = useCallback((value: number, metricKey: string, forTooltip: boolean = false): string => {
     if (value == null) return 'N/A';
@@ -256,59 +186,27 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     }
   }, []);
 
-  const handleSubmitQuestion = async () => {
-    if (!userQuestion.trim()) return;
-    setLoadingAnswer(true);
-    const userMessage: { content: string; sender: 'user' } = { content: userQuestion, sender: 'user' };
-    const loadingMessage: { content: string; sender: 'model'; isLoading: boolean } = { content: '', sender: 'model', isLoading: true };
-    setMessages(prevMessages => [...prevMessages, userMessage, loadingMessage]);
-    setUserQuestion('');
-
-    try {
-      const selectedData = selectedMetrics.reduce((acc, metricKey) => {
-        const metricData = metrics?.[metricKey]?.data || [];
-        const filteredData = metricData.filter((dp) => {
-          const dpDate = new Date(dp.date);
-          const startTime = startDate ? startDate.getTime() : -Infinity;
-          const endTime = endDate ? endDate.getTime() : Infinity;
-          return dpDate.getTime() >= startTime && dpDate.getTime() <= endTime;
-        });
-        acc[metricKey] = {
-          ...metrics?.[metricKey],
-          data: filteredData,
-          label: metrics?.[metricKey]?.label || '',
-          unit: metrics?.[metricKey]?.unit || '',
-          source: metrics?.[metricKey]?.source || '',
-          description: metrics?.[metricKey]?.description || '',
-        };
-        return acc;
-      }, {} as CountryMetrics);
-
-      const response = await api.submitDataQuestion(country, selectedData, userQuestion, messages);
-      setMessages(prevMessages => [
-        ...prevMessages.slice(0, -1),
-        { content: response.answer, sender: 'model' }
-      ]);
-    } catch (error) {
-      console.error('Error submitting question:', error);
-      setMessages(prevMessages => [
-        ...prevMessages.slice(0, -1),
-        { content: 'An error occurred while processing your question.', sender: 'model' }
-      ]);
-    } finally {
-      setLoadingAnswer(false);
+  useEffect(() => {
+    if (startYear && startMonth) {
+      setStartDate(new Date(startYear, startMonth - 1, 1));
+    } else {
+      setStartDate(undefined);
     }
-  };
+  }, [startYear, startMonth]);
 
-  const clearChatHistory = useCallback(() => {
-    setMessages([]);
-  }, []);
+  useEffect(() => {
+    if (endYear && endMonth) {
+      setEndDate(new Date(endYear, endMonth, 0)); // Last day of the month
+    } else {
+      setEndDate(undefined);
+    }
+  }, [endYear, endMonth]);
 
   const years = useMemo(() => {
     if (!metrics || Object.keys(metrics).length === 0) return [];
-    const allDates = Object.values(metrics).flatMap(metric => metric.data.map(d => new Date(d.date)));
-    const minYear = Math.min(...allDates.map(d => getYear(d)));
-    const maxYear = Math.max(...allDates.map(d => getYear(d)));
+    const allDates = Object.values(metrics).flatMap((metric) => metric.data.map((d) => new Date(d.date)));
+    const minYear = Math.min(...allDates.map((d) => getYear(d)));
+    const maxYear = Math.max(...allDates.map((d) => getYear(d)));
     return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
   }, [metrics]);
 
@@ -316,9 +214,9 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     const now = new Date();
     const monthsInYear = eachMonthOfInterval({
       start: startOfYear(now),
-      end: endOfYear(now)
+      end: endOfYear(now),
     });
-    return monthsInYear.map(date => format(date, 'MMMM'));
+    return monthsInYear.map((date) => format(date, 'MMMM'));
   }, []);
 
   if (loading) {
@@ -339,10 +237,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
         <div className="p-4 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Visualizations</h2>
           {enableChat && (
-            <Button
-              size="sm"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-            >
+            <Button size="sm" onClick={() => setIsChatOpen(!isChatOpen)}>
               <MessageCircle className="mr-2 h-4 w-4" />
               {isChatOpen ? 'Close Chat' : 'Open Chat'}
             </Button>
@@ -427,7 +322,15 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                       messages={messages}
                       userQuestion={userQuestion}
                       setUserQuestion={setUserQuestion}
-                      handleSubmitQuestion={handleSubmitQuestion}
+                      handleSubmitQuestion={() =>
+                        handleSubmitQuestion({
+                          country,
+                          selectedMetrics,
+                          metrics,
+                          startDate,
+                          endDate,
+                        })
+                      }
                       loadingAnswer={loadingAnswer}
                       clearChatHistory={clearChatHistory}
                     />

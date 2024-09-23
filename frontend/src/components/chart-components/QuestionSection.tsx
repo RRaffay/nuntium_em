@@ -5,7 +5,7 @@ import { ChatInput } from '@/components/ui/chat/chat-input';
 import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
-import { Trash2 } from 'lucide-react'; // Import the trash icon
+import { Trash2 } from 'lucide-react';
 
 interface Message {
     content: string;
