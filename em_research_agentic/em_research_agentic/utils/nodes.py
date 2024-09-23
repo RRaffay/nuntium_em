@@ -46,6 +46,21 @@ def _search_and_summarize(query, max_results):
     return [(r, summary) for r, summary in zip(response['results'], summaries)]
 
 
+# With o-1 preview
+# def plan_node(state: AgentState, config):
+
+#     input_message = f"The topic is:\n{state['task']}\n"
+
+#     current_date = datetime.now().strftime("%Y-%m-%d")
+
+#     input_message_with_system = PLAN_PROMPT.format(
+#         current_date=current_date) + input_message
+#     messages = [HumanMessage(content=input_message_with_system)]
+#     model = ChatOpenAI(temperature=1, model_name="o1-preview")
+#     response = model.invoke(messages)
+#     return {"plan": response.content}
+
+
 def plan_node(state: AgentState, config):
 
     input_message = f"The topic is:\n{state['task']}\n"
@@ -60,6 +75,7 @@ def plan_node(state: AgentState, config):
     model = _get_model(model_name)
     response = model.invoke(messages)
     return {"plan": response.content}
+
 
 # Node for Research Planning
 
@@ -80,11 +96,14 @@ def research_plan_node(state: AgentState, config):
     content = state.get('content') or []
     max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
-    for q in queries.queries:
-        for r, summary in _search_and_summarize(q, max_results):
-            response_obj = SearchResponse(
-                content=summary, url=r['url'], title=r['title'])
-            content.append(response_obj.to_string())
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(
+            _search_and_summarize, q, max_results) for q in queries.queries]
+        for future in concurrent.futures.as_completed(futures):
+            for r, summary in future.result():
+                response_obj = SearchResponse(
+                    content=summary, url=r['url'], title=r['title'])
+                content.append(response_obj.to_string())
 
     return {"content": content}
 
@@ -146,11 +165,14 @@ def research_critique_node(state: AgentState, config):
 
     max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
-    for q in queries.queries:
-        for r, summary in _search_and_summarize(q, max_results):
-            response_obj = SearchResponse(
-                content=summary, url=r['url'], title=r['title'])
-            content.append(response_obj.to_string())
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(
+            _search_and_summarize, q, max_results) for q in queries.queries]
+        for future in concurrent.futures.as_completed(futures):
+            for r, summary in future.result():
+                response_obj = SearchResponse(
+                    content=summary, url=r['url'], title=r['title'])
+                content.append(response_obj.to_string())
 
     return {"content": content}
 
