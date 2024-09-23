@@ -1,8 +1,9 @@
+from core.metric import get_country_metrics
 from fastapi import APIRouter, HTTPException, Depends, Request
-from core.reports import economic_report, economic_report_event
+from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
 from core.report_chat import economic_report_chat, ChatRequest
-from models import CountryData, Report
+from models import CountryData, Report, ChatMessage
 from db.data import fetch_country_data, addable_countries, delete_country_data
 from datetime import datetime
 from auth.users import current_active_user
@@ -12,6 +13,12 @@ import logging
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from config import settings
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from typing import Dict, Any, List
+from core.data_chat import data_chat, DataChatRequest
+from cache.cache import cached_with_logging, DateTimeEncoder
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +155,11 @@ async def generate_country_report(request: Request, country: str, user: User = D
 
         area_of_interest = user.area_of_interest
 
-        report_content = await economic_report(country, area_of_interest)
+        report_input = CountryReportInput(
+            country=country,
+            area_of_interest=area_of_interest
+        )
+        report_content = await economic_report(report_input)
 
         return Report(content=report_content, generated_at=datetime.now().isoformat())
     except Exception as e:
@@ -187,7 +198,12 @@ async def generate_event_report(request: Request, country: str, event_id: str, u
 
         area_of_interest = user.area_of_interest
 
-        report_content = await economic_report_event(country, area_of_interest, event)
+        report_input = EventReportInput(
+            country=country,
+            area_of_interest=area_of_interest,
+            event=event
+        )
+        report_content = await economic_report_event(report_input)
 
         return Report(content=report_content, generated_at=datetime.now().isoformat())
     except Exception as e:
@@ -240,7 +256,85 @@ async def research_chat(request: Request, chat_request: ChatRequest, user: User 
             decoded_report = base64.b64decode(
                 chat_request.encodedReport).decode('iso-8859-1')
 
-        return await economic_report_chat(chat_request.message, decoded_report, chat_request.messages)
+        # Create a new ChatRequest with the decoded report
+        input_request = ChatRequest(
+            message=chat_request.message,
+            encodedReport=decoded_report,
+            messages=chat_request.messages,
+            proMode=chat_request.proMode
+        )
+
+        return await economic_report_chat(input_request)
     except Exception as e:
         logger.error(f"Error in research_chat: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/countries/{country}/metrics")
+@cached_with_logging(expire=settings.METRIC_CACHE_TIMEOUT)
+@limiter.limit(settings.RATE_LIMITS["get_country_metrics"])
+async def get_country_metrics_route(request: Request, country: str, user: User = Depends(current_active_user)):
+    limiter.key_func = lambda: str(user.id)
+    try:
+        logger.info(f"Fetching metrics for {country}")
+        metrics = get_country_metrics(country)
+        logger.info(f"Successfully retrieved metrics for {country}")
+        
+        serialized_metrics = json.loads(json.dumps(metrics, cls=DateTimeEncoder))
+        
+        return serialized_metrics
+    except ValueError as ve:
+        logger.error(f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Error in get_country_metrics_route: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "An error occurred while processing the metrics.",
+                "details": str(e),
+                "message": "Some metrics may be unavailable due to a temporary issue with the data source."
+            }
+        )
+
+
+@router.post("/countries/{country}/data-question")
+@limiter.limit(settings.RATE_LIMITS["data_question"])
+async def handle_data_question(request: Request, country: str, payload: Dict[str, Any], user: User = Depends(current_active_user)):
+    limiter.key_func = lambda: str(user.id)
+    data = payload.get('data')
+    question = payload.get('question')
+    messages = payload.get('messages', [])
+    pro_mode = payload.get('proMode', False)
+    country = payload.get('country', '')
+
+    if not data or not question:
+        raise HTTPException(
+            status_code=400, detail="Data and question are required.")
+
+    if not isinstance(messages, list):
+        raise HTTPException(status_code=400, detail="Messages must be a list.")
+
+    try:
+        # Convert messages to the format expected by DataChatRequest
+        chat_messages = [(msg['content'], msg['sender']) for msg in messages]
+
+        # Create a DataChatRequest object
+        chat_request = DataChatRequest(
+            message=question,
+            data=data,
+            messages=chat_messages,
+            proMode=pro_mode,
+            country=country
+        )
+
+        logger.info(f"Received data question for {country}: {question}")
+        logger.info(f"Message history: {chat_messages}")
+
+        # Use the data_chat function instead of process_question_with_data
+        answer = await data_chat(chat_request)
+
+        return {"answer": answer}
+    except Exception as e:
+        logger.error(f"Error in handle_data_question: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

@@ -35,6 +35,7 @@ class EconomicReportInput(BaseModel):
 async def run_graph(input_data: GraphInput):
     try:
         thread = {"configurable": {"thread_id": "1"}}
+        logger.info(f"Running graph with input: {input_data}")
         s = await graph.ainvoke({
             'task': input_data.task,
             "max_revisions": input_data.max_revisions,

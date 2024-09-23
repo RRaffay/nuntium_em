@@ -60,7 +60,7 @@ const Dashboard: React.FC = React.memo(() => {
     setSuccessMessage(null);
     setRateLimitError(null);
     const startTime = Date.now();
-    const duration = 120000; // 120 seconds
+    const duration = 160000; // 160 seconds
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;

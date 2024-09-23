@@ -5,14 +5,14 @@ To complete this task, follow these steps:
 1. Carefully read the report and understand the question in the context of the report.
 2. Break down the question into smaller, manageable parts.
 3. Create a search query for each part.
-
+4. Try to make your queries MECE (Mutually Exclusive, Collectively Exhaustive).
 
 Examples of effective search queries might include:
 - "[Company name] financial performance 2024"
 - "[Industry] market trends analysis"
 - "[Economic indicator] impact on [sector] stocks"
 
-Remember, you should generate no more than 10 search queries. Focus on creating high-quality, diverse queries that will provide the most valuable information for answering the question.
+Remember, you should generate no more than {max_search_queries} search queries. Focus on creating high-quality, diverse queries that will provide the most valuable information for answering the question.
 
 Note that the current date is {current_date}.
 """
@@ -44,3 +44,19 @@ WRITER_PROMPT = """You are an AI assistant at a hedge fund focused on Emerging M
 
 Remember to maintain a professional tone throughout the answer and focus on providing valuable, actionable insights. If you need to make assumptions or if there's insufficient information, state this clearly in your answer. Avoid speculative or unfounded claims.
 """
+
+############################################################################################################
+
+FINAL_REVIEW_PROMPT = """You are a senior partner at an investment firm tasked with reviewing the final answer to a client question. Your goal is to take the final answer and make sure that it is polished and a client ready answer.
+
+1. Carefully review the final answer for any errors 
+2. Ensure that the answer is polished and professional.
+3. Make sure there are no incomplete sections with placeholder text. If there are, remove them or add a section about further research.
+4. Prioritize the most actionable and rigorous recommendations to the client that are backed by analysis and data
+5. Keep all the relevant citations
+
+Your goal is to make sure that the answer is client ready. 
+
+Note that the current date is {current_date}.
+
+Return ONLY the final answer, no other text or output. \n\n Answer: \n\n"""

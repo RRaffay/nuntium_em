@@ -53,7 +53,7 @@ def _format_conversation_history(messages: List[Tuple[str, str]]) -> str:
     return "\n".join([f"{sender}: {content}" for content, sender in messages])
 
 
-def research_plan_node(state: AgentState, config):
+def research_plan_node(state: AgentState, config, max_search_queries: int = 5):
     model_name = config.get('configurable', {}).get("model_name", "openai")
     model = _get_model(model_name)
 
@@ -63,7 +63,7 @@ def research_plan_node(state: AgentState, config):
 
     queries = model.with_structured_output(Queries).invoke([
         SystemMessage(content=RESEARCH_PLAN_PROMPT.format(
-            current_date=current_date)),
+            current_date=current_date, max_search_queries=max_search_queries)),
         HumanMessage(
             content=f"Conversation history:\n{conversation_history}\n\nThe question is:\n{state['task']}\n. Here is the equity report:\n<equity_report>\n{state['equity_report']}\n</equity_report>")
     ])
@@ -71,7 +71,7 @@ def research_plan_node(state: AgentState, config):
     content = state.get('content') or []
     max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = [executor.submit(
             _search_and_summarize, q, max_results) for q in queries.queries]
         for future in concurrent.futures.as_completed(futures):

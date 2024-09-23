@@ -16,7 +16,30 @@ else
     exit 1
 fi
 
-# Start Docker Compose with the selected file
-docker-compose -f $COMPOSE_FILE up -d --build
+# Parse command-line arguments
+SERVICES=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --frontend) SERVICES="$SERVICES frontend";;
+        --backend) SERVICES="$SERVICES backend";;
+        --report) SERVICES="$SERVICES report_server";;
+        --news) SERVICES="$SERVICES news_pipeline_server";;
+        --chat) SERVICES="$SERVICES research_chat";;
+        --datachat) SERVICES="$SERVICES data_chat";;
+        --db) SERVICES="$SERVICES mongodb";;
+        --redis) SERVICES="$SERVICES redis";;
+        --nginx) SERVICES="$SERVICES nginx";;
+        --certbot) SERVICES="$SERVICES certbot";;
+        *) echo "Unknown option: $1"; exit 1;;
+    esac
+    shift
+done
 
-echo "Started Docker Compose with $COMPOSE_FILE"
+# Start Docker Compose with the selected file and services
+if [ -z "$SERVICES" ]; then
+    docker-compose -f $COMPOSE_FILE up -d --build
+    echo "Started all services with $COMPOSE_FILE"
+else
+    docker-compose -f $COMPOSE_FILE up -d --build $SERVICES
+    echo "Started selected services: $SERVICES with $COMPOSE_FILE"
+fi

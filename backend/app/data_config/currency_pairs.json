@@ -1,0 +1,16 @@
+{
+    "Argentina": "USDARS=X",
+    "Brazil": "USDBRL=X",
+    "China": "USDCNY=X",
+    "India": "USDINR=X",
+    "South Africa": "USDZAR=X",
+    "Pakistan": "USDPKR=X",
+    "Indonesia": "USDIDR=X",
+    "Nigeria": "USDNGN=X",
+    "Mexico": "USDMXN=X",
+    "Egypt": "USDEGP=X",
+    "Vietnam": "USDVND=X",
+    "Philippines": "USDPHP=X",
+    "Russia": "USDRUB=X",
+    "Saudi Arabia": "USDSAR=X"
+}

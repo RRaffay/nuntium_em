@@ -29,3 +29,8 @@ class CountryData(BaseModel):
 class Report(BaseModel):
     content: str
     generated_at: str
+
+
+class ChatMessage(BaseModel):
+    content: str
+    sender: str

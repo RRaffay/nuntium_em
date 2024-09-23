@@ -35,7 +35,7 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-gray-100">
       <Header />
       <main>
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="max-w-8xl mx-auto py-6 sm:px-6 lg:px-8">
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />

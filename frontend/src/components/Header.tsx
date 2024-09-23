@@ -12,8 +12,8 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-white shadow">
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <Link to="/" className="text-3xl font-bold text-gray-900 hover:text-gray-700 transition-colors duration-200">
+      <div className="max-w-8xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <Link to="/" className="text-3xl font-bold text-gray-900 hover:text-gray-700 transition-colors duration-200 px-4">
           Nuntium
         </Link>
         <div>
