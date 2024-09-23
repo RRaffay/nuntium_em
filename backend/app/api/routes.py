@@ -302,7 +302,7 @@ async def handle_data_question(request: Request, country: str, payload: Dict[str
     data = payload.get('data')
     question = payload.get('question')
     messages = payload.get('messages', [])
-    pro_mode = payload.get('proMode', True)
+    pro_mode = payload.get('proMode', False)
     country = payload.get('country', '')
 
     if not data or not question:
@@ -319,7 +319,7 @@ async def handle_data_question(request: Request, country: str, payload: Dict[str
         # Create a DataChatRequest object
         chat_request = DataChatRequest(
             message=question,
-            data=str(data),
+            data=data,
             messages=chat_messages,
             proMode=pro_mode,
             country=country
