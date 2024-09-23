@@ -13,11 +13,12 @@ import logging
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from config import settings
-from fastapi_cache.decorator import cache
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from typing import Dict, Any, List
 from core.data_chat import data_chat, DataChatRequest
+from cache.cache import cached_with_logging, DateTimeEncoder
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -270,7 +271,7 @@ async def research_chat(request: Request, chat_request: ChatRequest, user: User 
 
 
 @router.get("/countries/{country}/metrics")
-@cache(expire=settings.METRIC_CACHE_TIMEOUT)
+@cached_with_logging(expire=settings.METRIC_CACHE_TIMEOUT)
 @limiter.limit(settings.RATE_LIMITS["get_country_metrics"])
 async def get_country_metrics_route(request: Request, country: str, user: User = Depends(current_active_user)):
     limiter.key_func = lambda: str(user.id)
@@ -278,16 +279,18 @@ async def get_country_metrics_route(request: Request, country: str, user: User =
         logger.info(f"Fetching metrics for {country}")
         metrics = get_country_metrics(country)
         logger.info(f"Successfully retrieved metrics for {country}")
-        return JSONResponse(content=jsonable_encoder(metrics))
+        
+        serialized_metrics = json.loads(json.dumps(metrics, cls=DateTimeEncoder))
+        
+        return serialized_metrics
     except ValueError as ve:
-        logger.error(
-            f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
+        logger.error(f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         logger.error(f"Error in get_country_metrics_route: {e}", exc_info=True)
-        return JSONResponse(
+        raise HTTPException(
             status_code=500,
-            content={
+            detail={
                 "error": "An error occurred while processing the metrics.",
                 "details": str(e),
                 "message": "Some metrics may be unavailable due to a temporary issue with the data source."

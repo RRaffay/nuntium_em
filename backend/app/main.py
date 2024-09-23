@@ -10,12 +10,14 @@ from config import settings
 
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as api_router
-from cache.cache import setup_cache
 
 # General fastapi
 from contextlib import asynccontextmanager
 from beanie import init_beanie
 from fastapi import FastAPI, Response
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from redis import asyncio as aioredis
 
 # Auth
 from auth.auth_db import User, db
@@ -40,7 +42,11 @@ async def lifespan(app: FastAPI):
         ],
     )
     app.state.limiter = limiter
-    await setup_cache()
+    
+    # Set up Redis cache
+    redis = aioredis.from_url(f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}", encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    
     yield
 
 

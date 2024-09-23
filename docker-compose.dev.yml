@@ -36,7 +36,6 @@ services:
     build:
       context: ./em_research_agentic
       dockerfile: Dockerfile
-    image: ghcr.io/rraffay/nuntium_em:report-server-latest
     ports:
       - "8001:8001"
     depends_on:
