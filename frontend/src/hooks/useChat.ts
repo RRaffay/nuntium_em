@@ -19,10 +19,13 @@ interface UseChatResult {
     metrics: CountryMetrics | null;
     startDate?: Date;
     endDate?: Date;
+    proMode: boolean;  // Add this line
   }) => Promise<void>;
   clearChatHistory: () => void;
   isChatOpen: boolean;
   setIsChatOpen: (open: boolean) => void;
+  proMode: boolean;
+  setProMode: (mode: boolean) => void;
 }
 
 export function useChat(): UseChatResult {
@@ -30,6 +33,7 @@ export function useChat(): UseChatResult {
   const [loadingAnswer, setLoadingAnswer] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [proMode, setProMode] = useState(false);
 
   const handleSubmitQuestion = async ({
     country,
@@ -37,12 +41,14 @@ export function useChat(): UseChatResult {
     metrics,
     startDate,
     endDate,
+    proMode,
   }: {
     country: string;
     selectedMetrics: string[];
     metrics: CountryMetrics | null;
     startDate?: Date;
     endDate?: Date;
+    proMode: boolean;
   }) => {
     if (!userQuestion.trim()) return;
     setLoadingAnswer(true);
@@ -71,7 +77,7 @@ export function useChat(): UseChatResult {
         return acc;
       }, {} as CountryMetrics);
 
-      const response = await api.submitDataQuestion(country, selectedData, userQuestion, messages);
+      const response = await api.submitDataQuestion(country, selectedData, userQuestion, messages, proMode);
       setMessages((prevMessages) => [
         ...prevMessages.slice(0, -1),
         { content: response.answer, sender: 'model' },
@@ -100,5 +106,7 @@ export function useChat(): UseChatResult {
     clearChatHistory,
     isChatOpen,
     setIsChatOpen,
+    proMode,
+    setProMode,
   };
 }

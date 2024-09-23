@@ -36,6 +36,8 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     clearChatHistory,
     isChatOpen,
     setIsChatOpen,
+    proMode,
+    setProMode,
   } = useChat();
 
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
@@ -325,10 +327,13 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                       metrics,
                       startDate,
                       endDate,
+                      proMode,
                     })
                   }
                   loadingAnswer={loadingAnswer}
                   clearChatHistory={clearChatHistory}
+                  proMode={proMode}
+                  setProMode={setProMode}
                 />
               </ResizablePanel>
             </>
@@ -355,10 +360,13 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                     metrics,
                     startDate,
                     endDate,
+                    proMode,
                   })
                 }
                 loadingAnswer={loadingAnswer}
                 clearChatHistory={clearChatHistory}
+                proMode={proMode}
+                setProMode={setProMode}
               />
             )}
           </div>

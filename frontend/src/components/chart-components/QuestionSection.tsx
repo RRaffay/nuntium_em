@@ -5,8 +5,16 @@ import { ChatInput } from '@/components/ui/chat/chat-input';
 import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
-import { Trash2 } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Trash2 } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Message {
     content: string;
@@ -20,7 +28,9 @@ interface QuestionSectionProps {
     setUserQuestion: (question: string) => void;
     handleSubmitQuestion: () => void;
     loadingAnswer: boolean;
-    clearChatHistory: () => void; // Add this new prop
+    clearChatHistory: () => void;
+    proMode: boolean;
+    setProMode: (mode: boolean) => void;
 }
 
 export const QuestionSection: React.FC<QuestionSectionProps> = ({
@@ -30,11 +40,37 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
     handleSubmitQuestion,
     loadingAnswer,
     clearChatHistory,
+    proMode,
+    setProMode,
 }) => {
     const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
     return (
-        <div className={`flex flex-col ${isSmallScreen ? 'h-[50vh]' : 'h-full'} ${isSmallScreen ? '' : 'border-l'}`}>
+        <div className={`flex flex-col ${isSmallScreen ? 'h-[50vh]' : 'h-full'}`}>
+            <div className="p-2 border-b flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id="pro-mode"
+                                        checked={proMode}
+                                        onCheckedChange={setProMode}
+                                    />
+                                    <Label htmlFor="pro-mode">Pro Mode</Label>
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Enables advanced features and more detailed responses. May incur additional time.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+                <Button onClick={clearChatHistory} variant="outline" size="icon">
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
             <div className="flex-grow overflow-y-auto p-4">
                 <ChatMessageList>
                     {messages.map((message, index) => (
@@ -71,14 +107,9 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
                     placeholder="Ask about the data..."
                     className="mb-2"
                 />
-                <div className="flex justify-between">
-                    <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim() || loadingAnswer}>
-                        Send
-                    </Button>
-                    <Button onClick={clearChatHistory} variant="outline" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+                <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim() || loadingAnswer}>
+                    Send
+                </Button>
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-// ReportDialog.tsx
+// components/ReportDialog.tsx
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -17,9 +17,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { Toggle } from '@/components/ui/toggle';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from "@/lib/utils";
+import { MessageCircle } from "lucide-react";
 
 const downloadReport = (content: string, filename: string) => {
   const blob = new Blob([content], { type: 'text/markdown' });
@@ -56,7 +54,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
   progress,
   autoGenerateOnOpen = false,
   buttonText,
-  canOpen, // Add this new prop
+  canOpen,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -92,8 +90,8 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button 
-          disabled={isLoading} 
+        <Button
+          disabled={isLoading}
           onClick={handleButtonClick}
         >
           {isLoading ? "Generating..." : buttonText}
@@ -106,56 +104,28 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
             {report && (
               <>
                 <Button
-                  variant="outline"
-                  className="text-black mt-2"
+                  className="mt-2"
                   onClick={() => downloadReport(report.content, `${title}.md`)}
                 >
                   Download Report
                 </Button>
                 <Button
-                  variant="outline"
-                  className="text-black mt-2"
+                  className="mt-2"
                   onClick={() => setIsChatOpen(!isChatOpen)}
                 >
+                  <MessageCircle className="mr-2 h-4 w-4" />
                   {isChatOpen ? 'Hide Chat' : 'Show Chat'}
                 </Button>
-                {isChatOpen && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Toggle
-                          aria-label="Toggle pro mode"
-                          pressed={proMode}
-                          onPressedChange={setProMode}
-                          className={cn(
-                            'mt-2 px-3 py-1',
-                            proMode
-                              ? 'bg-blue-600 text-white hover:bg-blue-700 hover:text-white'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          )}
-                        >
-                          PRO: {proMode ? 'Activated' : 'Deactivated'}
-                        </Toggle>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          Pro mode: {proMode ? 'Activated' : 'Deactivated'}. Responses might take longer but will be
-                          more researched and analysis-heavy when active.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
               </>
             )}
           </div>
         </DialogHeader>
-        <ResizablePanelGroup 
-          direction={isMobile ? "vertical" : "horizontal"} 
+        <ResizablePanelGroup
+          direction={isMobile ? "vertical" : "horizontal"}
           className="flex-grow overflow-hidden"
         >
-          <ResizablePanel 
-            defaultSize={isMobile ? 50 : (100 - chatSize)} 
+          <ResizablePanel
+            defaultSize={isMobile ? 50 : (100 - chatSize)}
             minSize={30}
           >
             <div className="h-full overflow-y-auto p-4">
@@ -189,15 +159,16 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
           {isChatOpen && report && (
             <>
               <ResizableHandle withHandle />
-              <ResizablePanel 
-                defaultSize={isMobile ? 50 : chatSize} 
-                minSize={30} 
+              <ResizablePanel
+                defaultSize={isMobile ? 50 : chatSize}
+                minSize={30}
                 onResize={(size) => !isMobile && setChatSize(size)}
               >
-                <ReportChatInterface 
-                  report={report.content} 
-                  onClose={() => setIsChatOpen(false)} 
+                <ReportChatInterface
+                  report={report.content}
+                  onClose={() => setIsChatOpen(false)}
                   proMode={proMode}
+                  setProMode={setProMode}
                   isMobile={isMobile}
                 />
               </ResizablePanel>
