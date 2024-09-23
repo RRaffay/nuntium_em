@@ -16,8 +16,8 @@ from config import settings
 from fastapi_cache.decorator import cache
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from core.data_qa import process_question_with_data
 from typing import Dict, Any, List
+from core.data_chat import data_chat, DataChatRequest
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +302,8 @@ async def handle_data_question(request: Request, country: str, payload: Dict[str
     data = payload.get('data')
     question = payload.get('question')
     messages = payload.get('messages', [])
+    pro_mode = payload.get('proMode', True)
+    country = payload.get('country', '')
 
     if not data or not question:
         raise HTTPException(
@@ -311,17 +313,25 @@ async def handle_data_question(request: Request, country: str, payload: Dict[str
         raise HTTPException(status_code=400, detail="Messages must be a list.")
 
     try:
-        # Convert messages to ChatMessage objects
-        chat_messages = [ChatMessage(**msg) for msg in messages]
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid message format: {str(e)}")
+        # Convert messages to the format expected by DataChatRequest
+        chat_messages = [(msg['content'], msg['sender']) for msg in messages]
 
-    logger.info(
-        f"Received data question for {country}: {question}. Data: {data}")
-    logger.info(f"Message history: {chat_messages}")
+        # Create a DataChatRequest object
+        chat_request = DataChatRequest(
+            message=question,
+            data=str(data),
+            messages=chat_messages,
+            proMode=pro_mode,
+            country=country
+        )
 
-    # Process the question and data, including the message history
-    answer = process_question_with_data(question, data, chat_messages)
+        logger.info(f"Received data question for {country}: {question}")
+        logger.info(f"Message history: {chat_messages}")
 
-    return {"answer": answer}
+        # Use the data_chat function instead of process_question_with_data
+        answer = await data_chat(chat_request)
+
+        return {"answer": answer}
+    except Exception as e:
+        logger.error(f"Error in handle_data_question: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

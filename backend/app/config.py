@@ -17,6 +17,7 @@ class BaseConfig(BaseSettings):
     REPORT_SERVER_URL: str = "http://report_server:8001"
     NEWS_PIPELINE_SERVER_URL: str = "http://news_pipeline_server:8002"
     REPORT_CHAT_SERVER_URL: str = "http://research_chat:8003"
+    DATA_CHAT_SERVER_URL: str = "http://data_chat:8004"
     MAIL_USERNAME: str
     MAIL_PASSWORD: str
     MAIL_FROM: str
@@ -78,13 +79,15 @@ class DevelopmentConfig(BaseConfig):
         "generate_event_report": "30/hour",
         "research_chat": "20/hour",
         "get_country_metrics": "40/hour",
-        "data_question": "20/minute"
+        "data_question": "20/minute",
+        "data_chat": "20/minute"
     }
     MAX_REVISIONS_REPORT: int = 1
     REVISION_NUMBER_REPORT: int = 1
     EVENT_REPORT_TIMEOUT: int = 450
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330
+    DATA_CHAT_TIMEOUT: int = 330  # 5 minutes
     REPORT_CACHE_TIMEOUT: int = 3600  # 1 hour
     METRIC_CACHE_TIMEOUT: int = 240  # 4 minutes
 
@@ -97,13 +100,15 @@ class ProductionConfig(BaseConfig):
         "generate_event_report": "10/hour",
         "research_chat": "20/hour",
         "get_country_metrics": "10/hour",
-        "data_question": "5/minute"
+        "data_question": "5/minute",
+        "data_chat": "5/minute"
     }
     MAX_REVISIONS_REPORT: int = 3
     REVISION_NUMBER_REPORT: int = 1
     EVENT_REPORT_TIMEOUT: int = 450
     COUNTRY_REPORT_TIMEOUT: int = 450
     REPORT_CHAT_TIMEOUT: int = 330  # 5 minutes
+    DATA_CHAT_TIMEOUT: int = 330  # 5 minutes
     REPORT_CACHE_TIMEOUT: int = 600  # 10 minutes
     METRIC_CACHE_TIMEOUT: int = 14400  # 4 hours
 
