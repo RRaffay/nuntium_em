@@ -63,6 +63,7 @@ const CountryPage: React.FC = () => {
             eventReportErrors={eventReportErrors}
             onGenerateEventReport={handleGenerateEventReport}
             isAnyReportGenerating={isAnyReportGenerating}
+            singleColumn={viewMode === "both"} // Add this prop
           />
         ) : (
           <div className="text-center py-4">
