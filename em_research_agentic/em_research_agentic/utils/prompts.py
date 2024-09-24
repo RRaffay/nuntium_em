@@ -129,4 +129,30 @@ Your goal is to make sure that the report is client ready.
 
 Note that the current date is {current_date}.
 
-Return ONLY the final report, no other text or output. \n\n Report: \n\n"""
+Return ONLY the final report, no other text or output."""
+
+
+############################################################################################################
+
+CLARIFICATIONS_QUESTIONS_PROMPT = """You are an AI assistant tasked with clarifying the user's request for a financial report. Your goal is to provide a list of questions that will help clarify the user's request. The answers to these question along with original user request will be given to a senior partner at an investment firm tasked with creating a high-level outline for an investment report. Remember that we don't want to overwhelm the user with too many questions so restrict your questions to 3-5, but try to make them as informative as possible.
+
+This is the user request:
+<user_request>
+{user_request}
+</user_request>
+
+Note that the current date is {current_date}.
+
+Return ONLY the questions, no other text or output. \n\n Questions: \n\n"""
+
+############################################################################################################
+
+CLARIFICATIONS_ANALYSIS_PROMPT = """You are an AI assistant tasked with analyzing the user's request for a financial report. You are given the user's request along with answers to clarifying questions.
+
+Your goal is to take the initial user request along with the answers to the clarifying questions and provide a comprehensive description of the user's request. Your description of the user's request will be given to a senior partner at an investment firm who is tasked with creating a high-level outline for an investment report.
+
+
+Note that the current date is {current_date}.
+
+
+Return ONLY the summary, no other text or output. \n\n Summary: \n\n"""

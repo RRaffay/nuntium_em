@@ -80,7 +80,9 @@ class DevelopmentConfig(BaseConfig):
         "research_chat": "20/hour",
         "get_country_metrics": "40/hour",
         "data_question": "20/minute",
-        "data_chat": "20/minute"
+        "data_chat": "20/minute",
+        "generate_clarifying_questions": "5/minute",
+        "open_research_report": "2/minute",
     }
     MAX_REVISIONS_REPORT: int = 1
     REVISION_NUMBER_REPORT: int = 1
@@ -101,7 +103,9 @@ class ProductionConfig(BaseConfig):
         "research_chat": "20/hour",
         "get_country_metrics": "10/hour",
         "data_question": "5/minute",
-        "data_chat": "5/minute"
+        "data_chat": "5/minute",
+        "generate_clarifying_questions": "2/minute",
+        "open_research_report": "1/minute",
     }
     MAX_REVISIONS_REPORT: int = 3
     REVISION_NUMBER_REPORT: int = 1

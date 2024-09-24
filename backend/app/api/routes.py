@@ -1,6 +1,9 @@
 from core.metric import get_country_metrics
 from fastapi import APIRouter, HTTPException, Depends, Request
-from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
+from core.reports import (
+    economic_report, economic_report_event, EventReportInput, CountryReportInput,
+    generate_clarifying_questions, open_research_report, ClarifyingQuestionsInput, OpenResearchReportInput
+)
 from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
 from core.report_chat import economic_report_chat, ChatRequest
 from models import CountryData, Report, ChatMessage
@@ -337,4 +340,73 @@ async def handle_data_question(request: Request, country: str, payload: Dict[str
         return {"answer": answer}
     except Exception as e:
         logger.error(f"Error in handle_data_question: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate-clarifying-questions")
+@limiter.limit(settings.RATE_LIMITS["generate_clarifying_questions"])
+async def generate_clarifying_questions_route(request: Request, input_data: ClarifyingQuestionsInput, user: User = Depends(current_active_user)):
+    """
+    Generate clarifying questions for a given task.
+
+    Args:
+        input_data (ClarifyingQuestionsInput): The input data containing the task.
+
+    Returns:
+        dict: A dictionary containing the generated clarifying questions.
+
+    Raises:
+        HTTPException: If there's an error during execution.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        logger.info(f"Generating clarifying questions for task: {input_data.task}")
+        questions = await generate_clarifying_questions(input_data)
+        logger.info(f"Generated clarifying questions: {questions}")
+        return {"questions": questions}
+    except Exception as e:
+        logger.error(f"Error in generate_clarifying_questions_route: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/open-research-report")
+@limiter.limit(settings.RATE_LIMITS["open_research_report"])
+async def open_research_report_route(request: Request, input_data: Dict[str, Any], user: User = Depends(current_active_user)):
+    """
+    Generate an open research report based on the task and clarifications.
+
+    Args:
+        input_data (Dict[str, Any]): A dictionary containing 'task', 'questions', and 'answers'.
+
+    Returns:
+        dict: A dictionary containing the generated report.
+
+    Raises:
+        HTTPException: If there's an error during execution or if the input is invalid.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        task = input_data.get('task')
+        questions = input_data.get('questions', [])
+        answers = input_data.get('answers', [])
+
+        
+        logger.info(f"Received open research report request with task: {task}")
+        logger.info(f"Received questions: {questions}")
+        logger.info(f"Received answers: {answers}")
+
+        if not task or len(questions) != len(answers):
+            raise HTTPException(status_code=400, detail="Invalid input data")
+
+        # Combine questions and answers into clarifications
+        clarifications = "\n".join([f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)])
+
+        report_input = OpenResearchReportInput(
+            task=task,
+            clarifications=clarifications
+        )
+
+        report_content = await open_research_report(report_input)
+        logger.info(f"Generated open research report: {report_content}")
+        return {"report": report_content}
+    except Exception as e:
+        logger.error(f"Error in open_research_report_route: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

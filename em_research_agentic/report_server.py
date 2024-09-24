@@ -4,6 +4,7 @@ load_dotenv()  # noqa
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
 from em_research_agentic.agent import graph
+from em_research_agentic.utils.nodes_open import clarification_questions
 import logging
 
 
@@ -22,6 +23,12 @@ class GraphInput(BaseModel):
     revision_number: int
     debug: bool = False
 
+class OpenResearchReportInput(BaseModel):
+    task: str
+    clarifications: str
+    max_revisions: int
+    revision_number: int
+    debug: bool = False
 
 class EconomicReportInput(BaseModel):
     country: str
@@ -31,8 +38,11 @@ class EconomicReportInput(BaseModel):
     debug: bool = False
 
 
-@app.post("/run_graph")
-async def run_graph(input_data: GraphInput):
+class ClarifyingQuestionsInput(BaseModel):
+    task: str
+
+@app.post("/run_report_generation")
+async def run_report_generation(input_data: GraphInput):
     try:
         thread = {"configurable": {"thread_id": "1"}}
         logger.info(f"Running graph with input: {input_data}")
@@ -45,7 +55,31 @@ async def run_graph(input_data: GraphInput):
     except Exception as e:
         logging.error(f"Error in run_graph: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
 
+@app.post("/generate_clarifying_questions")
+async def generate_clarifying_questions(input_data: ClarifyingQuestionsInput):
+    try:
+        clarifying_questions = clarification_questions(input_data.task)
+        return {"clarifying_questions": clarifying_questions}
+    except Exception as e:
+        logging.error(f"Error in generate_clarifying_questions: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/open_research_report")
+async def open_research_report(input_data: OpenResearchReportInput):
+    try:
+        thread = {"configurable": {"thread_id": "2"}}
+        s = await graph.ainvoke({
+            'task': input_data.task,
+            "max_revisions": input_data.max_revisions,
+            "revision_number": input_data.revision_number,
+            "clarifications": input_data.clarifications,
+        }, thread, debug=input_data.debug)
+        return {"final_report": s['final_report']}
+    except Exception as e:
+        logging.error(f"Error in open_research_report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/economic_report")
 async def economic_report(input_data: EconomicReportInput):

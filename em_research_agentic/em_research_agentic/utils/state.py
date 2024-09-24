@@ -1,4 +1,4 @@
-from typing import TypedDict, List
+from typing import TypedDict, List, Optional
 
 
 class AgentState(TypedDict):
@@ -10,3 +10,4 @@ class AgentState(TypedDict):
     revision_number: int
     max_revisions: int
     final_report: str
+    clarifications: Optional[str]
