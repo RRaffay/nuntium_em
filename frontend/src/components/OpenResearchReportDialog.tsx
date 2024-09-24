@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api, Report } from '@/services/api';
+import { Progress } from "@/components/ui/progress";
+import { api } from '@/services/api';
 import { ReportDialog } from '@/components/ReportDialog';
+import { useReportGeneration } from '@/hooks/useReportGeneration';
 
 interface OpenResearchReportDialogProps {
     isOpen: boolean;
@@ -17,9 +19,16 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
     const [questions, setQuestions] = useState<string[]>([]);
     const [answers, setAnswers] = useState<string[]>([]);
     const [step, setStep] = useState(0);
-    const [report, setReport] = useState<Report | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const {
+        openResearchReport,
+        isGeneratingOpenResearchReport,
+        openResearchReportError,
+        openResearchReportProgress,
+        handleGenerateOpenResearchReport,
+    } = useReportGeneration(country);
 
     const handleGenerateQuestions = async () => {
         setIsLoading(true);
@@ -44,8 +53,7 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
         setIsLoading(true);
         setError(null);
         try {
-            const reportContent = await api.createOpenResearchReport({ task, questions, answers });
-            setReport(reportContent);
+            await handleGenerateOpenResearchReport(task, questions, answers);
             setStep(2);
         } catch (err) {
             setError('Failed to generate report. Please try again.');
@@ -88,23 +96,26 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
                                 />
                             </div>
                         ))}
-                        <Button onClick={handleGenerateReport} disabled={answers.some(a => !a) || isLoading}>
+                        <Button onClick={handleGenerateReport} disabled={answers.some(a => !a) || isGeneratingOpenResearchReport}>
                             Generate Report
                         </Button>
+                        {isGeneratingOpenResearchReport && (
+                            <Progress value={openResearchReportProgress} className="mt-4" />
+                        )}
                     </>
                 );
             case 2:
                 return (
                     <ReportDialog
-                        report={report!}
-                        isLoading={false}
+                        report={openResearchReport!}
+                        isLoading={isGeneratingOpenResearchReport}
                         onGenerate={async () => { }}
-                        error={null}
+                        error={openResearchReportError}
                         title={`Open Research Report: ${task}`}
                         onClose={onClose}
-                        progress={100}
+                        progress={openResearchReportProgress}
                         buttonText="Open Report"
-                        canOpen={true}
+                        canOpen={!isGeneratingOpenResearchReport}
                     />
                 );
         }

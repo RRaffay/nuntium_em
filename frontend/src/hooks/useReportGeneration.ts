@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { api, Report } from '@/services/api';
 
 export const useReportGeneration = (country: string | undefined) => {
@@ -16,6 +16,7 @@ export const useReportGeneration = (country: string | undefined) => {
   const [openResearchReport, setOpenResearchReport] = useState<Report | null>(null);
   const [isGeneratingOpenResearchReport, setIsGeneratingOpenResearchReport] = useState(false);
   const [openResearchReportError, setOpenResearchReportError] = useState<string | null>(null);
+  const [openResearchReportProgress, setOpenResearchReportProgress] = useState<number>(0);
 
   const handleGenerateCountryReport = async () => {
     if (isAnyReportGenerating) {
@@ -121,6 +122,21 @@ export const useReportGeneration = (country: string | undefined) => {
     setIsGeneratingOpenResearchReport(true);
     setOpenResearchReportError(null);
     setRateLimitError(null);
+    setOpenResearchReportProgress(0);
+
+    const startTime = Date.now();
+    const duration = 210000; // 3.5 minutes
+    const easeOutQuad = (t: number) => t * (2 - t);
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
+      setOpenResearchReportProgress(progressValue);
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+      }
+    }, 100);
 
     try {
       const generatedReport = await api.createOpenResearchReport({ task, questions, answers });
@@ -134,6 +150,8 @@ export const useReportGeneration = (country: string | undefined) => {
       }
       setOpenResearchReport(null);
     } finally {
+      clearInterval(interval);
+      setOpenResearchReportProgress(100);
       setIsGeneratingOpenResearchReport(false);
       setIsAnyReportGenerating(false);
     }
@@ -157,6 +175,7 @@ export const useReportGeneration = (country: string | undefined) => {
     openResearchReport,
     isGeneratingOpenResearchReport,
     openResearchReportError,
+    openResearchReportProgress,
     handleGenerateOpenResearchReport,
   };
 };
