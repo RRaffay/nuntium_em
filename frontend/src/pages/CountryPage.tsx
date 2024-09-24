@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useCountryData } from '@/hooks/useCountryData';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
 import { EconomicIndicatorsChart } from '@/components/EconomicIndicatorsChart';
@@ -17,36 +17,23 @@ import { useMetricsData } from '@/hooks/useMetricsData';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
-  const navigate = useNavigate();
   const { countryData, userProfile, error } = useCountryData(country);
   const { metricsCount } = useMetricsData(country!);
   const {
-    countryReport,
     eventReports,
-    handleGenerateCountryReport,
     handleGenerateEventReport,
-    isGeneratingCountryReport,
     isGeneratingEventReport,
-    countryReportProgress,
     eventReportProgress,
-    countryReportError,
     eventReportErrors,
     rateLimitError,
     isAnyReportGenerating,
     showAlertDialog,
     setShowAlertDialog,
-    openResearchReport,
-    isGeneratingOpenResearchReport,
-    openResearchReportError,
-    handleGenerateOpenResearchReport,
   } = useReportGeneration(country);
 
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
   const [viewMode, setViewMode] = useState<string>("events");
 
-  const handleBackToDashboard = () => {
-    navigate('/');
-  };
 
   if (error) {
     return <div className="text-red-500">{error}</div>;
@@ -117,17 +104,6 @@ const CountryPage: React.FC = () => {
       <CountryPageHeader
         countryData={countryData}
         userProfile={userProfile}
-        onGenerateReport={handleGenerateCountryReport}
-        onBackToDashboard={handleBackToDashboard}
-        countryReport={countryReport}
-        isGeneratingCountryReport={isGeneratingCountryReport}
-        countryReportProgress={countryReportProgress}
-        countryReportError={countryReportError}
-        isAnyReportGenerating={isAnyReportGenerating}
-        openResearchReport={openResearchReport}
-        isGeneratingOpenResearchReport={isGeneratingOpenResearchReport}
-        openResearchReportError={openResearchReportError}
-        onGenerateOpenResearchReport={handleGenerateOpenResearchReport}
         metricsCount={metricsCount}
       />
       <br />

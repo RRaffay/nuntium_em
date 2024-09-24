@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CountryData, UserProfile, Report } from '@/services/api';
+import { CountryData, UserProfile } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { OpenResearchReportDialog } from '@/components/OpenResearchReportDialog';
 import { Clock, Calendar, FileText, User, BarChart2 } from 'lucide-react';
@@ -9,38 +9,16 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 interface CountryPageHeaderProps {
   countryData: CountryData;
   userProfile: UserProfile | null;
-  onGenerateReport: () => Promise<void>;
-  onBackToDashboard: () => void;
-  countryReport: Report | null;
-  isGeneratingCountryReport: boolean;
-  countryReportProgress: number;
-  countryReportError: string | null;
-  isAnyReportGenerating: boolean;
-  openResearchReport: Report | null;
-  isGeneratingOpenResearchReport: boolean;
-  openResearchReportError: string | null;
-  onGenerateOpenResearchReport: (task: string, questions: string[], answers: string[]) => Promise<void>;
   metricsCount: number;
 }
 
 export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
   countryData,
   userProfile,
-  onGenerateReport,
-  onBackToDashboard,
-  countryReport,
-  isGeneratingCountryReport,
-  countryReportProgress,
-  countryReportError,
-  isAnyReportGenerating,
-  openResearchReport,
-  isGeneratingOpenResearchReport,
-  openResearchReportError,
-  onGenerateOpenResearchReport,
-  metricsCount // Add this line
+  metricsCount
 }) => {
   const [isOpenResearchDialogOpen, setIsOpenResearchDialogOpen] = useState(false);
-  const isSmallScreen = useMediaQuery('(max-width: 640px)'); // Add this line
+  const isSmallScreen = useMediaQuery('(max-width: 640px)');
 
   return (
     <div>
