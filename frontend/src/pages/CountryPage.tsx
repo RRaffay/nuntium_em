@@ -7,10 +7,27 @@ import { EventList } from '@/components/EventList';
 import { LowRelevanceEvents } from '@/components/LowRelevanceEvents';
 import { CountryPageHeader } from '@/components/CountryPageHeader';
 import { CountryPageAlertDialog } from '@/components/CountryPageAlertDialog';
-import { Event as ApiEvent } from '@/services/api';
+import { OpenResearchReportDialog } from '@/components/OpenResearchReportDialog';
+import { Event as ApiEvent, Report } from '@/services/api'; // Add Report here
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { BarChart, LineChart, LayoutPanelLeft } from 'lucide-react';
+
+interface CountryPageHeaderProps {
+  countryData: any;
+  userProfile: any;
+  onGenerateReport: () => void;
+  onBackToDashboard: () => void;
+  countryReport: any;
+  isGeneratingCountryReport: boolean;
+  countryReportProgress: number;
+  countryReportError: string | null;
+  isAnyReportGenerating: boolean;
+  openResearchReport: Report | null;
+  isGeneratingOpenResearchReport: boolean;
+  openResearchReportError: string | null;
+  onGenerateOpenResearchReport: (task: string, questions: string[], answers: string[]) => Promise<void>;
+}
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -31,6 +48,10 @@ const CountryPage: React.FC = () => {
     isAnyReportGenerating,
     showAlertDialog,
     setShowAlertDialog,
+    openResearchReport,
+    isGeneratingOpenResearchReport,
+    openResearchReportError,
+    handleGenerateOpenResearchReport,
   } = useReportGeneration(country);
 
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
@@ -116,6 +137,10 @@ const CountryPage: React.FC = () => {
         countryReportProgress={countryReportProgress}
         countryReportError={countryReportError}
         isAnyReportGenerating={isAnyReportGenerating}
+        openResearchReport={openResearchReport}
+        isGeneratingOpenResearchReport={isGeneratingOpenResearchReport}
+        openResearchReportError={openResearchReportError}
+        onGenerateOpenResearchReport={handleGenerateOpenResearchReport}
       />
       <br />
       <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)} className="justify-center">
@@ -133,7 +158,7 @@ const CountryPage: React.FC = () => {
           className={`data-[state=on]:bg-primary data-[state=on]:text-primary-foreground`}
         >
           <LineChart className="h-4 w-4 mr-2" />
-          Charts
+          Indicators
         </ToggleGroupItem>
         <ToggleGroupItem
           value="both"

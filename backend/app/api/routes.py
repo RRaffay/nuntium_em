@@ -214,6 +214,50 @@ async def generate_event_report(request: Request, country: str, event_id: str, u
             f"Error in generate_event_report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/open-research-report")
+@limiter.limit(settings.RATE_LIMITS["open_research_report"])
+async def open_research_report_route(request: Request, input_data: Dict[str, Any], user: User = Depends(current_active_user)):
+    """
+    Generate an open research report based on the task and clarifications.
+
+    Args:
+        input_data (Dict[str, Any]): A dictionary containing 'task', 'questions', and 'answers'.
+
+    Returns:
+        dict: A dictionary containing the generated report.
+
+    Raises:
+        HTTPException: If there's an error during execution or if the input is invalid.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        task = input_data.get('task')
+        questions = input_data.get('questions', [])
+        answers = input_data.get('answers', [])
+
+        
+        logger.info(f"Received open research report request with task: {task}")
+        logger.info(f"Received questions: {questions}")
+        logger.info(f"Received answers: {answers}")
+
+        if not task or len(questions) != len(answers):
+            raise HTTPException(status_code=400, detail="Invalid input data")
+
+        # Combine questions and answers into clarifications
+        clarifications = "\n".join([f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)])
+
+        report_input = OpenResearchReportInput(
+            task=task,
+            clarifications=clarifications
+        )
+
+        report_content = await open_research_report(report_input)
+        logger.info(f"Generated open research report: {report_content}")
+        return Report(content=report_content, generated_at=datetime.now().isoformat())
+    except Exception as e:
+        logger.error(f"Error in open_research_report_route: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.delete("/countries/{country}")
 async def delete_country(country: str, user: User = Depends(current_active_user)):
@@ -367,46 +411,3 @@ async def generate_clarifying_questions_route(request: Request, input_data: Clar
         logger.error(f"Error in generate_clarifying_questions_route: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/open-research-report")
-@limiter.limit(settings.RATE_LIMITS["open_research_report"])
-async def open_research_report_route(request: Request, input_data: Dict[str, Any], user: User = Depends(current_active_user)):
-    """
-    Generate an open research report based on the task and clarifications.
-
-    Args:
-        input_data (Dict[str, Any]): A dictionary containing 'task', 'questions', and 'answers'.
-
-    Returns:
-        dict: A dictionary containing the generated report.
-
-    Raises:
-        HTTPException: If there's an error during execution or if the input is invalid.
-    """
-    limiter.key_func = lambda: str(user.id)
-    try:
-        task = input_data.get('task')
-        questions = input_data.get('questions', [])
-        answers = input_data.get('answers', [])
-
-        
-        logger.info(f"Received open research report request with task: {task}")
-        logger.info(f"Received questions: {questions}")
-        logger.info(f"Received answers: {answers}")
-
-        if not task or len(questions) != len(answers):
-            raise HTTPException(status_code=400, detail="Invalid input data")
-
-        # Combine questions and answers into clarifications
-        clarifications = "\n".join([f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)])
-
-        report_input = OpenResearchReportInput(
-            task=task,
-            clarifications=clarifications
-        )
-
-        report_content = await open_research_report(report_input)
-        logger.info(f"Generated open research report: {report_content}")
-        return {"report": report_content}
-    except Exception as e:
-        logger.error(f"Error in open_research_report_route: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))

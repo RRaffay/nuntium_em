@@ -13,6 +13,9 @@ export const useReportGeneration = (country: string | undefined) => {
   const [eventReportProgress, setEventReportProgress] = useState<{ [key: string]: number }>({});
   const [isAnyReportGenerating, setIsAnyReportGenerating] = useState(false);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [openResearchReport, setOpenResearchReport] = useState<Report | null>(null);
+  const [isGeneratingOpenResearchReport, setIsGeneratingOpenResearchReport] = useState(false);
+  const [openResearchReportError, setOpenResearchReportError] = useState<string | null>(null);
 
   const handleGenerateCountryReport = async () => {
     if (isAnyReportGenerating) {
@@ -109,6 +112,33 @@ export const useReportGeneration = (country: string | undefined) => {
     }
   };
 
+  const handleGenerateOpenResearchReport = async (task: string, questions: string[], answers: string[]) => {
+    if (isAnyReportGenerating) {
+      setShowAlertDialog(true);
+      return;
+    }
+    setIsAnyReportGenerating(true);
+    setIsGeneratingOpenResearchReport(true);
+    setOpenResearchReportError(null);
+    setRateLimitError(null);
+
+    try {
+      const generatedReport = await api.createOpenResearchReport({ task, questions, answers });
+      setOpenResearchReport(generatedReport);
+    } catch (err) {
+      console.error('Error generating open research report:', err);
+      if (err instanceof Error && err.message.includes('Rate limit exceeded')) {
+        setRateLimitError(err.message);
+      } else {
+        setOpenResearchReportError('Failed to generate open research report. Please try again.');
+      }
+      setOpenResearchReport(null);
+    } finally {
+      setIsGeneratingOpenResearchReport(false);
+      setIsAnyReportGenerating(false);
+    }
+  };
+
   return {
     countryReport,
     eventReports,
@@ -124,5 +154,9 @@ export const useReportGeneration = (country: string | undefined) => {
     isAnyReportGenerating,
     showAlertDialog,
     setShowAlertDialog,
+    openResearchReport,
+    isGeneratingOpenResearchReport,
+    openResearchReportError,
+    handleGenerateOpenResearchReport,
   };
 };

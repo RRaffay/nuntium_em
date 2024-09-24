@@ -70,6 +70,16 @@ export interface CountryMetrics {
   [key: string]: MetricInfo;
 }
 
+export interface ClarifyingQuestion {
+  question: string;
+}
+
+export interface OpenResearchReportInput {
+  task: string;
+  questions: string[];
+  answers: string[];
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -160,6 +170,24 @@ export const api = {
       throw new Error('Failed to fetch countries');
     }
     return handledResponse.json();
+  },
+
+  async createOpenResearchReport(input: OpenResearchReportInput): Promise<Report> {
+
+    const response = await fetch(`${API_BASE_URL}/open-research-report`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to create open research report');
+    }
+    const data = await handledResponse.json();
+    return data;
   },
 
   async runCountryPipeline(country: string, hours: number): Promise<void> {
@@ -328,5 +356,34 @@ export const api = {
     }
     return handledResponse.json();
   },
+
+  async generateClarifyingQuestions(task: string): Promise<ClarifyingQuestion[]> {
+    const response = await fetch(`${API_BASE_URL}/generate-clarifying-questions`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ task }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to generate clarifying questions');
+    }
+    const data = await handledResponse.json();
+    console.log('Clarifying questions response:', data); // Add this line for debugging
+
+    if (Array.isArray(data.questions)) {
+      return data.questions.map((q: string) => ({ question: q }));
+    } else if (typeof data.questions === 'string') {
+      // If the response is a single string, split it into an array
+      return data.questions.split('\n')
+        .filter((q: string) => q.trim())
+        .map((q: string) => ({ question: q.trim() }));
+    } else {
+      console.error('Unexpected response format for clarifying questions:', data);
+      throw new Error('Unexpected response format for clarifying questions');
+    }
+  }
 
 };

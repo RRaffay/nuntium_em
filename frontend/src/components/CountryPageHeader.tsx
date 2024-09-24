@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CountryData, UserProfile, Report } from '@/services/api';
+import { Button } from '@/components/ui/button';
+import { OpenResearchReportDialog } from '@/components/OpenResearchReportDialog';
 
 interface CountryPageHeaderProps {
   countryData: CountryData;
@@ -12,12 +14,37 @@ interface CountryPageHeaderProps {
   countryReportProgress: number;
   countryReportError: string | null;
   isAnyReportGenerating: boolean;
+  openResearchReport: Report | null;
+  isGeneratingOpenResearchReport: boolean;
+  openResearchReportError: string | null;
+  onGenerateOpenResearchReport: (task: string, questions: string[], answers: string[]) => Promise<void>;
 }
 
-export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryData, userProfile }) => {
+export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
+  countryData,
+  userProfile,
+  onGenerateReport,
+  onBackToDashboard,
+  countryReport,
+  isGeneratingCountryReport,
+  countryReportProgress,
+  countryReportError,
+  isAnyReportGenerating,
+  openResearchReport,
+  isGeneratingOpenResearchReport,
+  openResearchReportError,
+  onGenerateOpenResearchReport
+}) => {
+  const [isOpenResearchDialogOpen, setIsOpenResearchDialogOpen] = useState(false);
+
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl md:text-3xl font-bold">Events in {countryData.country}</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl md:text-3xl font-bold">Events in {countryData.country}</h2>
+        <Button onClick={() => setIsOpenResearchDialogOpen(true)}>
+          Generate Open Research Report
+        </Button>
+      </div>
       <TooltipProvider>
         <div className="space-y-2">
           <Tooltip>
@@ -56,6 +83,11 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({ countryDat
           )}
         </div>
       </TooltipProvider>
+      <OpenResearchReportDialog
+        isOpen={isOpenResearchDialogOpen}
+        onClose={() => setIsOpenResearchDialogOpen(false)}
+        country={countryData.country}
+      />
     </div>
   );
 };
