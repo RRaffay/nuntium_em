@@ -77,12 +77,14 @@ The current date is {datetime.now().strftime('%Y-%m-%d')}.
 </Task>"""
 
     def generate_payload(self) -> dict:
-        return {
+        payload = {
             "task": self.generate_task(),
             "max_revisions": self.max_revisions,
             "revision_number": self.revision_number,
             "debug": self.debug,
         }
+        logger.info(f"This is the payload {payload}")
+        return payload
 
 
 class CountryReportInput(BaseModel):
@@ -102,13 +104,15 @@ The current date is {datetime.now().strftime('%Y-%m-%d')}.
 </Task>"""
 
     def generate_payload(self) -> dict:
-        return {
+        payload = {
             "country": self.country,
             "task": self.generate_task(),
             "max_revisions": self.max_revisions,
             "revision_number": self.revision_number,
             "debug": self.debug,
         }
+        logger.info(f"This is the payload {payload}")
+        return payload
 
 
 class ClarifyingQuestionsInput(BaseModel):
@@ -122,13 +126,15 @@ class OpenResearchReportInput(BaseModel):
     debug: Optional[bool] = DEBUG
 
     def generate_payload(self) -> dict:
-        return {
+        payload = {
             "task": self.task,
             "clarifications": self.clarifications,
             "max_revisions": self.max_revisions,
             "revision_number": self.revision_number,
             "debug": self.debug,
         }
+        logger.info(f"This is the payload {payload}")
+        return payload
 
 
 @async_timed_lru_cache(maxsize=100, expires_after=REPORT_CACHE_TIMEOUT, key_func=lambda input: f"{input.country}:{input.area_of_interest}:{input.event.id}")
@@ -183,7 +189,7 @@ async def economic_report(input: CountryReportInput):
                 status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
-@async_timed_lru_cache(maxsize=100, expires_after=REPORT_CACHE_TIMEOUT, key_func=lambda input: input.task)
+# @async_timed_lru_cache(maxsize=100, expires_after=REPORT_CACHE_TIMEOUT, key_func=lambda input: input.task)
 async def generate_clarifying_questions(input: ClarifyingQuestionsInput):
     async with httpx.AsyncClient(timeout=EVENT_REPORT_TIMEOUT) as client:
         try:

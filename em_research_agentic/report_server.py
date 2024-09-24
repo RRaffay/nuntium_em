@@ -47,13 +47,13 @@ async def run_report_generation(input_data: GraphInput):
         thread = {"configurable": {"thread_id": "1"}}
         logger.info(f"Running graph with input: {input_data}")
         
-        graph = BaseGraph(open_research=False).build_graph()
+        graph = BaseGraph(open_research=False, debug=input_data.debug).build_graph()
         
         s = await graph.ainvoke({
             'task': input_data.task,
             "max_revisions": input_data.max_revisions,
             "revision_number": input_data.revision_number,
-        }, thread, debug=input_data.debug)
+        }, thread)
         return {"final_report": s['final_report']}
     except Exception as e:
         logging.error(f"Error in run_graph: {str(e)}")
@@ -74,14 +74,14 @@ async def open_research_report(input_data: OpenResearchReportInput):
     try:
         thread = {"configurable": {"thread_id": "2"}}
         
-        graph = BaseGraph(open_research=True).build_graph()
+        graph = BaseGraph(open_research=True, debug=input_data.debug).build_graph()
         
         s = await graph.ainvoke({
             'task': input_data.task,
             "max_revisions": input_data.max_revisions,
             "revision_number": input_data.revision_number,
             "clarifications": input_data.clarifications,
-        }, thread, debug=input_data.debug)
+        }, thread)
         return {"final_report": s['final_report']}
     except Exception as e:
         logging.error(f"Error in open_research_report: {str(e)}")

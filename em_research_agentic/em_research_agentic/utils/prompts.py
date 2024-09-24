@@ -129,6 +129,16 @@ Your goal is to make sure that the report is client ready.
 
 Note that the current date is {current_date}.
 
+This was the original user request:
+<user_request>
+{user_request}
+</user_request>
+
+This is the final draft:
+<final_draft>
+{draft}
+</final_draft>
+
 Return ONLY the final report, no other text or output."""
 
 

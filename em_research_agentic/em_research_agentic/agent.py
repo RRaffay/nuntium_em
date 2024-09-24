@@ -10,16 +10,17 @@ class GraphConfig(TypedDict):
     max_results_tavily: int
 
 class BaseGraph:
-    def __init__(self, open_research: bool = False):
+    def __init__(self, open_research: bool = False, debug: bool = False):
         self.open_research = open_research
+        self.debug = debug
 
     def build_graph(self):
         if self.open_research:
-            return self._build_open_research_graph()
+            return self._build_open_research_graph(self.debug)
         else:
-            return self._build_default_graph()
+            return self._build_default_graph(self.debug)
 
-    def _build_default_graph(self):
+    def _build_default_graph(self, debug: bool):
         builder = StateGraph(AgentState, config_schema=GraphConfig)
         builder.add_node("planner", plan_node)
         builder.add_node("generate", generation_node)
@@ -40,9 +41,9 @@ class BaseGraph:
         builder.add_edge("research_critique", "generate")
         builder.add_edge("final_review", END)
 
-        return builder.compile()
+        return builder.compile(debug=debug)
 
-    def _build_open_research_graph(self):
+    def _build_open_research_graph(self, debug: bool):
         builder = StateGraph(AgentState, config_schema=GraphConfig)
         builder.add_node("clarification", clarifications_node_open)
         builder.add_node("planner", plan_node_open)
@@ -66,7 +67,7 @@ class BaseGraph:
         builder.add_edge("research_critique", "generate")
         builder.add_edge("final_review", END)
 
-        return builder.compile()
+        return builder.compile(debug=debug)
 
 # Create the graph based on the open_research parameter
 graph = BaseGraph(open_research=False).build_graph()

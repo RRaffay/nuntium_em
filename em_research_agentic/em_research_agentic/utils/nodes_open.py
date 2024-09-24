@@ -11,6 +11,9 @@ from em_research_agentic.utils.tools import tavily_client
 from em_research_agentic.utils.article_summarizer import generate_summaries
 import concurrent.futures
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Queries(BaseModel):
@@ -51,8 +54,13 @@ def clarification_questions(task: str):
     current_date = datetime.now().strftime("%Y-%m-%d")
     input_message = CLARIFICATIONS_QUESTIONS_PROMPT.format(current_date=current_date, user_request=task)
     messages = [HumanMessage(content=input_message)]
-    model = ChatOpenAI(temperature=1, model_name="o1-preview")
+    #model = ChatOpenAI(temperature=1, model_name="o1-preview")
+    model = ChatOpenAI(temperature=1, model_name="o1-mini")
+    #model = ChatOpenAI(temperature=0, model_name="gpt-4o")
     response = model.invoke(messages)
+    
+    logger.info(f"Clarification questions: {response.content}")
+    
     return response.content
 
 
@@ -67,6 +75,7 @@ def clarifications_node(state: AgentState, config):
     ]
     model = _get_model(config.get('configurable', {}).get("model_name", "openai"))
     response = model.invoke(messages)
+    logger.info(f"Clarification analysis: {response.content}")
     return {"task": response.content}
 
 # With o-1 preview
@@ -219,9 +228,10 @@ def research_critique_node(state: AgentState, config):
 def final_review_node(state: AgentState, config):
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    input_message = f"Here is the report:\n\n{state['draft']}"
+    draft = state['draft']
+    user_request = state['task']
     
-    input_message_with_system = FINAL_REVIEW_PROMPT.format(current_date=current_date) + input_message
+    input_message_with_system = FINAL_REVIEW_PROMPT.format(current_date=current_date, user_request=user_request, draft=draft) 
     
     messages = [HumanMessage(content=input_message_with_system)]
     model = ChatOpenAI(temperature=1, model_name="o1-preview")
