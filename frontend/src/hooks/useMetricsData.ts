@@ -8,6 +8,7 @@ interface UseMetricsDataResult {
   error: string | null;
   availableMetrics: string[];
   latestDates: { [key: string]: string };
+  metricsCount: number; 
 }
 
 export function useMetricsData(country: string): UseMetricsDataResult {
@@ -16,6 +17,7 @@ export function useMetricsData(country: string): UseMetricsDataResult {
   const [error, setError] = useState<string | null>(null);
   const [availableMetrics, setAvailableMetrics] = useState<string[]>([]);
   const [latestDates, setLatestDates] = useState<{ [key: string]: string }>({});
+  const [metricsCount, setMetricsCount] = useState<number>(0); 
 
   const fetchMetrics = useCallback(async () => {
     if (!country) return;
@@ -39,6 +41,8 @@ export function useMetricsData(country: string): UseMetricsDataResult {
           return acc;
         }, {} as { [key: string]: string });
         setLatestDates(latestDatesObj);
+
+        setMetricsCount(availableMetrics.length); 
       } else {
         throw new Error('No valid metrics data received');
       }
@@ -47,6 +51,7 @@ export function useMetricsData(country: string): UseMetricsDataResult {
       setError('Failed to load economic indicators');
       setMetrics(null);
       setAvailableMetrics([]);
+      setMetricsCount(0); 
     } finally {
       setLoading(false);
     }
@@ -56,5 +61,5 @@ export function useMetricsData(country: string): UseMetricsDataResult {
     fetchMetrics();
   }, [fetchMetrics]);
 
-  return { metrics, loading, error, availableMetrics, latestDates };
+  return { metrics, loading, error, availableMetrics, latestDates, metricsCount };
 }

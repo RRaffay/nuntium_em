@@ -10,13 +10,16 @@ import { CountryPageAlertDialog } from '@/components/CountryPageAlertDialog';
 import { Event as ApiEvent } from '@/services/api';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { BarChart, LineChart, LayoutPanelLeft } from 'lucide-react';
+import { FileText, LineChart, LayoutPanelLeft } from 'lucide-react';
 
+
+import { useMetricsData } from '@/hooks/useMetricsData';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
   const navigate = useNavigate();
   const { countryData, userProfile, error } = useCountryData(country);
+  const { metricsCount } = useMetricsData(country!);
   const {
     countryReport,
     eventReports,
@@ -125,6 +128,7 @@ const CountryPage: React.FC = () => {
         isGeneratingOpenResearchReport={isGeneratingOpenResearchReport}
         openResearchReportError={openResearchReportError}
         onGenerateOpenResearchReport={handleGenerateOpenResearchReport}
+        metricsCount={metricsCount}
       />
       <br />
       <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)} className="justify-center">
@@ -133,7 +137,7 @@ const CountryPage: React.FC = () => {
           aria-label="Toggle events view"
           className={`data-[state=on]:bg-primary data-[state=on]:text-primary-foreground`}
         >
-          <BarChart className="h-4 w-4 mr-2" />
+          <FileText className="h-4 w-4 mr-2" />
           Events
         </ToggleGroupItem>
         <ToggleGroupItem

@@ -71,7 +71,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
 
     return (
         <div className="mb-6">
-            <Label htmlFor="metrics-select" className="block mb-2 mt-2">Select Metrics to Display (max {MAX_METRICS}):</Label>
+            <Label htmlFor="metrics-select" className="block mb-2 mt-2">Select Indicators to Display (max {MAX_METRICS}):</Label>
             <div className="flex items-start space-x-2">
                 <div className="flex-grow">
                     <MultiSelect
@@ -97,7 +97,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[625px]">
                         <DialogHeader>
-                            <DialogTitle>Select Metrics</DialogTitle>
+                            <DialogTitle>Select Indicators</DialogTitle>
                         </DialogHeader>
                         <div className="mt-4">
                             <MultiSelect
@@ -114,7 +114,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                             <Alert variant="default" className="mt-2">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertDescription>
-                                    Maximum of {MAX_METRICS} metrics selected. Remove a metric to add another.
+                                    Maximum of {MAX_METRICS} indicators selected. Remove an indicator to add another.
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -125,7 +125,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
                 <Alert variant="default" className="mt-2">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                        Maximum of {MAX_METRICS} metrics selected. Remove a metric to add another.
+                        Maximum of {MAX_METRICS} indicators selected. Remove an indicator to add another.
                     </AlertDescription>
                 </Alert>
             )}
