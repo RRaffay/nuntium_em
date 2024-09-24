@@ -67,12 +67,12 @@ def clarifications_node(state: AgentState, config):
     ]
     model = _get_model(config.get('configurable', {}).get("model_name", "openai"))
     response = model.invoke(messages)
-    return {"clarifications": response.content}
+    return {"task": response.content}
 
 # With o-1 preview
 def plan_node(state: AgentState, config):
 
-    input_message = f"The topic is:\n{state['task']}\n"
+    input_message = f"The topic is:\n{state['task']}\n. These are the clarifications:\n{state['clarifications']}\n"
 
     current_date = datetime.now().strftime("%Y-%m-%d")
 

@@ -31,7 +31,9 @@ export const EventList: React.FC<EventListProps> = ({
     <Accordion key={event.id} type="single" collapsible className="w-full">
       <AccordionItem value={event.id}>
         <AccordionTrigger className="flex justify-between items-center">
-          <span>{event.title}</span>
+          <div className="flex-1 text-center">
+            <span>{event.title}</span>
+          </div>
         </AccordionTrigger>
         <AccordionContent>
           <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>

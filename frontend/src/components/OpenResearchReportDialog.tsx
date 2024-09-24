@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api, Report } from '@/services/api'; // Import Report type
+import { api, Report } from '@/services/api';
 import { ReportDialog } from '@/components/ReportDialog';
 
 interface OpenResearchReportDialogProps {
@@ -17,7 +17,7 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
     const [questions, setQuestions] = useState<string[]>([]);
     const [answers, setAnswers] = useState<string[]>([]);
     const [step, setStep] = useState(0);
-    const [report, setReport] = useState<Report | null>(null); // Change type to Report | null
+    const [report, setReport] = useState<Report | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
         setError(null);
         try {
             const generatedQuestions = await api.generateClarifyingQuestions(task);
-            console.log('Generated questions:', generatedQuestions); // Add this line for debugging
+            console.log('Generated questions:', generatedQuestions);
             if (generatedQuestions.length === 0) {
                 throw new Error('No questions were generated');
             }
@@ -45,7 +45,7 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
         setError(null);
         try {
             const reportContent = await api.createOpenResearchReport({ task, questions, answers });
-            setReport(reportContent); // This should now work correctly
+            setReport(reportContent);
             setStep(2);
         } catch (err) {
             setError('Failed to generate report. Please try again.');
@@ -98,12 +98,12 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
                     <ReportDialog
                         report={report!}
                         isLoading={false}
-                        onGenerate={async () => { }} // Change to async function
+                        onGenerate={async () => { }}
                         error={null}
                         title={`Open Research Report: ${task}`}
                         onClose={onClose}
                         progress={100}
-                        buttonText="Close"
+                        buttonText="Open Report"
                         canOpen={true}
                     />
                 );

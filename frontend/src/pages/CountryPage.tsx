@@ -7,27 +7,11 @@ import { EventList } from '@/components/EventList';
 import { LowRelevanceEvents } from '@/components/LowRelevanceEvents';
 import { CountryPageHeader } from '@/components/CountryPageHeader';
 import { CountryPageAlertDialog } from '@/components/CountryPageAlertDialog';
-import { OpenResearchReportDialog } from '@/components/OpenResearchReportDialog';
-import { Event as ApiEvent, Report } from '@/services/api'; // Add Report here
+import { Event as ApiEvent } from '@/services/api';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { BarChart, LineChart, LayoutPanelLeft } from 'lucide-react';
 
-interface CountryPageHeaderProps {
-  countryData: any;
-  userProfile: any;
-  onGenerateReport: () => void;
-  onBackToDashboard: () => void;
-  countryReport: any;
-  isGeneratingCountryReport: boolean;
-  countryReportProgress: number;
-  countryReportError: string | null;
-  isAnyReportGenerating: boolean;
-  openResearchReport: Report | null;
-  isGeneratingOpenResearchReport: boolean;
-  openResearchReportError: string | null;
-  onGenerateOpenResearchReport: (task: string, questions: string[], answers: string[]) => Promise<void>;
-}
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -84,7 +68,7 @@ const CountryPage: React.FC = () => {
             eventReportErrors={eventReportErrors}
             onGenerateEventReport={handleGenerateEventReport}
             isAnyReportGenerating={isAnyReportGenerating}
-            singleColumn={viewMode === "both"} // Add this prop
+            singleColumn={viewMode === "both"}
           />
         ) : (
           <div className="text-center py-4">
@@ -118,7 +102,7 @@ const CountryPage: React.FC = () => {
         <h2 className="text-2xl font-bold mb-4">Economic Indicators</h2>
         <EconomicIndicatorsChart
           country={country!}
-          enableChat={viewMode === "charts"} // Pass this prop to EconomicIndicatorsChart
+          enableChat={viewMode === "charts"}
         />
       </div>
     );

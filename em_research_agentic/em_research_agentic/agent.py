@@ -69,5 +69,5 @@ class BaseGraph:
         return builder.compile()
 
 # Create the graph based on the open_research parameter
-#graph = BaseGraph(open_research=False).build_graph()
-graph = BaseGraph(open_research=True).build_graph()
+graph = BaseGraph(open_research=False).build_graph()
+#graph = BaseGraph(open_research=True).build_graph()

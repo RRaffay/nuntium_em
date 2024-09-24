@@ -3,7 +3,7 @@ load_dotenv()  # noqa
 
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
-from em_research_agentic.agent import graph
+from em_research_agentic.agent import graph, BaseGraph
 from em_research_agentic.utils.nodes_open import clarification_questions
 import logging
 
@@ -28,7 +28,7 @@ class OpenResearchReportInput(BaseModel):
     clarifications: str
     max_revisions: int
     revision_number: int
-    debug: bool = False
+    debug: bool = True
 
 class EconomicReportInput(BaseModel):
     country: str
@@ -46,6 +46,9 @@ async def run_report_generation(input_data: GraphInput):
     try:
         thread = {"configurable": {"thread_id": "1"}}
         logger.info(f"Running graph with input: {input_data}")
+        
+        graph = BaseGraph(open_research=False).build_graph()
+        
         s = await graph.ainvoke({
             'task': input_data.task,
             "max_revisions": input_data.max_revisions,
@@ -70,6 +73,9 @@ async def generate_clarifying_questions(input_data: ClarifyingQuestionsInput):
 async def open_research_report(input_data: OpenResearchReportInput):
     try:
         thread = {"configurable": {"thread_id": "2"}}
+        
+        graph = BaseGraph(open_research=True).build_graph()
+        
         s = await graph.ainvoke({
             'task': input_data.task,
             "max_revisions": input_data.max_revisions,
@@ -84,7 +90,10 @@ async def open_research_report(input_data: OpenResearchReportInput):
 @app.post("/economic_report")
 async def economic_report(input_data: EconomicReportInput):
     try:
-        thread = {"configurable": {"thread_id": "2"}}
+        thread = {"configurable": {"thread_id": "3"}}
+        
+        graph = BaseGraph(open_research=False).build_graph()
+        
         s = await graph.ainvoke({
             'task': input_data.task,
             "max_revisions": input_data.max_revisions,

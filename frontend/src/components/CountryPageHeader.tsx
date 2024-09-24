@@ -4,6 +4,7 @@ import { CountryData, UserProfile, Report } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { OpenResearchReportDialog } from '@/components/OpenResearchReportDialog';
 
+
 interface CountryPageHeaderProps {
   countryData: CountryData;
   userProfile: UserProfile | null;

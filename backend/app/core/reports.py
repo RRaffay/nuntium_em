@@ -194,8 +194,14 @@ async def generate_clarifying_questions(input: ClarifyingQuestionsInput):
             )
             response.raise_for_status()
             result = response.json()
+            
+            # Get the clarifying questions from the response
+            clarifying_questions = result.get('clarifying_questions')
+            
+            # Remove "Questions" from the clarifying questions
+            clarifying_questions = clarifying_questions.replace("Questions:", "").strip()
 
-            return result['clarifying_questions']
+            return clarifying_questions
         except httpx.HTTPStatusError as e:
             logger.error(e)
             raise HTTPException(
