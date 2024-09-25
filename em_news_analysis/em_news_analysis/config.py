@@ -16,6 +16,7 @@ class Config:
     mmr_lambda_param: float = 0.9
     n_components: int = 50
     reducer_algorithm: str = "umap"
+    top_n_clusters: int = 20
 
     def __hash__(self):
         return hash((self.embedding_model, self.cache_size, self.min_cluster_size,

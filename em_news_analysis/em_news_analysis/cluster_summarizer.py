@@ -52,6 +52,8 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 4, 
 
     summaries_prompt = f"These are the summaries\n<Summaries>\n\n{summaries}</Summaries>.\n\nToday's date is {current_date}."
 
+    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor. If the event is relevant to investors, assign it a score from 0 to 5, where 0 represents no significant market movement and 5 represents a major trading opportunity. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys. If all the articles say inaccessible, return an event with title 'INACCESSIBLE' and summary 'INACCESSIBLE'."
+
     if model == 3:
         open_ai_llm = ChatOpenAI(
             temperature=0,
@@ -68,7 +70,7 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 4, 
         Event, method="json_mode")
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor. If the event is relevant to investors, assign it a score from 0 to 5, where 0 represents no significant market movement and 5 represents a major trading opportunity. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys. If all the articles say inaccessible, return an event with title 'INACCESSIBLE' and summary 'INACCESSIBLE'."),
+        ("system", system_prompt),
         ("user", "{input}")
     ])
 
