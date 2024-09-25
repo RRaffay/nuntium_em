@@ -234,7 +234,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     <Card className="mt-4 relative h-[calc(90vh)]">
       <CardContent className="p-0 h-full flex flex-col">
         <div className="p-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Visualizations</h2>
+          <h2 className="text-xl font-semibold">Visualization Settings</h2>
           {enableChat && !isSmallScreen && (
             <Button size="sm" onClick={() => setIsChatOpen(!isChatOpen)}>
               <MessageCircle className="mr-2 h-4 w-4" />
