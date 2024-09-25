@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 
 interface ReportChatInterfaceProps {
   report: string;
@@ -63,6 +64,7 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({
         ...prevMessages.slice(0, -1),
         { content: response, sender: 'model' }
       ]);
+      scrollToLastNonUserMessage();
     } catch (error) {
       console.error('Error sending message:', error);
       if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
@@ -80,6 +82,8 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({
     setMessages([]);
     setRateLimitError(null);
   };
+
+  const { ref: chatContainerRef, scrollToLastNonUserMessage } = useAutoScroll<HTMLDivElement>([messages]);
 
   return (
     <div className={`flex flex-col ${isMobile ? 'h-[50vh]' : 'h-full'}`}>
@@ -107,13 +111,14 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <div className="flex-grow overflow-y-auto p-4">
+      <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4">
         <ChatMessageList>
           {messages.map((message, index) => (
             <ChatBubble
               key={index}
               variant={message.sender === 'user' ? 'sent' : 'received'}
               className="max-w-[80%]"
+              data-message-type={message.sender}
             >
               <ChatBubbleAvatar
                 fallback={message.sender === 'user' ? 'U' : 'A'}

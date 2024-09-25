@@ -3,15 +3,22 @@ import { useRef, useEffect } from 'react';
 export function useAutoScroll<T extends HTMLElement>(deps: any[] = []) {
   const ref = useRef<T>(null);
 
-  const scrollToBottom = () => {
+  const scrollToLastNonUserMessage = () => {
     if (ref.current) {
-      ref.current.scrollTop = ref.current.scrollHeight;
+      const messages = ref.current.querySelectorAll('[data-message-type]');
+      const lastNonUserMessage = Array.from(messages).reverse().find(
+        (msg) => msg.getAttribute('data-message-type') !== 'user'
+      );
+
+      if (lastNonUserMessage) {
+        lastNonUserMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToLastNonUserMessage();
   }, deps);
 
-  return ref;
+  return { ref, scrollToLastNonUserMessage };
 }

@@ -15,6 +15,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 
 interface Message {
     content: string;
@@ -45,6 +46,8 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
 }) => {
     const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
+    const { ref: chatContainerRef, scrollToLastNonUserMessage } = useAutoScroll<HTMLDivElement>([messages]);
+
     return (
         <div className={`flex flex-col ${isSmallScreen ? 'h-[50vh]' : 'h-full'}`}>
             <div className="p-2 border-b flex justify-between items-center">
@@ -71,13 +74,14 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
-            <div className="flex-grow overflow-y-auto p-4">
+            <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4">
                 <ChatMessageList>
                     {messages.map((message, index) => (
                         <ChatBubble
                             key={index}
                             variant={message.sender === 'user' ? 'sent' : 'received'}
                             className="max-w-[80%]"
+                            data-message-type={message.sender}
                         >
                             <ChatBubbleAvatar
                                 fallback={message.sender === 'user' ? 'U' : 'A'}
