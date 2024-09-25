@@ -1,10 +1,13 @@
 from core.metric import get_country_metrics
-from fastapi import APIRouter, HTTPException, Depends, Request
-from core.reports import economic_report, economic_report_event, EventReportInput, CountryReportInput
-from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
+from fastapi import APIRouter, HTTPException, Depends, Request, Body
+from core.reports import (
+    economic_report, economic_report_event, EventReportInput, CountryReportInput,
+    generate_clarifying_questions, open_research_report, ClarifyingQuestionsInput, OpenResearchReportInput
+)
+from core.pipeline import run_pipeline, PipelineInput
 from core.report_chat import economic_report_chat, ChatRequest
-from models import CountryData, Report, ChatMessage
-from db.data import fetch_country_data, addable_countries, delete_country_data
+from models import CountryData, Report
+from db.data import fetch_country_data, addable_countries, delete_country_data, update_country_data
 from datetime import datetime
 from auth.users import current_active_user
 from auth.auth_db import User
@@ -13,12 +16,11 @@ import logging
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from config import settings
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from typing import Dict, Any, List
+from typing import Dict, Any
 from core.data_chat import data_chat, DataChatRequest
 from cache.cache import cached_with_logging, DateTimeEncoder
 import json
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,11 @@ async def read_root():
     return {"message": "Welcome to the EM Investor API"}
 
 
+class CountryPipelineRequest(BaseModel):
+    country: str
+    hours: int = Field(ge=2, le=24, default=3)
+
+
 @router.post("/run-country-pipeline")
 @limiter.limit(settings.RATE_LIMITS["run_country_pipeline"])
 async def run_country_pipeline(request: Request, input_data: CountryPipelineRequest, user: User = Depends(current_active_user)):
@@ -39,7 +46,7 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
     Run the country pipeline for data processing.
 
     Args:
-        input_data (CountryPipelineInputApp): The input data for the pipeline.
+        input_data (CountryPipelineRequest): The input data for the pipeline.
 
     Returns:
         dict: A dictionary containing the status and result of the pipeline execution.
@@ -49,12 +56,11 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
     """
     limiter.key_func = lambda: str(user.id)
     try:
-        # Check if the country is in the addable countries list
         if input_data.country not in addable_countries:
             raise HTTPException(
                 status_code=400, detail="Country not in addable countries list")
 
-        pipeline_input = CountryPipelineInputApp(
+        pipeline_input = PipelineInput(
             country=input_data.country,
             country_fips_10_4_code=addable_countries[input_data.country],
             hours=input_data.hours,
@@ -64,6 +70,12 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
         logger.info(f"Running pipeline with user_id: {pipeline_input.user_id}")
 
         result = await run_pipeline(pipeline_input)
+
+        # Add the country to the user's list if it's not already there
+        if input_data.country not in user.countries:
+            user.countries.append(input_data.country)
+            await user.save()
+
         return {"status": "success", "result": result}
     except Exception as e:
         logger.error(f"Error in run_country_pipeline: {str(e)}", exc_info=True)
@@ -135,17 +147,6 @@ async def get_country_data(country: str, user: User = Depends(current_active_use
 @router.post("/countries/{country}/generate-report", response_model=Report)
 @limiter.limit(settings.RATE_LIMITS["generate_country_report"])
 async def generate_country_report(request: Request, country: str, user: User = Depends(current_active_user)):
-    """
-    Generate an economic report for a specific country.
-    Args:
-        country (str): The name of the country.
-
-    Returns:
-        Report: A Report object containing the generated report content and timestamp.
-
-    Raises:
-        HTTPException: If the country is not found in the database.
-    """
     limiter.key_func = lambda: str(user.id)
     try:
         user_id = str(user.id)
@@ -153,7 +154,9 @@ async def generate_country_report(request: Request, country: str, user: User = D
         if country not in country_data:
             raise HTTPException(status_code=404, detail="Country not found")
 
-        area_of_interest = user.area_of_interest
+        # Use country-specific interest if available, otherwise use general interest
+        area_of_interest = user.country_interests.get(
+            country, user.area_of_interest)
 
         report_input = CountryReportInput(
             country=country,
@@ -171,18 +174,6 @@ async def generate_country_report(request: Request, country: str, user: User = D
 @router.post("/countries/{country}/events/{event_id}/generate-report", response_model=Report)
 @limiter.limit(settings.RATE_LIMITS["generate_event_report"])
 async def generate_event_report(request: Request, country: str, event_id: str, user: User = Depends(current_active_user)):
-    """
-    Generate an economic report for a specific country.
-
-    Args:
-        country (str): The name of the country.
-
-    Returns:
-        Report: A Report object containing the generated report content and timestamp.
-
-    Raises:
-        HTTPException: If the country is not found in the database.
-    """
     limiter.key_func = lambda: str(user.id)
     try:
         user_id = str(user.id)
@@ -196,7 +187,9 @@ async def generate_event_report(request: Request, country: str, event_id: str, u
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
 
-        area_of_interest = user.area_of_interest
+        # Use country-specific interest if available, otherwise use general interest
+        area_of_interest = user.country_interests.get(
+            country, user.area_of_interest)
 
         report_input = EventReportInput(
             country=country,
@@ -209,6 +202,55 @@ async def generate_event_report(request: Request, country: str, event_id: str, u
     except Exception as e:
         logger.error(
             f"Error in generate_event_report: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/open-research-report")
+@limiter.limit(settings.RATE_LIMITS["open_research_report"])
+async def open_research_report_route(request: Request, input_data: Dict[str, Any], user: User = Depends(current_active_user)):
+    """
+    Generate an open research report based on the task and clarifications.
+
+    Args:
+        input_data (Dict[str, Any]): A dictionary containing 'task', 'questions', and 'answers'.
+
+    Returns:
+        dict: A dictionary containing the generated report.
+
+    Raises:
+        HTTPException: If there's an error during execution or if the input is invalid.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        task = input_data.get('task')
+        questions = input_data.get('questions', [])
+        answers = input_data.get('answers', [])
+        country = input_data.get('country', '')
+
+        logger.info(f"Received open research report request with task: {task}")
+        logger.info(f"Received questions: {questions}")
+        logger.info(f"Received answers: {answers}")
+        logger.info(f"Received country: {country}")
+
+        if not task or len(questions) != len(answers):
+            raise HTTPException(status_code=400, detail="Invalid input data")
+
+        # Combine questions and answers into clarifications
+        clarifications = "\n".join(
+            [f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)])
+
+        report_input = OpenResearchReportInput(
+            country=country,
+            task=task,
+            clarifications=clarifications
+        )
+
+        report_content = await open_research_report(report_input)
+        logger.info(f"Generated open research report: {report_content}")
+        return Report(content=report_content, generated_at=datetime.now().isoformat())
+    except Exception as e:
+        logger.error(
+            f"Error in open_research_report_route: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -230,6 +272,10 @@ async def delete_country(country: str, user: User = Depends(current_active_user)
 
         success = await delete_country_data(country, str(user.id))
         if success:
+            # Remove the country from the user's list
+            if country in user.countries:
+                user.countries.remove(country)
+                await user.save()
             return {"message": f"Country data for {country} has been deleted"}
         else:
             raise HTTPException(
@@ -279,12 +325,14 @@ async def get_country_metrics_route(request: Request, country: str, user: User =
         logger.info(f"Fetching metrics for {country}")
         metrics = get_country_metrics(country)
         logger.info(f"Successfully retrieved metrics for {country}")
-        
-        serialized_metrics = json.loads(json.dumps(metrics, cls=DateTimeEncoder))
-        
+
+        serialized_metrics = json.loads(
+            json.dumps(metrics, cls=DateTimeEncoder))
+
         return serialized_metrics
     except ValueError as ve:
-        logger.error(f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
+        logger.error(
+            f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         logger.error(f"Error in get_country_metrics_route: {e}", exc_info=True)
@@ -337,4 +385,92 @@ async def handle_data_question(request: Request, country: str, payload: Dict[str
         return {"answer": answer}
     except Exception as e:
         logger.error(f"Error in handle_data_question: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate-clarifying-questions")
+@limiter.limit(settings.RATE_LIMITS["generate_clarifying_questions"])
+async def generate_clarifying_questions_route(request: Request, input_data: ClarifyingQuestionsInput, user: User = Depends(current_active_user)):
+    """
+    Generate clarifying questions for a given task.
+
+    Args:
+        input_data (ClarifyingQuestionsInput): The input data containing the task.
+
+    Returns:
+        dict: A dictionary containing the generated clarifying questions.
+
+    Raises:
+        HTTPException: If there's an error during execution.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        logger.info(
+            f"Generating clarifying questions for task: {input_data.task}")
+        questions = await generate_clarifying_questions(input_data)
+        logger.info(f"Generated clarifying questions: {questions}")
+        return {"questions": questions}
+    except Exception as e:
+        logger.error(
+            f"Error in generate_clarifying_questions_route: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/update-country/{country}")
+@limiter.limit(settings.RATE_LIMITS["update_country"])
+async def update_country(
+    request: Request,
+    country: str,
+    update_data: CountryPipelineRequest,
+    user: User = Depends(current_active_user)
+):
+    """
+    Update the data for a specific country by deleting old data and running the pipeline again.
+
+    Args:
+        country (str): The name of the country to update.
+        hours (int): The number of hours to fetch data for.
+
+
+    Returns:
+        dict: A dictionary containing the status and result of the update operation.
+
+    Raises:
+        HTTPException: If the country is not in the addable countries list or if there's an error during execution.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        if country not in addable_countries:
+            raise HTTPException(
+                status_code=400, detail="Country not in addable countries list")
+
+        result = await update_country_data(country, str(user.id), update_data.hours)
+
+        return {"status": "success", "result": result}
+    except Exception as e:
+        logger.error(f"Error in update_country: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/update-user-interests")
+async def update_user_interests(
+    interests: Dict[str, str] = Body(...),
+    user: User = Depends(current_active_user)
+):
+    """
+    Update the user's areas of interest for specific countries.
+
+    Args:
+        interests (Dict[str, str]): A dictionary where keys are country names and values are areas of interest.
+
+    Returns:
+        dict: A message indicating the success of the update.
+    """
+    try:
+        user.country_interests.update(interests)
+        await user.save()
+        return {"message": "User interests updated successfully"}
+    except Exception as e:
+        logger.error(
+            f"Error in update_user_interests: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

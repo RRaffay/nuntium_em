@@ -6,7 +6,6 @@ import { MetricSelector } from '@/components/chart-components/MetricSelector';
 import { ChartOptions } from '@/components/chart-components/ChartOptions';
 import { SingleChart } from '@/components/chart-components/SingleChart';
 import { MultipleCharts } from '@/components/chart-components/MultipleCharts';
-import { QuestionSection } from '@/components/chart-components/QuestionSection';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
@@ -16,6 +15,7 @@ import { useChartData } from '@/hooks/useChartData';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ChatInterface, Message } from '@/components/ChatInterface';
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -50,7 +50,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     }
   }, [availableMetrics]);
 
-  const [displayMode, setDisplayMode] = useState<'single' | 'multiple'>('single');
+  const [displayMode, setDisplayMode] = useState<'single' | 'multiple'>('multiple');
   const [chartType, setChartType] = useState<'Line' | 'Area' | 'Bar'>('Line');
   const [dataTransformation, setDataTransformation] = useState<'none' | 'normalize' | 'percentChange'>('none');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -218,6 +218,18 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     return monthsInYear.map((date) => format(date, 'MMMM'));
   }, []);
 
+  const handleSendMessage = useCallback(() => {
+    if (loadingAnswer) return;
+    handleSubmitQuestion({
+      country,
+      selectedMetrics,
+      metrics,
+      startDate,
+      endDate,
+      proMode,
+    });
+  }, [handleSubmitQuestion, country, selectedMetrics, metrics, startDate, endDate, proMode, loadingAnswer]);
+
   if (loading) {
     return <div>Loading economic indicators...</div>;
   }
@@ -234,7 +246,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     <Card className="mt-4 relative h-[calc(90vh)]">
       <CardContent className="p-0 h-full flex flex-col">
         <div className="p-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Visualizations</h2>
+          <h2 className="text-xl font-semibold">Visualization Settings</h2>
           {enableChat && !isSmallScreen && (
             <Button size="sm" onClick={() => setIsChatOpen(!isChatOpen)}>
               <MessageCircle className="mr-2 h-4 w-4" />
@@ -316,24 +328,16 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={30} minSize={20}>
-                <QuestionSection
+                <ChatInterface
                   messages={messages}
-                  userQuestion={userQuestion}
-                  setUserQuestion={setUserQuestion}
-                  handleSubmitQuestion={() =>
-                    handleSubmitQuestion({
-                      country,
-                      selectedMetrics,
-                      metrics,
-                      startDate,
-                      endDate,
-                      proMode,
-                    })
-                  }
-                  loadingAnswer={loadingAnswer}
+                  inputValue={userQuestion}
+                  setInputValue={setUserQuestion}
+                  handleSendMessage={handleSendMessage}
                   clearChatHistory={clearChatHistory}
                   proMode={proMode}
                   setProMode={setProMode}
+                  isSmallScreen={isSmallScreen}
+                  isLoading={loadingAnswer}
                 />
               </ResizablePanel>
             </>
@@ -349,24 +353,16 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
               {isChatOpen ? 'Close Chat' : 'Open Chat'}
             </Button>
             {isChatOpen && (
-              <QuestionSection
+              <ChatInterface
                 messages={messages}
-                userQuestion={userQuestion}
-                setUserQuestion={setUserQuestion}
-                handleSubmitQuestion={() =>
-                  handleSubmitQuestion({
-                    country,
-                    selectedMetrics,
-                    metrics,
-                    startDate,
-                    endDate,
-                    proMode,
-                  })
-                }
-                loadingAnswer={loadingAnswer}
+                inputValue={userQuestion}
+                setInputValue={setUserQuestion}
+                handleSendMessage={handleSendMessage}
                 clearChatHistory={clearChatHistory}
                 proMode={proMode}
                 setProMode={setProMode}
+                isSmallScreen={isSmallScreen}
+                isLoading={loadingAnswer}
               />
             )}
           </div>

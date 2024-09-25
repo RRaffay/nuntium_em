@@ -4,6 +4,7 @@ from pymongo import MongoClient
 import os
 from datetime import datetime
 from config import settings
+from core.pipeline import run_pipeline, PipelineInput
 
 
 country_data: Dict[str, CountryData] = {}
@@ -86,6 +87,10 @@ addable_countries = {
     "United Kingdom": "UK",
     "Vietnam": "VM",
     "Belarus": "BO",
+    "Russia": "RS",
+    "Saudi Arabia": "SA",
+    "Ethiopia": "ET",
+    "Democratic Republic of the Congo": "CG"
 }
 
 
@@ -95,3 +100,18 @@ async def delete_country_data(country: str, user_id: str):
     if result.deleted_count == 0:
         return False
     return True
+
+
+async def update_country_data(country: str, user_id: str, hours: int):
+    # Delete the old data
+    await delete_country_data(country, user_id)
+
+    # Run the pipeline with new parameters
+    pipeline_input = PipelineInput(
+        country=country,
+        country_fips_10_4_code=addable_countries[country],
+        hours=hours,
+        user_id=user_id
+    )
+
+    return await run_pipeline(pipeline_input)

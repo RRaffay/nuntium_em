@@ -10,44 +10,26 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class CountryPipelineRequest(BaseModel):
-    country: str
-    country_fips_10_4_code: str = Field(default="")
-    hours: int = Field(ge=2, le=24, default=3)
-
-
-class CountryPipelineInputApp(BaseModel):
-    country: str
-    country_fips_10_4_code: str = Field(default="")
-    hours: int = Field(ge=2, le=24, default=3)
-    user_id: str
-
-# Backend Pipeline Input Config (IMPORTANT)
-
-
 class PipelineInput(BaseModel):
-    input_sentence: str = Field(
-        default="Economy Finance Markets")
     country: str
     country_fips_10_4_code: str
-    hours: int
-    article_summarizer_objective: str = Field(
-        default="")
-    cluster_summarizer_objective: str = Field(
-        default="")
+    hours: int = Field(ge=2, le=24, default=3)
+    user_id: str
+    input_sentence: str = Field(default="Economy Finance Markets")
+    article_summarizer_objective: str = Field(default="")
+    cluster_summarizer_objective: str = Field(default="")
     process_all: bool = False
     sample_size: int = 1500
     max_workers_embeddings: int = 5
     max_workers_summaries: int = 3
-    user_id: str
 
 
-async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
+async def run_pipeline(pipeline_input: PipelineInput):
     """
     Run the news pipeline for processing country data.
 
     Args:
-        pipeline_inputs (CountryPipelineInputApp): The input parameters for the pipeline.
+        pipeline_input (PipelineInput): The input parameters for the pipeline.
 
     Returns:
         dict: The result of the pipeline execution.
@@ -62,18 +44,11 @@ async def run_pipeline(pipeline_inputs: CountryPipelineInputApp):
                 f"News pipeline server URL: {news_pipeline_server_url}")
 
             logger.info(
-                f"These are the inputs for pipeline from user: {pipeline_inputs}")
+                f"These are the inputs for pipeline from user: {pipeline_input}")
 
-            pipeline_inputs
+            pipeline_input
 
-            pipeline_input = PipelineInput(
-                country=pipeline_inputs.country,
-                country_fips_10_4_code=pipeline_inputs.country_fips_10_4_code,
-                hours=pipeline_inputs.hours,
-                user_id=pipeline_inputs.user_id
-            )
-
-            pipeline_input.cluster_summarizer_objective = f"Analyze for someone interested in events about {pipeline_inputs.country}"
+            pipeline_input.cluster_summarizer_objective = f"Analyze for someone interested in events about {pipeline_input.country}"
 
             logger.info(f"These are the inputs for pipeline: {pipeline_input}")
 

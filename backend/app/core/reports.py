@@ -77,12 +77,14 @@ The current date is {datetime.now().strftime('%Y-%m-%d')}.
 </Task>"""
 
     def generate_payload(self) -> dict:
-        return {
+        payload = {
             "task": self.generate_task(),
             "max_revisions": self.max_revisions,
             "revision_number": self.revision_number,
             "debug": self.debug,
         }
+        logger.info(f"This is the payload {payload}")
+        return payload
 
 
 class CountryReportInput(BaseModel):
@@ -102,13 +104,42 @@ The current date is {datetime.now().strftime('%Y-%m-%d')}.
 </Task>"""
 
     def generate_payload(self) -> dict:
-        return {
+        payload = {
             "country": self.country,
             "task": self.generate_task(),
             "max_revisions": self.max_revisions,
             "revision_number": self.revision_number,
             "debug": self.debug,
         }
+        logger.info(f"This is the payload {payload}")
+        return payload
+
+
+class ClarifyingQuestionsInput(BaseModel):
+    task: str
+
+
+class OpenResearchReportInput(BaseModel):
+    country: str
+    task: str
+    clarifications: str
+    max_revisions: Optional[int] = MAX_REVISIONS_REPORT
+    revision_number: Optional[int] = REVISION_NUMBER_REPORT
+    debug: Optional[bool] = DEBUG
+
+    def generate_task(self) -> str:
+        return f"I'm interested in the following country: {self.country}. More specifically, {self.task}"
+
+    def generate_payload(self) -> dict:
+        payload = {
+            "task": self.generate_task(),
+            "clarifications": self.clarifications,
+            "max_revisions": self.max_revisions,
+            "revision_number": self.revision_number,
+            "debug": self.debug,
+        }
+        logger.info(f"This is the payload {payload}")
+        return payload
 
 
 @async_timed_lru_cache(maxsize=100, expires_after=REPORT_CACHE_TIMEOUT, key_func=lambda input: f"{input.country}:{input.area_of_interest}:{input.event.id}")
@@ -118,7 +149,7 @@ async def economic_report_event(input: EventReportInput):
             report_server_url = settings.REPORT_SERVER_URL
             logger.info(f"This is url {report_server_url}")
             response = await client.post(
-                f"{report_server_url}/run_graph",
+                f"{report_server_url}/run_report_generation",
                 json=input.generate_payload()
             )
             response.raise_for_status()
@@ -145,6 +176,61 @@ async def economic_report(input: CountryReportInput):
             logger.info(f"This is url {report_server_url}")
             response = await client.post(
                 f"{report_server_url}/economic_report",
+                json=input.generate_payload()
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            content = result['final_report']
+
+            return content
+        except httpx.HTTPStatusError as e:
+            logger.error(e)
+            raise HTTPException(
+                status_code=500, detail=f"Graph server error: {str(e)}")
+        except Exception as e:
+            logger.error(e)
+            raise HTTPException(
+                status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+# @async_timed_lru_cache(maxsize=100, expires_after=REPORT_CACHE_TIMEOUT, key_func=lambda input: input.task)
+async def generate_clarifying_questions(input: ClarifyingQuestionsInput):
+    async with httpx.AsyncClient(timeout=EVENT_REPORT_TIMEOUT) as client:
+        try:
+            report_server_url = settings.REPORT_SERVER_URL
+            response = await client.post(
+                f"{report_server_url}/generate_clarifying_questions",
+                json={"task": input.task}
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            # Get the clarifying questions from the response
+            clarifying_questions = result.get('clarifying_questions')
+
+            # Remove "Questions" from the clarifying questions
+            clarifying_questions = clarifying_questions.replace(
+                "Questions:", "").strip()
+
+            return clarifying_questions
+        except httpx.HTTPStatusError as e:
+            logger.error(e)
+            raise HTTPException(
+                status_code=500, detail=f"Graph server error: {str(e)}")
+        except Exception as e:
+            logger.error(e)
+            raise HTTPException(
+                status_code=500, detail=f"Unexpected error: {str(e)}")
+
+
+@async_timed_lru_cache(maxsize=100, expires_after=REPORT_CACHE_TIMEOUT, key_func=lambda input: f"{input.task}:{input.clarifications}")
+async def open_research_report(input: OpenResearchReportInput):
+    async with httpx.AsyncClient(timeout=EVENT_REPORT_TIMEOUT) as client:
+        try:
+            report_server_url = settings.REPORT_SERVER_URL
+            response = await client.post(
+                f"{report_server_url}/open_research_report",
                 json=input.generate_payload()
             )
             response.raise_for_status()

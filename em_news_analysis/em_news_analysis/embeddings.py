@@ -10,6 +10,7 @@ from openai import OpenAI
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from openai import OpenAI
+from functools import lru_cache
 
 
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 client = OpenAI()
 
 
+@lru_cache(maxsize=1000)
 def get_embedding(text: str, model: str = "text-embedding-3-small", embedding_function: Callable = None) -> List[float]:
     """
     Generate an embedding for a given text using the specified embedding function.

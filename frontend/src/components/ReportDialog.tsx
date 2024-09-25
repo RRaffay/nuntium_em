@@ -41,7 +41,8 @@ interface ReportDialogProps {
   progress: number;
   autoGenerateOnOpen?: boolean;
   buttonText: string;
-  canOpen: boolean; // Add this new prop
+  canOpen: boolean;
+  autoOpen?: boolean;
 }
 
 export const ReportDialog: React.FC<ReportDialogProps> = ({
@@ -55,8 +56,9 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
   autoGenerateOnOpen = false,
   buttonText,
   canOpen,
+  autoOpen = false,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(autoOpen);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatSize, setChatSize] = useState(50);
   const [proMode, setProMode] = useState(false);
@@ -70,6 +72,12 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (autoOpen && report && !isLoading) {
+      setIsOpen(true);
+    }
+  }, [autoOpen, report, isLoading]);
 
   const handleOpenChange = (open: boolean) => {
     if (canOpen && report) {

@@ -5,10 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { api, CountryInfo } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import { Trash2 } from 'lucide-react';
+import { FileText, Clock, AlertTriangle } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const Dashboard: React.FC = React.memo(() => {
   const [countries, setCountries] = useState<CountryInfo[]>([]);
@@ -23,6 +26,8 @@ const Dashboard: React.FC = React.memo(() => {
   const [addProgress, setAddProgress] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<string>("grid");
+  const [countryInterest, setCountryInterest] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,7 +39,7 @@ const Dashboard: React.FC = React.memo(() => {
         ]);
         setCountries(countriesData);
         setHeaderMessage(headerData);
-        
+
         // Filter out countries that are already added and sort alphabetically
         const filteredAddableCountries = allAddableCountries
           .filter(country => !countriesData.map(c => c.name).includes(country))
@@ -74,6 +79,8 @@ const Dashboard: React.FC = React.memo(() => {
 
     try {
       await api.runCountryPipeline(selectedCountry, timePeriod);
+      // Update user's country interests
+      await api.updateUserInterests({ [selectedCountry]: countryInterest });
       clearInterval(interval);
       setAddProgress(100);
       setSuccessMessage(`Events for ${selectedCountry} have been successfully added!`);
@@ -97,7 +104,7 @@ const Dashboard: React.FC = React.memo(() => {
     } finally {
       setIsAddingCountry(false);
     }
-  }, [selectedCountry, timePeriod]);
+  }, [selectedCountry, timePeriod, countryInterest]);
 
   const handleDeleteCountry = useCallback(async (country: string, event: React.MouseEvent) => {
     event.preventDefault();
@@ -121,7 +128,8 @@ const Dashboard: React.FC = React.memo(() => {
   return (
     <div className="container mx-auto px-4">
       <h1 className="text-3xl font-bold mb-8 text-center">{headerMessage}</h1>
-      <div className="mb-4">
+
+      <div className="flex justify-between items-center mb-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button disabled={!isVerified}>
@@ -137,7 +145,7 @@ const Dashboard: React.FC = React.memo(() => {
                 <div className="grid gap-4 py-4">
                   {isAddingCountry ? (
                     <>
-                      <p>Fetching events for country</p>
+                      <p>Consolidating infomation for {selectedCountry}</p>
                       <Progress value={addProgress} className="mt-2" />
                     </>
                   ) : successMessage ? (
@@ -145,9 +153,7 @@ const Dashboard: React.FC = React.memo(() => {
                   ) : (
                     <>
                       <div className="space-y-2">
-                        <label htmlFor="country-select" className="text-sm font-medium">
-                          Country Name
-                        </label>
+                        <Label htmlFor="country-select">Country Name</Label>
                         <Select onValueChange={(value) => setSelectedCountry(value)}>
                           <SelectTrigger id="country-select">
                             <SelectValue placeholder="Select a country" />
@@ -162,9 +168,7 @@ const Dashboard: React.FC = React.memo(() => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="time-period" className="text-sm font-medium">
-                          Hours
-                        </label>
+                        <Label htmlFor="time-period">Hours</Label>
                         <Input
                           id="time-period"
                           type="number"
@@ -173,6 +177,16 @@ const Dashboard: React.FC = React.memo(() => {
                           max={24}
                           value={timePeriod}
                           onChange={(e) => setTimePeriod(Number(e.target.value))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="country-interest">Area of Interest</Label>
+                        <Input
+                          id="country-interest"
+                          type="text"
+                          placeholder="Specify areas of focus such as 'Politics', 'Economy', etc."
+                          value={countryInterest}
+                          onChange={(e) => setCountryInterest(e.target.value)}
                         />
                       </div>
                       <Button onClick={handleAddCountry} disabled={!selectedCountry}>
@@ -193,31 +207,50 @@ const Dashboard: React.FC = React.memo(() => {
             )}
           </DialogContent>
         </Dialog>
+
+        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)}>
+          <ToggleGroupItem value="grid" aria-label="Grid view">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-grid-2x2"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 12h18" /><path d="M12 3v18" /></svg>
+          </ToggleGroupItem>
+          <ToggleGroupItem value="list" aria-label="List view">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-list"><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></svg>
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
         {countries.map((country) => (
           <Link key={country.name} to={`/country/${country.name}`}>
-          <Card className="hover:shadow-lg transition-shadow duration-300 relative">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                {country.name}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => handleDeleteCountry(country.name, e)}
-                  className="absolute top-2 right-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Last updated: {new Date(country.timestamp).toLocaleString()}</p>
-              <p>Hours of data: {country.hours}</p>
-              <p>Events Found: {country.no_relevant_events}</p>
-            </CardContent>
-          </Card>
-        </Link>
+            <Card className="hover:shadow-lg transition-shadow duration-300 relative">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  {country.name}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => handleDeleteCountry(country.name, e)}
+                    className="absolute top-2 right-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>Last updated: {new Date(country.timestamp).toLocaleString()}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-2">
+                  <FileText className="h-4 w-4" />
+                  <span>Hours of data: {country.hours}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Events Found: {country.no_relevant_events}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

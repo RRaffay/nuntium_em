@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { api, Report } from '@/services/api';
 
 export const useReportGeneration = (country: string | undefined) => {
@@ -13,6 +13,10 @@ export const useReportGeneration = (country: string | undefined) => {
   const [eventReportProgress, setEventReportProgress] = useState<{ [key: string]: number }>({});
   const [isAnyReportGenerating, setIsAnyReportGenerating] = useState(false);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [openResearchReport, setOpenResearchReport] = useState<Report | null>(null);
+  const [isGeneratingOpenResearchReport, setIsGeneratingOpenResearchReport] = useState(false);
+  const [openResearchReportError, setOpenResearchReportError] = useState<string | null>(null);
+  const [openResearchReportProgress, setOpenResearchReportProgress] = useState<number>(0);
 
   const handleGenerateCountryReport = async () => {
     if (isAnyReportGenerating) {
@@ -109,6 +113,54 @@ export const useReportGeneration = (country: string | undefined) => {
     }
   };
 
+  const handleGenerateOpenResearchReport = async (task: string, questions: string[], answers: string[]) => {
+    if (isAnyReportGenerating) {
+      setShowAlertDialog(true);
+      return;
+    }
+    if (!country) {
+      setOpenResearchReportError('Country is not defined');
+      return;
+    }
+    setIsAnyReportGenerating(true);
+    setIsGeneratingOpenResearchReport(true);
+    setOpenResearchReportError(null);
+    setRateLimitError(null);
+    setOpenResearchReportProgress(0);
+
+    const startTime = Date.now();
+    const duration = 210000; // 3.5 minutes
+    const easeOutQuad = (t: number) => t * (2 - t);
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
+      setOpenResearchReportProgress(progressValue);
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    try {
+      const generatedReport = await api.createOpenResearchReport({ country, task, questions, answers });
+      setOpenResearchReport(generatedReport);
+    } catch (err) {
+      console.error('Error generating open research report:', err);
+      if (err instanceof Error && err.message.includes('Rate limit exceeded')) {
+        setRateLimitError(err.message);
+      } else {
+        setOpenResearchReportError('Failed to generate open research report. Please try again.');
+      }
+      setOpenResearchReport(null);
+    } finally {
+      clearInterval(interval);
+      setOpenResearchReportProgress(100);
+      setIsGeneratingOpenResearchReport(false);
+      setIsAnyReportGenerating(false);
+    }
+  };
+
   return {
     countryReport,
     eventReports,
@@ -124,5 +176,10 @@ export const useReportGeneration = (country: string | undefined) => {
     isAnyReportGenerating,
     showAlertDialog,
     setShowAlertDialog,
+    openResearchReport,
+    isGeneratingOpenResearchReport,
+    openResearchReportError,
+    openResearchReportProgress,
+    handleGenerateOpenResearchReport,
   };
 };

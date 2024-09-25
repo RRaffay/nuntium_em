@@ -114,9 +114,9 @@ class GDELTNewsPipeline:
             self.logger.info("Optimizing clustering parameters...")
             # Simplified parameter grid focusing on key hyperparameters
             param_grid = {
-                'n_components': [20, 50],
-                'min_cluster_size': [5, 10],
-                'min_samples': [1, 2],
+                'n_components': [20, 50, 70],
+                'min_cluster_size': [5, 10, 15],
+                'min_samples': [3, 5, 7],
                 # Fixed parameters
                 'reduce_dimensionality': [True],
                 'reducer_algorithm': ['umap'],
@@ -145,7 +145,7 @@ class GDELTNewsPipeline:
             self.logger.info("Matching clusters...")
             input_embedding = self.get_embedding(input_sentence)
             matched_clusters = match_clusters(
-                input_embedding, embeddings, clusters)
+                input_embedding, embeddings, clusters, self.config.top_n_clusters)
             self.logger.info(f"Matched {len(matched_clusters)} clusters.")
 
             # Create a dictionary mapping cluster to rank
