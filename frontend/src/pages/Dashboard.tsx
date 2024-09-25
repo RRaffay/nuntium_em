@@ -145,7 +145,7 @@ const Dashboard: React.FC = React.memo(() => {
                 <div className="grid gap-4 py-4">
                   {isAddingCountry ? (
                     <>
-                      <p>Fetching events for country</p>
+                      <p>Consolidating infomation for {selectedCountry}</p>
                       <Progress value={addProgress} className="mt-2" />
                     </>
                   ) : successMessage ? (

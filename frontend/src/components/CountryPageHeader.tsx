@@ -47,7 +47,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
           icon={<Calendar className="w-5 h-5 text-gray-500" />}
           label="Last updated"
           value={new Date(countryData.timestamp).toLocaleString() + " UTC"}
-          tooltip="The most recent time the data was refreshed"
+          tooltip="The most recent time the data was refreshed. To update the data, click the Fetch New Events button."
         />
         <InfoItem
           icon={<Clock className="w-5 h-5 text-gray-500" />}

@@ -6,7 +6,7 @@ from core.reports import (
 )
 from core.pipeline import run_pipeline, PipelineInput
 from core.report_chat import economic_report_chat, ChatRequest
-from models import CountryData, Report, ChatMessage
+from models import CountryData, Report
 from db.data import fetch_country_data, addable_countries, delete_country_data, update_country_data
 from datetime import datetime
 from auth.users import current_active_user
@@ -16,9 +16,7 @@ import logging
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from config import settings
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from typing import Dict, Any, List
+from typing import Dict, Any
 from core.data_chat import data_chat, DataChatRequest
 from cache.cache import cached_with_logging, DateTimeEncoder
 import json
