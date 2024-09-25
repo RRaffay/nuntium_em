@@ -284,7 +284,7 @@ def fetch_econdb_data(series_code: str, max_retries: int = 3, retry_delay: int =
         except HTTPError as e:
             if e.response.status_code == 429:
                 logger.warning(
-                    f"Rate limit exceeded. Retrying in {retry_delay} seconds...")
+                    f"Rate limit exceeded for Econdb API. Retrying {series_code} in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             else:
                 logger.error(f"HTTP error occurred: {e}")

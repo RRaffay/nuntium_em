@@ -116,7 +116,7 @@ class GDELTNewsPipeline:
             param_grid = {
                 'n_components': [20, 50, 70],
                 'min_cluster_size': [5, 10, 15],
-                'min_samples': [1, 2, 3],
+                'min_samples': [3, 5, 7],
                 # Fixed parameters
                 'reduce_dimensionality': [True],
                 'reducer_algorithm': ['umap'],

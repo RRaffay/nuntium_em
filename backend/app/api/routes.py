@@ -4,7 +4,7 @@ from core.reports import (
     economic_report, economic_report_event, EventReportInput, CountryReportInput,
     generate_clarifying_questions, open_research_report, ClarifyingQuestionsInput, OpenResearchReportInput
 )
-from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest, UpdateCountryRequest
+from core.pipeline import run_pipeline, PipelineInput
 from core.report_chat import economic_report_chat, ChatRequest
 from models import CountryData, Report, ChatMessage
 from db.data import fetch_country_data, addable_countries, delete_country_data, update_country_data
@@ -22,6 +22,7 @@ from typing import Dict, Any, List
 from core.data_chat import data_chat, DataChatRequest
 from cache.cache import cached_with_logging, DateTimeEncoder
 import json
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,11 @@ async def read_root():
     return {"message": "Welcome to the EM Investor API"}
 
 
+class CountryPipelineRequest(BaseModel):
+    country: str
+    hours: int = Field(ge=2, le=24, default=3)
+
+
 @router.post("/run-country-pipeline")
 @limiter.limit(settings.RATE_LIMITS["run_country_pipeline"])
 async def run_country_pipeline(request: Request, input_data: CountryPipelineRequest, user: User = Depends(current_active_user)):
@@ -42,7 +48,7 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
     Run the country pipeline for data processing.
 
     Args:
-        input_data (CountryPipelineInputApp): The input data for the pipeline.
+        input_data (CountryPipelineRequest): The input data for the pipeline.
 
     Returns:
         dict: A dictionary containing the status and result of the pipeline execution.
@@ -56,7 +62,7 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
             raise HTTPException(
                 status_code=400, detail="Country not in addable countries list")
 
-        pipeline_input = CountryPipelineInputApp(
+        pipeline_input = PipelineInput(
             country=input_data.country,
             country_fips_10_4_code=addable_countries[input_data.country],
             hours=input_data.hours,
@@ -417,7 +423,7 @@ async def generate_clarifying_questions_route(request: Request, input_data: Clar
 async def update_country(
     request: Request,
     country: str,
-    update_data: UpdateCountryRequest,
+    update_data: CountryPipelineRequest,
     user: User = Depends(current_active_user)
 ):
     """

@@ -58,7 +58,7 @@ const CountryPage: React.FC = () => {
 
   const handleSaveInterest = useCallback(async () => {
     if (country && newInterest) {
-      await updateCountryInterest(country, newInterest);
+      await updateCountryInterest(newInterest);
       setIsEditingInterest(false);
     }
   }, [country, newInterest, updateCountryInterest]);

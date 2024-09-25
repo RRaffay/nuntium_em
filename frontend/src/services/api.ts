@@ -86,6 +86,11 @@ export interface CountryInterests {
   [country: string]: string;
 }
 
+interface CountryPipelineRequest {
+  country: string;
+  hours: number;
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = auth.getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -202,11 +207,11 @@ export const api = {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ country, hours }),
+      body: JSON.stringify({ country, hours } as CountryPipelineRequest),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {
-      throw new Error('Failed to fetch countries');
+      throw new Error('Failed to run country pipeline');
     }
     return handledResponse.json();
   },
@@ -397,7 +402,7 @@ export const api = {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ hours }),
+      body: JSON.stringify({ country, hours } as CountryPipelineRequest),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {
