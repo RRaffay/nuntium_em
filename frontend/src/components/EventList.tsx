@@ -14,7 +14,7 @@ interface EventListProps {
   eventReportErrors: { [key: string]: string | null };
   onGenerateEventReport: (eventId: string) => Promise<void>;
   isAnyReportGenerating: boolean;
-  singleColumn?: boolean; // Add this prop
+  singleColumn?: boolean;
 }
 
 export const EventList: React.FC<EventListProps> = ({
