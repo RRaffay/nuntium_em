@@ -6,7 +6,6 @@ import { MetricSelector } from '@/components/chart-components/MetricSelector';
 import { ChartOptions } from '@/components/chart-components/ChartOptions';
 import { SingleChart } from '@/components/chart-components/SingleChart';
 import { MultipleCharts } from '@/components/chart-components/MultipleCharts';
-import { QuestionSection } from '@/components/chart-components/QuestionSection';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
@@ -16,6 +15,7 @@ import { useChartData } from '@/hooks/useChartData';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ChatInterface, Message } from '@/components/ChatInterface';
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -316,11 +316,11 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={30} minSize={20}>
-                <QuestionSection
+                <ChatInterface
                   messages={messages}
-                  userQuestion={userQuestion}
-                  setUserQuestion={setUserQuestion}
-                  handleSubmitQuestion={() =>
+                  inputValue={userQuestion}
+                  setInputValue={setUserQuestion}
+                  handleSendMessage={() =>
                     handleSubmitQuestion({
                       country,
                       selectedMetrics,
@@ -334,6 +334,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                   clearChatHistory={clearChatHistory}
                   proMode={proMode}
                   setProMode={setProMode}
+                  isSmallScreen={isSmallScreen}
                 />
               </ResizablePanel>
             </>
@@ -349,11 +350,11 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
               {isChatOpen ? 'Close Chat' : 'Open Chat'}
             </Button>
             {isChatOpen && (
-              <QuestionSection
+              <ChatInterface
                 messages={messages}
-                userQuestion={userQuestion}
-                setUserQuestion={setUserQuestion}
-                handleSubmitQuestion={() =>
+                inputValue={userQuestion}
+                setInputValue={setUserQuestion}
+                handleSendMessage={() =>
                   handleSubmitQuestion({
                     country,
                     selectedMetrics,
@@ -367,6 +368,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                 clearChatHistory={clearChatHistory}
                 proMode={proMode}
                 setProMode={setProMode}
+                isSmallScreen={isSmallScreen}
               />
             )}
           </div>

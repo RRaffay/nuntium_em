@@ -5,7 +5,6 @@ import { ChatInput } from '@/components/ui/chat/chat-input';
 import { ChatMessageList } from '@/components/ui/chat/chat-message-list';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import MessageLoading from '@/components/ui/chat/message-loading';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Trash2 } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -17,35 +16,35 @@ import {
 } from "@/components/ui/tooltip";
 import { useAutoScroll } from '@/hooks/useAutoScroll';
 
-interface Message {
+export interface Message {
     content: string;
     sender: 'user' | 'model';
     isLoading?: boolean;
 }
 
-interface QuestionSectionProps {
+interface ChatInterfaceProps {
     messages: Message[];
-    userQuestion: string;
-    setUserQuestion: (question: string) => void;
-    handleSubmitQuestion: () => void;
-    loadingAnswer: boolean;
+    inputValue: string;
+    setInputValue: (value: string) => void;
+    handleSendMessage: () => void;
     clearChatHistory: () => void;
     proMode: boolean;
     setProMode: (mode: boolean) => void;
+    isSmallScreen: boolean;
+    loadingAnswer?: boolean;
 }
 
-export const QuestionSection: React.FC<QuestionSectionProps> = ({
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messages,
-    userQuestion,
-    setUserQuestion,
-    handleSubmitQuestion,
-    loadingAnswer,
+    inputValue,
+    setInputValue,
+    handleSendMessage,
     clearChatHistory,
     proMode,
     setProMode,
+    isSmallScreen,
+    loadingAnswer = false,
 }) => {
-    const isSmallScreen = useMediaQuery('(max-width: 768px)');
-
     const { ref: chatContainerRef, scrollToLastNonUserMessage } = useAutoScroll<HTMLDivElement>([messages]);
 
     return (
@@ -105,13 +104,13 @@ export const QuestionSection: React.FC<QuestionSectionProps> = ({
             </div>
             <div className="p-4 border-t">
                 <ChatInput
-                    value={userQuestion}
-                    onChange={(e) => setUserQuestion(e.target.value)}
-                    onSend={handleSubmitQuestion}
-                    placeholder="Ask about the data..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onSend={handleSendMessage}
+                    placeholder="Type your message..."
                     className="mb-2"
                 />
-                <Button onClick={handleSubmitQuestion} disabled={!userQuestion.trim() || loadingAnswer}>
+                <Button onClick={handleSendMessage} disabled={!inputValue.trim() || loadingAnswer}>
                     Send
                 </Button>
             </div>
