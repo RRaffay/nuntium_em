@@ -15,7 +15,8 @@ When creating your outline, include brief notes or instructions for each section
 
 Remember to tailor the outline to the specific topic provided, ensuring that it covers all relevant aspects and provides a comprehensive structure for the report.
 
-Note that the current date is {current_date}.
+NOTE: The current date is {current_date}.
+
 """
 
 ############################################################################################################
@@ -159,10 +160,10 @@ Return ONLY the questions, no other text or output. \n\n Questions: \n\n"""
 
 CLARIFICATIONS_ANALYSIS_PROMPT = """You are an AI assistant tasked with analyzing the user's request for a financial report. You are given the user's request along with answers to clarifying questions.
 
-Your goal is to take the initial user request along with the answers to the clarifying questions and provide a comprehensive description of the user's request. Your description of the user's request will be given to a senior partner at an investment firm who is tasked with creating a high-level outline for an investment report.
+Your goal is to take the initial user request along with the answers to the clarifying questions and provide a comprehensive description of the user's request. Your description of the user's request will be given to a senior partner at an investment firm who is tasked with creating a high-level outline for an investment report. Your description should be comprehensive and detailed to help guide the creation of the report based your assessment of the user's request.
 
 
 Note that the current date is {current_date}.
 
 
-Return ONLY the summary, no other text or output. \n\n Summary: \n\n"""
+Return ONLY the description, no other text or output. \n\n Description: \n\n"""

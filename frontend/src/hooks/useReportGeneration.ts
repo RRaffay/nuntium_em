@@ -118,6 +118,10 @@ export const useReportGeneration = (country: string | undefined) => {
       setShowAlertDialog(true);
       return;
     }
+    if (!country) {
+      setOpenResearchReportError('Country is not defined');
+      return;
+    }
     setIsAnyReportGenerating(true);
     setIsGeneratingOpenResearchReport(true);
     setOpenResearchReportError(null);
@@ -139,7 +143,7 @@ export const useReportGeneration = (country: string | undefined) => {
     }, 100);
 
     try {
-      const generatedReport = await api.createOpenResearchReport({ task, questions, answers });
+      const generatedReport = await api.createOpenResearchReport({ country, task, questions, answers });
       setOpenResearchReport(generatedReport);
     } catch (err) {
       console.error('Error generating open research report:', err);

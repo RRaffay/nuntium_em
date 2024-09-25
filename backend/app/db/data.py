@@ -86,6 +86,10 @@ addable_countries = {
     "United Kingdom": "UK",
     "Vietnam": "VM",
     "Belarus": "BO",
+    "Russia": "RS",
+    "Saudi Arabia": "SA",
+    "Ethiopia": "ET",
+    "Democratic Republic of the Congo": "CG"
 }
 
 

@@ -15,6 +15,8 @@ import yfinance as yf
 from requests.exceptions import RequestException
 from dotenv import load_dotenv
 from pydantic import BaseModel, validator
+import time
+from requests.exceptions import RequestException, HTTPError
 
 from config import settings
 
@@ -253,7 +255,7 @@ def fetch_indicator_data(country_code: str, indicator_code: str, start_date: str
         return []
 
 
-def fetch_econdb_data(series_code: str) -> List[DataPoint]:
+def fetch_econdb_data(series_code: str, max_retries: int = 3, retry_delay: int = 5) -> List[DataPoint]:
     api_key = settings.ECONDB_API_KEY
     if not api_key:
         logger.error("Econdb API key is not set.")
@@ -262,27 +264,40 @@ def fetch_econdb_data(series_code: str) -> List[DataPoint]:
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        if 'data' in data:
-            data_points = []
-            dates = data['data']['dates']
-            values = data['data']['values']
-            for date_str, value in zip(dates, values):
-                date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
-                data_point = DataPoint(date=date_val, value=value)
-                data_points.append(data_point)
-            return data_points
-        else:
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            if 'data' in data:
+                data_points = []
+                dates = data['data']['dates']
+                values = data['data']['values']
+                for date_str, value in zip(dates, values):
+                    date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    data_point = DataPoint(date=date_val, value=value)
+                    data_points.append(data_point)
+                return data_points
+            else:
+                return []
+        except HTTPError as e:
+            if e.response.status_code == 429:
+                logger.warning(
+                    f"Rate limit exceeded. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"HTTP error occurred: {e}")
+                return []
+        except RequestException as e:
+            logger.error(f"Error fetching data from Econdb API: {e}")
             return []
-    except RequestException as e:
-        logger.error(f"Error fetching data from Econdb API: {e}")
-        return []
-    except Exception as e:
-        logger.error(f"General error in fetch_econdb_data: {e}")
-        return []
+        except Exception as e:
+            logger.error(f"General error in fetch_econdb_data: {e}")
+            return []
+
+    logger.error(f"Failed to fetch data after {max_retries} attempts")
+    return []
 
 
 def fetch_exchange_rate_series(currency_pair: str) -> Optional[MetricData]:

@@ -214,6 +214,7 @@ async def generate_event_report(request: Request, country: str, event_id: str, u
             f"Error in generate_event_report: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/open-research-report")
 @limiter.limit(settings.RATE_LIMITS["open_research_report"])
 async def open_research_report_route(request: Request, input_data: Dict[str, Any], user: User = Depends(current_active_user)):
@@ -234,19 +235,22 @@ async def open_research_report_route(request: Request, input_data: Dict[str, Any
         task = input_data.get('task')
         questions = input_data.get('questions', [])
         answers = input_data.get('answers', [])
+        country = input_data.get('country', '')
 
-        
         logger.info(f"Received open research report request with task: {task}")
         logger.info(f"Received questions: {questions}")
         logger.info(f"Received answers: {answers}")
+        logger.info(f"Received country: {country}")
 
         if not task or len(questions) != len(answers):
             raise HTTPException(status_code=400, detail="Invalid input data")
 
         # Combine questions and answers into clarifications
-        clarifications = "\n".join([f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)])
+        clarifications = "\n".join(
+            [f"Q: {q}\nA: {a}" for q, a in zip(questions, answers)])
 
         report_input = OpenResearchReportInput(
+            country=country,
             task=task,
             clarifications=clarifications
         )
@@ -255,7 +259,8 @@ async def open_research_report_route(request: Request, input_data: Dict[str, Any
         logger.info(f"Generated open research report: {report_content}")
         return Report(content=report_content, generated_at=datetime.now().isoformat())
     except Exception as e:
-        logger.error(f"Error in open_research_report_route: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in open_research_report_route: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -326,12 +331,14 @@ async def get_country_metrics_route(request: Request, country: str, user: User =
         logger.info(f"Fetching metrics for {country}")
         metrics = get_country_metrics(country)
         logger.info(f"Successfully retrieved metrics for {country}")
-        
-        serialized_metrics = json.loads(json.dumps(metrics, cls=DateTimeEncoder))
-        
+
+        serialized_metrics = json.loads(
+            json.dumps(metrics, cls=DateTimeEncoder))
+
         return serialized_metrics
     except ValueError as ve:
-        logger.error(f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
+        logger.error(
+            f"ValueError in get_country_metrics_route: {ve}", exc_info=True)
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         logger.error(f"Error in get_country_metrics_route: {e}", exc_info=True)
@@ -386,6 +393,7 @@ async def handle_data_question(request: Request, country: str, payload: Dict[str
         logger.error(f"Error in handle_data_question: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/generate-clarifying-questions")
 @limiter.limit(settings.RATE_LIMITS["generate_clarifying_questions"])
 async def generate_clarifying_questions_route(request: Request, input_data: ClarifyingQuestionsInput, user: User = Depends(current_active_user)):
@@ -403,11 +411,12 @@ async def generate_clarifying_questions_route(request: Request, input_data: Clar
     """
     limiter.key_func = lambda: str(user.id)
     try:
-        logger.info(f"Generating clarifying questions for task: {input_data.task}")
+        logger.info(
+            f"Generating clarifying questions for task: {input_data.task}")
         questions = await generate_clarifying_questions(input_data)
         logger.info(f"Generated clarifying questions: {questions}")
         return {"questions": questions}
     except Exception as e:
-        logger.error(f"Error in generate_clarifying_questions_route: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error in generate_clarifying_questions_route: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-

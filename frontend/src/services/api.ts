@@ -75,6 +75,7 @@ export interface ClarifyingQuestion {
 }
 
 export interface OpenResearchReportInput {
+  country: string;
   task: string;
   questions: string[];
   answers: string[];
@@ -173,7 +174,6 @@ export const api = {
   },
 
   async createOpenResearchReport(input: OpenResearchReportInput): Promise<Report> {
-
     const response = await fetch(`${API_BASE_URL}/open-research-report`, {
       method: 'POST',
       headers: {

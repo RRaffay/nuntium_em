@@ -118,16 +118,21 @@ The current date is {datetime.now().strftime('%Y-%m-%d')}.
 class ClarifyingQuestionsInput(BaseModel):
     task: str
 
+
 class OpenResearchReportInput(BaseModel):
+    country: str
     task: str
     clarifications: str
     max_revisions: Optional[int] = MAX_REVISIONS_REPORT
     revision_number: Optional[int] = REVISION_NUMBER_REPORT
     debug: Optional[bool] = DEBUG
 
+    def generate_task(self) -> str:
+        return f"I'm interested in the following country: {self.country}. More specifically, {self.task}"
+
     def generate_payload(self) -> dict:
         payload = {
-            "task": self.task,
+            "task": self.generate_task(),
             "clarifications": self.clarifications,
             "max_revisions": self.max_revisions,
             "revision_number": self.revision_number,
@@ -200,12 +205,13 @@ async def generate_clarifying_questions(input: ClarifyingQuestionsInput):
             )
             response.raise_for_status()
             result = response.json()
-            
+
             # Get the clarifying questions from the response
             clarifying_questions = result.get('clarifying_questions')
-            
+
             # Remove "Questions" from the clarifying questions
-            clarifying_questions = clarifying_questions.replace("Questions:", "").strip()
+            clarifying_questions = clarifying_questions.replace(
+                "Questions:", "").strip()
 
             return clarifying_questions
         except httpx.HTTPStatusError as e:

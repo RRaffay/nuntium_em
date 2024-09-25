@@ -29,7 +29,6 @@ class SearchResponse(BaseModel):
         return f"Article title:{self.title}\n\nArticle Content:\n {self.content}\n\nURL: {self.url}"
 
 
-
 @lru_cache(maxsize=4)
 def _get_model(model_name: str):
     if model_name == "openai":
@@ -52,33 +51,39 @@ def _search_and_summarize(query, max_results):
 
 def clarification_questions(task: str):
     current_date = datetime.now().strftime("%Y-%m-%d")
-    input_message = CLARIFICATIONS_QUESTIONS_PROMPT.format(current_date=current_date, user_request=task)
+    input_message = CLARIFICATIONS_QUESTIONS_PROMPT.format(
+        current_date=current_date, user_request=task)
     messages = [HumanMessage(content=input_message)]
-    #model = ChatOpenAI(temperature=1, model_name="o1-preview")
+    # model = ChatOpenAI(temperature=1, model_name="o1-preview")
     model = ChatOpenAI(temperature=1, model_name="o1-mini")
-    #model = ChatOpenAI(temperature=0, model_name="gpt-4o")
+    # model = ChatOpenAI(temperature=0, model_name="gpt-4o")
     response = model.invoke(messages)
-    
+
     logger.info(f"Clarification questions: {response.content}")
-    
+
     return response.content
 
 
 def clarifications_node(state: AgentState, config):
-    
+
     current_date = datetime.now().strftime("%Y-%m-%d")
     input_message = f"The user request is:\n{state['task']}\n. The answers to the clarifying questions are:\n{state['clarifications']}\n."
-    
+
     messages = [
-        SystemMessage(content=CLARIFICATIONS_ANALYSIS_PROMPT.format(current_date=current_date)),
+        SystemMessage(content=CLARIFICATIONS_ANALYSIS_PROMPT.format(
+            current_date=current_date)),
         HumanMessage(content=input_message)
     ]
-    model = _get_model(config.get('configurable', {}).get("model_name", "openai"))
+    model = _get_model(config.get('configurable', {}
+                                  ).get("model_name", "openai"))
     response = model.invoke(messages)
-    logger.info(f"Clarification analysis: {response.content}")
+    logger.info(
+        f"Clarification analysis:\n Input message: {input_message}\n Response: {response.content}")
     return {"task": response.content}
 
 # With o-1 preview
+
+
 def plan_node(state: AgentState, config):
 
     input_message = f"The topic is:\n{state['task']}\n. These are the clarifications:\n{state['clarifications']}\n"
@@ -230,9 +235,10 @@ def final_review_node(state: AgentState, config):
 
     draft = state['draft']
     user_request = state['task']
-    
-    input_message_with_system = FINAL_REVIEW_PROMPT.format(current_date=current_date, user_request=user_request, draft=draft) 
-    
+
+    input_message_with_system = FINAL_REVIEW_PROMPT.format(
+        current_date=current_date, user_request=user_request, draft=draft)
+
     messages = [HumanMessage(content=input_message_with_system)]
     model = ChatOpenAI(temperature=1, model_name="o1-preview")
     response = model.invoke(messages)
