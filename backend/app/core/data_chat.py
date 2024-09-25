@@ -40,7 +40,7 @@ class DataChatRequest(BaseModel):
                         f"Description: {value.get('description', 'No description provided')}")
                 else:
                     formatted_data.append(f"{key}: {value}")
-            return f"The data is for {self.country}.\nData:\n" + "\n\n".join(formatted_data)
+            return f"The data is for {self.country}.\nData:\n" + "\n".join(formatted_data)
         else:
             return f"The data is for {self.country}.\nData format not recognized."
 

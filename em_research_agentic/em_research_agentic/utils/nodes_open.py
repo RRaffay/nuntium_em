@@ -6,7 +6,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langgraph.graph import END
 from typing import List
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
-from em_research_agentic.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT, REFLECTION_PROMPT, RESEARCH_CRITIQUE_PROMPT, FINAL_REVIEW_PROMPT, PLAN_PROMPT, CLARIFICATIONS_QUESTIONS_PROMPT, CLARIFICATIONS_ANALYSIS_PROMPT
+from em_research_agentic.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT, REFLECTION_PROMPT, RESEARCH_CRITIQUE_PROMPT, FINAL_REVIEW_PROMPT_O1, PLAN_PROMPT, CLARIFICATIONS_QUESTIONS_PROMPT, CLARIFICATIONS_ANALYSIS_PROMPT
 from em_research_agentic.utils.tools import tavily_client
 from em_research_agentic.utils.article_summarizer import generate_summaries
 import concurrent.futures
@@ -236,7 +236,7 @@ def final_review_node(state: AgentState, config):
     draft = state['draft']
     user_request = state['task']
 
-    input_message_with_system = FINAL_REVIEW_PROMPT.format(
+    input_message_with_system = FINAL_REVIEW_PROMPT_O1.format(
         current_date=current_date, user_request=user_request, draft=draft)
 
     messages = [HumanMessage(content=input_message_with_system)]
