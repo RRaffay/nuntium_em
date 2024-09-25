@@ -8,8 +8,7 @@ export const useCountryData = (country: string | undefined) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState<number>(0);
 
-  const easeOutQuad = (t: number) => t * (2 - t);
-
+  const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
   const fetchData = useCallback(async () => {
     if (!country) return;
@@ -41,7 +40,7 @@ export const useCountryData = (country: string | undefined) => {
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
+      const progressValue = easeInOutCubic(Math.min(elapsed / duration, 0.99)) * 100;
       setUpdateProgress(progressValue);
 
       if (elapsed >= duration) {
