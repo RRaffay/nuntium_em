@@ -5,6 +5,8 @@ import os
 from datetime import datetime
 from config import settings
 from core.pipeline import run_pipeline, PipelineInput
+from auth.auth_db import User
+from fastapi import HTTPException
 
 
 country_data: Dict[str, CountryData] = {}
@@ -102,7 +104,7 @@ async def delete_country_data(country: str, user_id: str):
     return True
 
 
-async def update_country_data(country: str, user_id: str, hours: int):
+async def update_country_data(country: str, user_id: str, hours: int, area_of_interest: str):
     # Delete the old data
     await delete_country_data(country, user_id)
 
@@ -111,7 +113,8 @@ async def update_country_data(country: str, user_id: str, hours: int):
         country=country,
         country_fips_10_4_code=addable_countries[country],
         hours=hours,
-        user_id=user_id
+        user_id=user_id,
+        user_area_of_interest=area_of_interest
     )
 
     return await run_pipeline(pipeline_input)
