@@ -31,7 +31,7 @@ interface ChatInterfaceProps {
     proMode: boolean;
     setProMode: (mode: boolean) => void;
     isSmallScreen: boolean;
-    loadingAnswer?: boolean;
+    isLoading: boolean;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -43,7 +43,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     proMode,
     setProMode,
     isSmallScreen,
-    loadingAnswer = false,
+    isLoading,
 }) => {
     const { ref: chatContainerRef, scrollToLastNonUserMessage } = useAutoScroll<HTMLDivElement>([messages]);
 
@@ -109,8 +109,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     onSend={handleSendMessage}
                     placeholder="Type your message..."
                     className="mb-2"
+                    disabled={isLoading}
                 />
-                <Button onClick={handleSendMessage} disabled={!inputValue.trim() || loadingAnswer}>
+                <Button onClick={handleSendMessage} disabled={!inputValue.trim() || isLoading}>
                     Send
                 </Button>
             </div>

@@ -218,6 +218,18 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     return monthsInYear.map((date) => format(date, 'MMMM'));
   }, []);
 
+  const handleSendMessage = useCallback(() => {
+    if (loadingAnswer) return;
+    handleSubmitQuestion({
+      country,
+      selectedMetrics,
+      metrics,
+      startDate,
+      endDate,
+      proMode,
+    });
+  }, [handleSubmitQuestion, country, selectedMetrics, metrics, startDate, endDate, proMode, loadingAnswer]);
+
   if (loading) {
     return <div>Loading economic indicators...</div>;
   }
@@ -320,21 +332,12 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                   messages={messages}
                   inputValue={userQuestion}
                   setInputValue={setUserQuestion}
-                  handleSendMessage={() =>
-                    handleSubmitQuestion({
-                      country,
-                      selectedMetrics,
-                      metrics,
-                      startDate,
-                      endDate,
-                      proMode,
-                    })
-                  }
-                  loadingAnswer={loadingAnswer}
+                  handleSendMessage={handleSendMessage}
                   clearChatHistory={clearChatHistory}
                   proMode={proMode}
                   setProMode={setProMode}
                   isSmallScreen={isSmallScreen}
+                  isLoading={loadingAnswer}
                 />
               </ResizablePanel>
             </>
@@ -354,21 +357,12 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                 messages={messages}
                 inputValue={userQuestion}
                 setInputValue={setUserQuestion}
-                handleSendMessage={() =>
-                  handleSubmitQuestion({
-                    country,
-                    selectedMetrics,
-                    metrics,
-                    startDate,
-                    endDate,
-                    proMode,
-                  })
-                }
-                loadingAnswer={loadingAnswer}
+                handleSendMessage={handleSendMessage}
                 clearChatHistory={clearChatHistory}
                 proMode={proMode}
                 setProMode={setProMode}
                 isSmallScreen={isSmallScreen}
+                isLoading={loadingAnswer}
               />
             )}
           </div>

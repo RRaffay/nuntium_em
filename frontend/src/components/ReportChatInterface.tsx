@@ -12,7 +12,6 @@ interface ReportChatInterfaceProps {
   isMobile: boolean;
 }
 
-
 export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({
   report,
   onClose,
@@ -23,11 +22,13 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isLoading) return;
 
+    setIsLoading(true);
     const userMessage: Message = { content: inputValue, sender: 'user' };
     const loadingMessage: Message = { content: '', sender: 'model', isLoading: true };
     setMessages([...messages, userMessage, loadingMessage]);
@@ -56,6 +57,8 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({
           { content: 'An error occurred while processing your request.', sender: 'model' }
         ]);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,6 +78,7 @@ export const ReportChatInterface: React.FC<ReportChatInterfaceProps> = ({
         proMode={proMode}
         setProMode={setProMode}
         isSmallScreen={isSmallScreen}
+        isLoading={isLoading}
       />
       {rateLimitError && (
         <div className="p-2 bg-red-100 text-red-700 mb-2">

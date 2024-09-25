@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from '@/services/api';
 import { ReportDialog } from '@/components/ReportDialog';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
@@ -67,11 +68,12 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
                 return (
                     <>
                         <Label htmlFor="task">Describe your research task</Label>
-                        <Input
+                        <Textarea
                             id="task"
                             value={task}
                             onChange={(e) => setTask(e.target.value)}
                             placeholder="For example, key drivers of inflation"
+                            rows={4}
                         />
                         <Button onClick={handleGenerateQuestions} disabled={!task || isLoading}>
                             Begin
@@ -116,6 +118,7 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
                         progress={openResearchReportProgress}
                         buttonText="Open Report"
                         canOpen={!isGeneratingOpenResearchReport}
+                        autoOpen={true}
                     />
                 );
         }
