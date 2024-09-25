@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCountryData } from '@/hooks/useCountryData';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
-  const { countryData, userProfile, error, isUpdating, updateCountryData, updateProgress } = useCountryData(country);
+  const { countryData, userProfile, error, isUpdating, updateCountryData, updateProgress, updateCountryInterest } = useCountryData(country);
   const [updateHours, setUpdateHours] = useState(5);
   const { metricsCount } = useMetricsData(country!);
   const {
@@ -38,6 +38,8 @@ const CountryPage: React.FC = () => {
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
   const [viewMode, setViewMode] = useState<string>("events");
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isEditingInterest, setIsEditingInterest] = useState(false);
+  const [newInterest, setNewInterest] = useState('');
 
   const handleUpdateCountry = async () => {
     if (country) {
@@ -48,6 +50,18 @@ const CountryPage: React.FC = () => {
       }, 1000);
     }
   };
+
+  const handleEditInterest = useCallback(() => {
+    setIsEditingInterest(true);
+    setNewInterest(userProfile?.country_interests[country!] || userProfile?.area_of_interest || '');
+  }, [userProfile, country]);
+
+  const handleSaveInterest = useCallback(async () => {
+    if (country && newInterest) {
+      await updateCountryInterest(country, newInterest);
+      setIsEditingInterest(false);
+    }
+  }, [country, newInterest, updateCountryInterest]);
 
   if (error) {
     return <div className="text-red-500">{error}</div>;
@@ -157,6 +171,11 @@ const CountryPage: React.FC = () => {
         countryData={countryData}
         userProfile={userProfile}
         metricsCount={metricsCount}
+        isEditingInterest={isEditingInterest}
+        newInterest={newInterest}
+        onEditInterest={handleEditInterest}
+        onSaveInterest={handleSaveInterest}
+        onChangeInterest={(e) => setNewInterest(e.target.value)}
       />
       <Separator className="my-4" />
       <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)} className="justify-center">

@@ -36,7 +36,7 @@ export const useCountryData = (country: string | undefined) => {
     setUpdateProgress(0);
 
     const startTime = Date.now();
-    const duration = hours * 60 * 1000; // Convert hours to milliseconds
+    const duration = hours * 60 * 1000; 
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
@@ -50,7 +50,7 @@ export const useCountryData = (country: string | undefined) => {
 
     try {
       await api.updateCountry(country, hours);
-      await fetchData(); // Refetch the data after updating
+      await fetchData(); 
     } catch (err) {
       setError('Failed to update country data. Please try again.');
       console.error('Error updating country data:', err);
@@ -64,5 +64,32 @@ export const useCountryData = (country: string | undefined) => {
     }
   };
 
-  return { countryData, userProfile, error, isUpdating, updateCountryData, updateProgress };
+  const updateCountryInterest = async (country: string, interest: string) => {
+    if (!userProfile) return;
+
+    try {
+      const updatedInterests = {
+        ...userProfile.country_interests,
+        [country]: interest
+      };
+      await api.updateUserInterests(updatedInterests);
+      setUserProfile({
+        ...userProfile,
+        country_interests: updatedInterests
+      });
+    } catch (err) {
+      setError('Failed to update country interest. Please try again.');
+      console.error('Error updating country interest:', err);
+    }
+  };
+
+  return { 
+    countryData, 
+    userProfile, 
+    error, 
+    isUpdating, 
+    updateCountryData, 
+    updateProgress,
+    updateCountryInterest 
+  };
 };

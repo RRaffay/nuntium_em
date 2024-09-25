@@ -1,5 +1,5 @@
 from core.metric import get_country_metrics
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Body
 from core.reports import (
     economic_report, economic_report_event, EventReportInput, CountryReportInput,
     generate_clarifying_questions, open_research_report, ClarifyingQuestionsInput, OpenResearchReportInput
@@ -143,17 +143,6 @@ async def get_country_data(country: str, user: User = Depends(current_active_use
 @router.post("/countries/{country}/generate-report", response_model=Report)
 @limiter.limit(settings.RATE_LIMITS["generate_country_report"])
 async def generate_country_report(request: Request, country: str, user: User = Depends(current_active_user)):
-    """
-    Generate an economic report for a specific country.
-    Args:
-        country (str): The name of the country.
-
-    Returns:
-        Report: A Report object containing the generated report content and timestamp.
-
-    Raises:
-        HTTPException: If the country is not found in the database.
-    """
     limiter.key_func = lambda: str(user.id)
     try:
         user_id = str(user.id)
@@ -161,7 +150,9 @@ async def generate_country_report(request: Request, country: str, user: User = D
         if country not in country_data:
             raise HTTPException(status_code=404, detail="Country not found")
 
-        area_of_interest = user.area_of_interest
+        # Use country-specific interest if available, otherwise use general interest
+        area_of_interest = user.country_interests.get(
+            country, user.area_of_interest)
 
         report_input = CountryReportInput(
             country=country,
@@ -179,18 +170,6 @@ async def generate_country_report(request: Request, country: str, user: User = D
 @router.post("/countries/{country}/events/{event_id}/generate-report", response_model=Report)
 @limiter.limit(settings.RATE_LIMITS["generate_event_report"])
 async def generate_event_report(request: Request, country: str, event_id: str, user: User = Depends(current_active_user)):
-    """
-    Generate an economic report for a specific country.
-
-    Args:
-        country (str): The name of the country.
-
-    Returns:
-        Report: A Report object containing the generated report content and timestamp.
-
-    Raises:
-        HTTPException: If the country is not found in the database.
-    """
     limiter.key_func = lambda: str(user.id)
     try:
         user_id = str(user.id)
@@ -204,7 +183,9 @@ async def generate_event_report(request: Request, country: str, event_id: str, u
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
 
-        area_of_interest = user.area_of_interest
+        # Use country-specific interest if available, otherwise use general interest
+        area_of_interest = user.country_interests.get(
+            country, user.area_of_interest)
 
         report_input = EventReportInput(
             country=country,
@@ -464,4 +445,28 @@ async def update_country(
         return {"status": "success", "result": result}
     except Exception as e:
         logger.error(f"Error in update_country: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/update-user-interests")
+async def update_user_interests(
+    interests: Dict[str, str] = Body(...),
+    user: User = Depends(current_active_user)
+):
+    """
+    Update the user's areas of interest for specific countries.
+
+    Args:
+        interests (Dict[str, str]): A dictionary where keys are country names and values are areas of interest.
+
+    Returns:
+        dict: A message indicating the success of the update.
+    """
+    try:
+        user.country_interests.update(interests)
+        await user.save()
+        return {"message": "User interests updated successfully"}
+    except Exception as e:
+        logger.error(
+            f"Error in update_user_interests: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

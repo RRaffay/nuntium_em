@@ -39,6 +39,7 @@ export interface UserProfile {
   first_name: string;
   last_name: string;
   area_of_interest: string;
+  country_interests: CountryInterests;
   email: string;
   is_verified: boolean;
 }
@@ -79,6 +80,10 @@ export interface OpenResearchReportInput {
   task: string;
   questions: string[];
   answers: string[];
+}
+
+export interface CountryInterests {
+  [country: string]: string;
 }
 
 const getAuthHeaders = (): HeadersInit => {
@@ -399,6 +404,20 @@ export const api = {
       throw new Error('Failed to update country');
     }
     return handledResponse.json();
-  }
+  },
 
+  async updateUserInterests(interests: CountryInterests): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/update-user-interests`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(interests),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to update user interests');
+    }
+  }
 };

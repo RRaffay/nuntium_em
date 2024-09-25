@@ -3,19 +3,30 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { CountryData, UserProfile } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { OpenResearchReportDialog } from '@/components/OpenResearchReportDialog';
-import { Clock, Calendar, FileText, User, BarChart2 } from 'lucide-react';
+import { Clock, Calendar, FileText, User, BarChart2, Edit2 } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Input } from "@/components/ui/input";
 
 interface CountryPageHeaderProps {
   countryData: CountryData;
   userProfile: UserProfile | null;
   metricsCount: number;
+  isEditingInterest: boolean;
+  newInterest: string;
+  onEditInterest: () => void;
+  onSaveInterest: () => void;
+  onChangeInterest: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
   countryData,
   userProfile,
-  metricsCount
+  metricsCount,
+  isEditingInterest,
+  newInterest,
+  onEditInterest,
+  onSaveInterest,
+  onChangeInterest
 }) => {
   const [isOpenResearchDialogOpen, setIsOpenResearchDialogOpen] = useState(false);
   const isSmallScreen = useMediaQuery('(max-width: 640px)');
@@ -60,8 +71,33 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
           <InfoItem
             icon={<User className="w-5 h-5 text-gray-500" />}
             label="Your Area of Interest"
-            value={userProfile.area_of_interest}
-            tooltip="Your specified area of interest to be used for generating reports. To change, update your profile."
+            value={
+              isEditingInterest ? (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={newInterest}
+                    onChange={onChangeInterest}
+                    className="w-full"
+                  />
+                  <Button onClick={onSaveInterest} size="sm" variant="ghost">
+                    Save
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <span>{userProfile.country_interests[countryData.country] || userProfile.area_of_interest}</span>
+                  <Button
+                    onClick={onEditInterest}
+                    size="sm"
+                    variant="ghost"
+                    className="p-0 h-auto"
+                  >
+                    <Edit2 className="w-4 h-4 text-gray-500" />
+                  </Button>
+                </div>
+              )
+            }
+            tooltip="Your specified area of interest for this country. Click the edit icon to change."
           />
         )}
 
@@ -78,7 +114,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
 interface InfoItemProps {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   tooltip: string;
 }
 
@@ -90,7 +126,7 @@ const InfoItem: React.FC<InfoItemProps> = ({ icon, label, value, tooltip }) => (
           <div className="mt-1">{icon}</div>
           <div>
             <p className="text-sm font-medium text-gray-500">{label}</p>
-            <p className="text-sm font-semibold text-gray-900">{value}</p>
+            <div className="text-sm font-semibold text-gray-900">{value}</div>
           </div>
         </div>
       </TooltipTrigger>

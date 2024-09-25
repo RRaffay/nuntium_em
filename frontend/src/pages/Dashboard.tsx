@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { api, CountryInfo } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
@@ -26,6 +27,7 @@ const Dashboard: React.FC = React.memo(() => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<string>("grid");
+  const [countryInterest, setCountryInterest] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,6 +79,8 @@ const Dashboard: React.FC = React.memo(() => {
 
     try {
       await api.runCountryPipeline(selectedCountry, timePeriod);
+      // Update user's country interests
+      await api.updateUserInterests({ [selectedCountry]: countryInterest });
       clearInterval(interval);
       setAddProgress(100);
       setSuccessMessage(`Events for ${selectedCountry} have been successfully added!`);
@@ -100,7 +104,7 @@ const Dashboard: React.FC = React.memo(() => {
     } finally {
       setIsAddingCountry(false);
     }
-  }, [selectedCountry, timePeriod]);
+  }, [selectedCountry, timePeriod, countryInterest]);
 
   const handleDeleteCountry = useCallback(async (country: string, event: React.MouseEvent) => {
     event.preventDefault();
@@ -149,9 +153,7 @@ const Dashboard: React.FC = React.memo(() => {
                   ) : (
                     <>
                       <div className="space-y-2">
-                        <label htmlFor="country-select" className="text-sm font-medium">
-                          Country Name
-                        </label>
+                        <Label htmlFor="country-select">Country Name</Label>
                         <Select onValueChange={(value) => setSelectedCountry(value)}>
                           <SelectTrigger id="country-select">
                             <SelectValue placeholder="Select a country" />
@@ -166,9 +168,7 @@ const Dashboard: React.FC = React.memo(() => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="time-period" className="text-sm font-medium">
-                          Hours
-                        </label>
+                        <Label htmlFor="time-period">Hours</Label>
                         <Input
                           id="time-period"
                           type="number"
@@ -177,6 +177,16 @@ const Dashboard: React.FC = React.memo(() => {
                           max={24}
                           value={timePeriod}
                           onChange={(e) => setTimePeriod(Number(e.target.value))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="country-interest">Area of Interest</Label>
+                        <Input
+                          id="country-interest"
+                          type="text"
+                          placeholder="Specify areas of focus such as 'Politics', 'Economy', etc."
+                          value={countryInterest}
+                          onChange={(e) => setCountryInterest(e.target.value)}
                         />
                       </div>
                       <Button onClick={handleAddCountry} disabled={!selectedCountry}>
