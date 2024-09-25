@@ -22,10 +22,11 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-800">{countryData.country}</h2>
+      <div className={`${isSmallScreen ? 'flex flex-col' : 'flex justify-between items-center'} mb-6`}>
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">{countryData.country}</h2>
         <Button
           onClick={() => setIsOpenResearchDialogOpen(true)}
+          className={isSmallScreen ? 'w-full' : ''}
         >
           Generate Open Research Report
         </Button>

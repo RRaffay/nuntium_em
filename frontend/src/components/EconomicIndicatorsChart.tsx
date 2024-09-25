@@ -50,7 +50,7 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     }
   }, [availableMetrics]);
 
-  const [displayMode, setDisplayMode] = useState<'single' | 'multiple'>('single');
+  const [displayMode, setDisplayMode] = useState<'single' | 'multiple'>('multiple');
   const [chartType, setChartType] = useState<'Line' | 'Area' | 'Bar'>('Line');
   const [dataTransformation, setDataTransformation] = useState<'none' | 'normalize' | 'percentChange'>('none');
   const [dialogOpen, setDialogOpen] = useState(false);

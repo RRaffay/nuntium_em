@@ -16,6 +16,7 @@ import { useMetricsData } from '@/hooks/useMetricsData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -65,16 +66,16 @@ const CountryPage: React.FC = () => {
           <h2 className="text-2xl font-bold">Events</h2>
           <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>Update Country Data</Button>
+              <Button>Fetch New Events</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Update Country Data</DialogTitle>
+                <DialogTitle>Fetch New Events for {country}</DialogTitle>
               </DialogHeader>
               <div className="py-4">
                 {!isUpdating ? (
                   <div className="flex items-center space-x-2">
-                    <label htmlFor="updateHours">Hours to update:</label>
+                    <label htmlFor="updateHours">Fetch events from the last </label>
                     <Input
                       id="updateHours"
                       type="number"
@@ -84,6 +85,7 @@ const CountryPage: React.FC = () => {
                       max={12}
                       className="w-24"
                     />
+                    <span>hours</span>
                   </div>
                 ) : (
                   <>
@@ -151,13 +153,12 @@ const CountryPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-2 lg:p-4">
-
       <CountryPageHeader
         countryData={countryData}
         userProfile={userProfile}
         metricsCount={metricsCount}
       />
-      <br />
+      <Separator className="my-4" />
       <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)} className="justify-center">
         <ToggleGroupItem
           value="events"

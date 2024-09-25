@@ -66,15 +66,15 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
             case 0:
                 return (
                     <>
-                        <Label htmlFor="task">Research Task</Label>
+                        <Label htmlFor="task">Describe your research task</Label>
                         <Input
                             id="task"
                             value={task}
                             onChange={(e) => setTask(e.target.value)}
-                            placeholder="Enter your research task"
+                            placeholder="For example, key drivers of inflation"
                         />
                         <Button onClick={handleGenerateQuestions} disabled={!task || isLoading}>
-                            Generate Questions
+                            Begin
                         </Button>
                     </>
                 );
@@ -125,7 +125,7 @@ export const OpenResearchReportDialog: React.FC<OpenResearchReportDialogProps> =
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Generate Open Research Report for {country}</DialogTitle>
+                    <DialogTitle>Generate Report for {country}</DialogTitle>
                 </DialogHeader>
                 {error && <div className="text-red-500 mb-4">{error}</div>}
                 {renderContent()}
