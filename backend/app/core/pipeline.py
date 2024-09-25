@@ -10,6 +10,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class UpdateCountryRequest(BaseModel):
+    hours: int
+
+
 class CountryPipelineRequest(BaseModel):
     country: str
     country_fips_10_4_code: str = Field(default="")

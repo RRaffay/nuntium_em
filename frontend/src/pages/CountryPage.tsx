@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCountryData } from '@/hooks/useCountryData';
+import { Button } from '@/components/ui/button';
 import { useReportGeneration } from '@/hooks/useReportGeneration';
 import { EconomicIndicatorsChart } from '@/components/EconomicIndicatorsChart';
 import { EventList } from '@/components/EventList';
@@ -11,13 +12,15 @@ import { Event as ApiEvent } from '@/services/api';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { FileText, LineChart, LayoutPanelLeft } from 'lucide-react';
-
-
 import { useMetricsData } from '@/hooks/useMetricsData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
-  const { countryData, userProfile, error } = useCountryData(country);
+  const { countryData, userProfile, error, isUpdating, updateCountryData, updateProgress } = useCountryData(country);
+  const [updateHours, setUpdateHours] = useState(5);
   const { metricsCount } = useMetricsData(country!);
   const {
     eventReports,
@@ -33,7 +36,17 @@ const CountryPage: React.FC = () => {
 
   const [showLowRelevanceEvents, setShowLowRelevanceEvents] = useState(false);
   const [viewMode, setViewMode] = useState<string>("events");
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
+  const handleUpdateCountry = async () => {
+    if (country) {
+      setIsUpdateDialogOpen(true);
+      await updateCountryData(updateHours);
+      setTimeout(() => {
+        setIsUpdateDialogOpen(false);
+      }, 1000);
+    }
+  };
 
   if (error) {
     return <div className="text-red-500">{error}</div>;
@@ -48,7 +61,45 @@ const CountryPage: React.FC = () => {
   const renderEventsSection = () => {
     return (
       <div className="w-full">
-        <h2 className="text-2xl font-bold mb-4">Events</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Events</h2>
+          <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>Update Country Data</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Update Country Data</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                {!isUpdating ? (
+                  <div className="flex items-center space-x-2">
+                    <label htmlFor="updateHours">Hours to update:</label>
+                    <Input
+                      id="updateHours"
+                      type="number"
+                      value={updateHours}
+                      onChange={(e) => setUpdateHours(Number(e.target.value))}
+                      min={2}
+                      max={12}
+                      className="w-24"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <Progress value={updateProgress} className="w-full" />
+                    <p className="text-center mt-2">Updating... {updateProgress.toFixed(0)}%</p>
+                  </>
+                )}
+              </div>
+              <DialogFooter>
+                <Button onClick={handleUpdateCountry} disabled={isUpdating}>
+                  {isUpdating ? 'Updating...' : 'Start Update'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
         {highRelevanceEvents.length > 0 ? (
           <EventList
             events={highRelevanceEvents}

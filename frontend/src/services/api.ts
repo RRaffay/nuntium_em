@@ -371,7 +371,6 @@ export const api = {
       throw new Error('Failed to generate clarifying questions');
     }
     const data = await handledResponse.json();
-    console.log('Clarifying questions response:', data); // Add this line for debugging
 
     if (Array.isArray(data.questions)) {
       return data.questions.map((q: string) => ({ question: q }));
@@ -384,6 +383,22 @@ export const api = {
       console.error('Unexpected response format for clarifying questions:', data);
       throw new Error('Unexpected response format for clarifying questions');
     }
+  },
+
+  async updateCountry(country: string, hours: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/update-country/${country}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ hours }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to update country');
+    }
+    return handledResponse.json();
   }
 
 };

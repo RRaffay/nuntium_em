@@ -4,10 +4,10 @@ from core.reports import (
     economic_report, economic_report_event, EventReportInput, CountryReportInput,
     generate_clarifying_questions, open_research_report, ClarifyingQuestionsInput, OpenResearchReportInput
 )
-from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest
+from core.pipeline import run_pipeline, CountryPipelineInputApp, CountryPipelineRequest, UpdateCountryRequest
 from core.report_chat import economic_report_chat, ChatRequest
 from models import CountryData, Report, ChatMessage
-from db.data import fetch_country_data, addable_countries, delete_country_data
+from db.data import fetch_country_data, addable_countries, delete_country_data, update_country_data
 from datetime import datetime
 from auth.users import current_active_user
 from auth.auth_db import User
@@ -52,7 +52,6 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
     """
     limiter.key_func = lambda: str(user.id)
     try:
-        # Check if the country is in the addable countries list
         if input_data.country not in addable_countries:
             raise HTTPException(
                 status_code=400, detail="Country not in addable countries list")
@@ -67,6 +66,12 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
         logger.info(f"Running pipeline with user_id: {pipeline_input.user_id}")
 
         result = await run_pipeline(pipeline_input)
+
+        # Add the country to the user's list if it's not already there
+        if input_data.country not in user.countries:
+            user.countries.append(input_data.country)
+            await user.save()
+
         return {"status": "success", "result": result}
     except Exception as e:
         logger.error(f"Error in run_country_pipeline: {str(e)}", exc_info=True)
@@ -282,6 +287,10 @@ async def delete_country(country: str, user: User = Depends(current_active_user)
 
         success = await delete_country_data(country, str(user.id))
         if success:
+            # Remove the country from the user's list
+            if country in user.countries:
+                user.countries.remove(country)
+                await user.save()
             return {"message": f"Country data for {country} has been deleted"}
         else:
             raise HTTPException(
@@ -419,4 +428,40 @@ async def generate_clarifying_questions_route(request: Request, input_data: Clar
     except Exception as e:
         logger.error(
             f"Error in generate_clarifying_questions_route: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/update-country/{country}")
+@limiter.limit(settings.RATE_LIMITS["update_country"])
+async def update_country(
+    request: Request,
+    country: str,
+    update_data: UpdateCountryRequest,
+    user: User = Depends(current_active_user)
+):
+    """
+    Update the data for a specific country by deleting old data and running the pipeline again.
+
+    Args:
+        country (str): The name of the country to update.
+        hours (int): The number of hours to fetch data for.
+
+
+    Returns:
+        dict: A dictionary containing the status and result of the update operation.
+
+    Raises:
+        HTTPException: If the country is not in the addable countries list or if there's an error during execution.
+    """
+    limiter.key_func = lambda: str(user.id)
+    try:
+        if country not in addable_countries:
+            raise HTTPException(
+                status_code=400, detail="Country not in addable countries list")
+
+        result = await update_country_data(country, str(user.id), update_data.hours)
+
+        return {"status": "success", "result": result}
+    except Exception as e:
+        logger.error(f"Error in update_country: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
