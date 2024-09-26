@@ -23,6 +23,7 @@ from .cluster_summarizer import generate_cluster_summary
 from .article_summarizer import generate_summaries
 from .utils import get_country_name
 from .sampling import sample_data, sample_articles
+from .models import Metadata, ClusterSummary, ClusterArticleSummaries
 
 
 class GDELTNewsPipeline:
@@ -130,9 +131,9 @@ class GDELTNewsPipeline:
             self.logger.info("Optimizing clustering parameters...")
             # Simplified parameter grid focusing on key hyperparameters
             param_grid = {
-                'n_components': [5, 20, 50, 70],
-                'min_cluster_size': [3, 5, 10],
-                'min_samples': [1, 3, 5],
+                'n_components': [5, 20, 50],
+                'min_cluster_size': [3, 5, 7],
+                'min_samples': [1, 2, 3],
                 # Fixed parameters
                 'reduce_dimensionality': [True],
                 'reducer_algorithm': ['umap'],
@@ -183,20 +184,21 @@ class GDELTNewsPipeline:
             no_matched_clusters = len(matched_clusters)
             no_articles = len(sampled_data)
 
-            cluster_article_summaries = {
+            metadata = Metadata(
+                input_sentence=input_sentence,
+                country=country,
+                country_name=get_country_name(country),
+                hours=hours,
+                cluster_summarizer_objective=cluster_summarizer_objective,
+                no_clusters=no_clusters,
+                no_matched_clusters=no_matched_clusters,
+                no_articles=no_articles,
+                no_financially_relevant_events=0
+            )
 
-                'metadata': {
-                    'input_sentence': input_sentence,
-                    'country': country,
-                    'country_name': get_country_name(country),
-                    'hours': hours,
-                    'cluster_summarizer_objective': cluster_summarizer_objective,
-                    'no_clusters': no_clusters,
-                    'no_matched_clusters': no_matched_clusters,
-                    'no_articles': no_articles,
-                    'no_financially_relevant_events': 0
-                }
-            }
+            # Initialize ClusterArticleSummaries
+            cluster_article_summaries = ClusterArticleSummaries(
+                metadata=metadata)
 
             def process_cluster(cluster):
                 cluster_indices = np.where(
@@ -255,19 +257,22 @@ class GDELTNewsPipeline:
                     try:
                         result = future.result()
                         if result:
-                            cluster, event_obj, article_summaries, sampled_urls = result
+                            cluster_id, event_obj, article_summaries, sampled_urls = result
                             cluster_summaries.append(event_obj.summary)
-                            cluster_article_summaries[cluster] = {
-                                'event_title': event_obj.title,
-                                'event_relevant_for_financial_analysis': event_obj.relevant_for_financial_analysis,
-                                'event_relevance_score': event_obj.relevance_score,
-                                'event_summary': event_obj.summary,
-                                'article_summaries': article_summaries,
-                                'article_urls': sampled_urls
-                            }
-                            # Increment the counter if the event is financially relevant
-                            if event_obj.relevant_for_financial_analysis:
-                                cluster_article_summaries['metadata']['no_financially_relevant_events'] += 1
+
+                            # Create ClusterSummary object
+                            cluster_summary = ClusterSummary(
+                                event_title=event_obj.title,
+                                event_relevant_for_financial_analysis=event_obj.relevant_for_financial_analysis,
+                                event_relevance_score=event_obj.relevance_score,
+                                event_summary=event_obj.summary,
+                                article_summaries=article_summaries,
+                                article_urls=sampled_urls
+                            )
+
+                            # Add cluster summary to ClusterArticleSummaries
+                            cluster_article_summaries.add_cluster_summary(
+                                cluster_id, cluster_summary)
                     except Exception as e:
                         self.logger.error(
                             f"Error processing cluster {cluster}: {str(e)}")
@@ -290,17 +295,7 @@ class GDELTNewsPipeline:
                     f"Exported data to MongoDB with ID: {mongo_id}")
 
             # Return metadata of run
-            run_information = {
-                'input_sentence': input_sentence,
-                'country': country,
-                'country_name': get_country_name(country),
-                'hours': hours,
-                'cluster_summarizer_objective': cluster_summarizer_objective,
-                'no_clusters': no_clusters,
-                'no_matched_clusters': no_matched_clusters,
-                'no_articles': no_articles,
-                'no_financially_relevant_events': cluster_article_summaries['metadata']['no_financially_relevant_events']
-            }
+            run_information = cluster_article_summaries.metadata.model_dump()
 
             return run_information
 
@@ -338,7 +333,15 @@ class GDELTNewsPipeline:
 
         return csv_filepath, json_filepath
 
-    def export_data_mongo(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int, user_id: str) -> str:
+    def export_data_mongo(
+        self,
+        df: pd.DataFrame,
+        cluster_article_summaries: ClusterArticleSummaries,
+        input_sentence: str,
+        country: str,
+        hours: int,
+        user_id: str
+    ) -> str:
         """
         Export the processed DataFrame and summaries to MongoDB.
         """
@@ -350,7 +353,7 @@ class GDELTNewsPipeline:
                 'input_sentence': input_sentence,
                 'country': country,
                 'hours': hours,
-                'summaries': self._convert_keys_to_strings(summaries),
+                'summaries': cluster_article_summaries.model_dump(),
                 'user_id': user_id
             }
             result = mongo_collection.insert_one(mongo_data)
@@ -358,14 +361,3 @@ class GDELTNewsPipeline:
         except Exception as e:
             self.logger.error(f"Failed to save data to MongoDB: {str(e)}")
             raise
-
-    def _convert_keys_to_strings(self, obj):
-        """
-        Recursively convert all keys in a dictionary to strings.
-        """
-        if isinstance(obj, dict):
-            return {str(key): self._convert_keys_to_strings(value) for key, value in obj.items()}
-        elif isinstance(obj, list):
-            return [self._convert_keys_to_strings(item) for item in obj]
-        else:
-            return obj
