@@ -12,11 +12,11 @@ def main():
     try:
         results = pipeline.run_pipeline(
             input_sentence="Economy Finance Markets",
-            country="AF",  # FIPS 10-4 country codes
-            hours=3,
+            country="PK",  # FIPS 10-4 country codes
+            hours=5,
             article_summarizer_objective="",
             # article_summarizer_objective="Analyze the impact of the event being discussed on the financial markets",
-            cluster_summarizer_objective="Below are article summaries for a particular event."
+            cluster_summarizer_objective=""
             # cluster_summarizer_objective="Below are article summaries for a particular event. Summarize the main points and potential impacts for someone interested in financial markets"
         )
         if results:

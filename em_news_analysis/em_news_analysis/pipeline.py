@@ -106,11 +106,10 @@ class GDELTNewsPipeline:
             sampled_data = sampled_data.iloc[valid_indices].reset_index(
                 drop=True)
 
-            # self.logger.info("Clustering embeddings...")
-            # clusters = cluster_embeddings(embeddings, self.config)
-            # self.logger.info(f"Generated {len(set(clusters))} clusters.")
+            self.logger.info("Generating input embedding...")
+            input_embedding = self.get_embedding(input_sentence)
+            input_embedding = np.array(input_embedding)
 
-            # sampled_data['cluster'] = clusters
             self.logger.info("Optimizing clustering parameters...")
             # Simplified parameter grid focusing on key hyperparameters
             param_grid = {
@@ -126,7 +125,8 @@ class GDELTNewsPipeline:
 
             clusters, best_params = optimize_clustering(
                 embeddings=embeddings,
-                param_grid=param_grid
+                param_grid=param_grid,
+                input_embedding=input_embedding
             )
 
             self.logger.info(f"Best clustering parameters: {best_params}")
@@ -143,7 +143,6 @@ class GDELTNewsPipeline:
             # input_embedding = self.get_embedding(enriched_input)
 
             self.logger.info("Matching clusters...")
-            input_embedding = self.get_embedding(input_sentence)
             matched_clusters = match_clusters(
                 input_embedding, embeddings, clusters, self.config.top_n_clusters)
             self.logger.info(f"Matched {len(matched_clusters)} clusters.")

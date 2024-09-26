@@ -1,12 +1,12 @@
 # Updated clustering.py
-
+import numpy as np
+from sklearn.metrics import silhouette_score, davies_bouldin_score
+from sklearn.model_selection import ParameterGrid
 from joblib import Parallel, delayed
+from typing import List, Any, Callable, Dict, Tuple
 import warnings
 from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import silhouette_score
-from typing import List, Dict, Any, Tuple, Callable
-from typing import List, Dict, Any, Tuple
-import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import HDBSCAN
 from sklearn.decomposition import PCA
@@ -80,24 +80,24 @@ def cluster_embeddings(
         raise ValueError(f"Clustering failed: {str(e)}")
 
 
-# clustering.py
-
-
 def optimize_clustering(
     embeddings: np.ndarray,
     param_grid: Dict[str, List[Any]],
-    scoring_function: Callable = None,
+    input_embedding: np.ndarray,
+    scoring_functions: Dict[str, Callable] = None,
     clustering_algorithm: Callable = None,
     reducer_algorithms: Dict[str, Callable] = None,
     n_jobs: int = -1
 ) -> Tuple[np.ndarray, Dict[str, Any]]:
     """
     Optimize clustering and dimensionality reduction hyperparameters using parallel grid search.
+    Uses an ensemble of scoring functions to evaluate clustering performance.
 
     Args:
         embeddings (np.ndarray): Embeddings to cluster.
         param_grid (Dict[str, List[Any]]): Grid of hyperparameters to search.
-        scoring_function (Callable): Function to evaluate clustering performance.
+        input_embedding (np.ndarray): Embedding of the input sentence for relevance scoring.
+        scoring_functions (Dict[str, Callable]): Dictionary of scoring functions to use.
         clustering_algorithm (Callable): Clustering algorithm to use.
         reducer_algorithms (Dict[str, Callable]): Mapping from reducer_algorithm name to the reducer class.
         n_jobs (int): Number of jobs to run in parallel. -1 means using all processors.
@@ -105,8 +105,11 @@ def optimize_clustering(
     Returns:
         Tuple[np.ndarray, Dict[str, Any]]: Best cluster labels and best hyperparameters.
     """
-    if scoring_function is None:
-        scoring_function = silhouette_score
+    if scoring_functions is None:
+        scoring_functions = {
+            'silhouette': silhouette_score,
+            'davies_bouldin': davies_bouldin_score
+        }
 
     if clustering_algorithm is None:
         clustering_algorithm = HDBSCAN
@@ -128,7 +131,7 @@ def optimize_clustering(
             reducer_algorithm_name = params.get('reducer_algorithm', 'umap')
             n_components = params.get('n_components', 50)
 
-            # Remove dimensionality reduction parameters from params to avoid passing them to the clustering algorithm
+            # Remove dimensionality reduction parameters from params
             clustering_params = params.copy()
             clustering_params.pop('reduce_dimensionality', None)
             clustering_params.pop('reducer_algorithm', None)
@@ -141,14 +144,17 @@ def optimize_clustering(
                         f"Unsupported reducer_algorithm: {reducer_algorithm_name}")
                 reducer_class = reducer_algorithms[reducer_algorithm_name]
                 if reducer_algorithm_name == 'umap':
-                    reducer = reducer_class(
-                        n_components=n_components)
+                    reducer = reducer_class(n_components=n_components)
                 else:
-                    reducer = reducer_class(
-                        n_components=n_components)
+                    reducer = reducer_class(n_components=n_components)
                 embeddings_reduced = reducer.fit_transform(embeddings)
+
+                # Transform the input embedding
+                input_embedding_reduced = reducer.transform(
+                    input_embedding.reshape(1, -1))
             else:
                 embeddings_reduced = embeddings
+                input_embedding_reduced = input_embedding.reshape(1, -1)
 
             # Clustering
             clusterer = clustering_algorithm(**clustering_params)
@@ -158,10 +164,53 @@ def optimize_clustering(
             unique_labels = set(labels)
             if len(unique_labels) > 1 and len(unique_labels) < len(embeddings_reduced):
                 valid_indices = labels != -1 if -1 in labels else slice(None)
-                score = scoring_function(
-                    embeddings_reduced[valid_indices], labels[valid_indices])
+                embeddings_valid = embeddings_reduced[valid_indices]
+                labels_valid = labels[valid_indices]
 
-                return (score, labels, params)
+                # Compute individual scores
+                scores = {}
+
+                # Silhouette Score (Higher is better)
+                silhouette_avg = silhouette_score(
+                    embeddings_valid, labels_valid) if len(set(labels_valid)) > 1 else 0
+                scores['silhouette'] = silhouette_avg
+
+                # Davies-Bouldin Index (Lower is better)
+                davies_bouldin = davies_bouldin_score(
+                    embeddings_valid, labels_valid) if len(set(labels_valid)) > 1 else np.inf
+                # Invert Davies-Bouldin Index so that higher is better
+                scores['davies_bouldin'] = -davies_bouldin
+
+                # Cluster Stability (Higher is better)
+                cluster_stabilities = clusterer.probabilities_[valid_indices]
+                stability_avg = np.mean(cluster_stabilities)
+                scores['stability'] = stability_avg
+
+                # Relevance Score (Higher is better)
+                # Compute cluster centroids
+                centroids = []
+                for label in set(labels_valid):
+                    cluster_points = embeddings_valid[labels_valid == label]
+                    centroid = np.mean(cluster_points, axis=0)
+                    centroids.append(centroid)
+                centroids = np.array(centroids)
+
+                # Compute similarities to input embedding
+                similarities = cosine_similarity(
+                    input_embedding_reduced, centroids)[0]
+                relevance_score = np.max(similarities)
+                scores['relevance'] = relevance_score
+
+                # Combine scores into a composite score
+                # You can adjust the weights as needed
+                composite_score = (
+                    scores['silhouette'] * 0.4 +
+                    scores['davies_bouldin'] * 0.3 +
+                    scores['stability'] * 0.2 +
+                    scores['relevance'] * 0.1
+                )
+
+                return (composite_score, labels, params)
             else:
                 # Return a very low score if clustering is not meaningful
                 return (-np.inf, None, params)
