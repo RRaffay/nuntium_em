@@ -158,7 +158,11 @@ def article_summarizer(url: str, objective: str, model: int = 3, max_words: int 
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     def invoke_with_retry():
-        response_value = chain.invoke({"input": input_prompt})
+        try:
+            response_value = chain.invoke({"input": input_prompt})
+        except Exception as e:
+            logger.error(f"Error in generating article summary: {str(e)}")
+            raise e
         if "INACCESSIBLE" in response_value:
             logger.error(
                 f"Article is inaccessible: {url}. Content: {article_content}")

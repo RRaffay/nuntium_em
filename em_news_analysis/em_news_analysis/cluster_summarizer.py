@@ -57,7 +57,11 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 4, 
 
     @retry(stop=stop_after_attempt(retry_attempts), wait=wait_exponential(multiplier=1, min=4, max=10))
     def invoke_with_retry():
-        return chain.invoke({"input": input_prompt})
+        try:
+            return chain.invoke({"input": input_prompt})
+        except Exception as e:
+            logger.error(f"Error generating cluster summary: {str(e)}")
+            raise e
 
     return invoke_with_retry()
 
