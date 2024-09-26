@@ -155,22 +155,21 @@ def generate_summaries(article_urls: List[str], objective: str, max_workers: int
     Returns:
     List[str]: List of summaries or error messages
     """
-    summaries = []
+    summaries = [None] * \
+        len(article_urls)  # Pre-allocate list with None values
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_url = {executor.submit(
-            article_summarizer, url, objective): url for url in article_urls}
-        for future in concurrent.futures.as_completed(future_to_url):
-            url = future_to_url[future]
+        future_to_index = {executor.submit(article_summarizer, url, objective): i
+                           for i, url in enumerate(article_urls)}
+        for future in concurrent.futures.as_completed(future_to_index):
+            index = future_to_index[future]
+            url = article_urls[index]
             try:
                 summary = future.result()
                 if "INACCESSIBLE" in summary:
-                    summaries.append(
-                        f"Article summarization not allowed. Please read article directly.")
+                    summaries[index] = f"Article summarization not allowed. Please read article directly."
                 else:
-                    summaries.append(summary)
-
+                    summaries[index] = summary
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
-                summaries.append(
-                    f"Article summarization not possible. Please read article directly.")
+                summaries[index] = f"Article summarization not possible. Please read article directly."
     return summaries
