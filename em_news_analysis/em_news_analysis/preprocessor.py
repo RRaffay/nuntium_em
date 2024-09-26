@@ -1,4 +1,55 @@
 import pandas as pd
+import numpy as np
+
+
+def safe_get(row, key, default=""):
+    """Safely get a value from a pandas Series, returning a default if it's empty or null."""
+    value = row.get(key, default)
+    if pd.isna(value) or value == "":
+        return default
+    return value
+
+
+def interpret_avg_tone(avg_tone: float) -> str:
+    if pd.isna(avg_tone):
+        return "an unknown tone"
+    if avg_tone > 5:
+        return "a very positive tone"
+    elif avg_tone > 0:
+        return "a somewhat positive tone"
+    elif avg_tone == 0:
+        return "a neutral tone"
+    elif avg_tone > -5:
+        return "a somewhat negative tone"
+    else:
+        return "a very negative tone"
+
+
+def interpret_goldstein_scale(scale: float) -> str:
+    if pd.isna(scale):
+        return "an event with unknown impact"
+    if scale > 7:
+        return "a highly cooperative event"
+    elif scale > 3:
+        return "a moderately cooperative event"
+    elif scale > -3:
+        return "a neutral to slightly impactful event"
+    elif scale > -7:
+        return "a moderately conflictual event"
+    else:
+        return "a highly conflictual event"
+
+
+def interpret_quad_class(quad_class: int) -> str:
+    quad_class_dict = {
+        1: "Verbal Cooperation",
+        2: "Material Cooperation",
+        3: "Verbal Conflict",
+        4: "Material Conflict"
+    }
+    if pd.isna(quad_class):
+        return "Unknown classification"
+    return quad_class_dict.get(int(quad_class), "Unknown classification")
 
 
 def preprocess(entry: str, column_type: str, max_entities: int = 10) -> str:
@@ -6,7 +57,7 @@ def preprocess(entry: str, column_type: str, max_entities: int = 10) -> str:
     Preprocesses the given entry based on the specified column type.
     Returns up to 10 unique entities.
     """
-    if not isinstance(entry, str):
+    if not isinstance(entry, str) or pd.isna(entry):
         return ""
     mentions = entry.split(";")
     if column_type == "location":
@@ -17,17 +68,19 @@ def preprocess(entry: str, column_type: str, max_entities: int = 10) -> str:
                  for mention in mentions]
     # Remove duplicates and non-informative entities
     unique_names = list(dict.fromkeys(names))
-
     return ", ".join(unique_names[:max_entities])
 
 
 def preprocess_data_summary(df: pd.DataFrame) -> pd.DataFrame:
     """
     Combine the processed columns into a summary column that is used to create the embeddings.
-    Includes additional event information for better context.
+    Includes additional event information for better context and handles empty values.
     """
-    required_columns = ["V2Persons",
-                        "V2Organizations", "V2Locations", "V2Themes"]
+    required_columns = [
+        "V2Persons", "V2Organizations", "V2Locations", "V2Themes",
+        "SQLDATE", "EventCode", "AvgTone", "GoldsteinScale", "QuadClass",
+        "Actor1Name", "Actor2Name", "NumMentions", "NumSources", "NumArticles"
+    ]
     for col in required_columns:
         if col not in df.columns:
             raise ValueError(f"Missing column: {col}")
@@ -48,20 +101,34 @@ def preprocess_data_summary(df: pd.DataFrame) -> pd.DataFrame:
     df['processed_themes'] = df['V2Themes'].apply(
         lambda x: preprocess(x, "theme", max_entities=max_entities["theme"]))
 
-    # Include additional event data for context
-    # Convert metadata into natural language sentences
+    # df['combined'] = df.apply(
+    #     lambda row: (
+    #         f"On {safe_get(row, 'SQLDATE', 'an unknown date')}, an event occurred with the following details. "
+    #         f"It has the CAMEO code {safe_get(row, 'EventCode', 'unknown')}. "
+    #         f"The event is classified as {interpret_quad_class(safe_get(row, 'QuadClass'))}. "
+    #         f"The Goldstein scale value is {safe_get(row, 'GoldsteinScale', 'unknown')}, indicating {interpret_goldstein_scale(safe_get(row, 'GoldsteinScale'))}. "
+    #         f"The average tone was {safe_get(row, 'AvgTone', 'unknown')}, suggesting {interpret_avg_tone(safe_get(row, 'AvgTone'))}. "
+    #         f"The primary actors involved were {safe_get(row, 'Actor1Name', 'unknown')} and {safe_get(row, 'Actor2Name', 'unknown')}. "
+    #         f"This event was mentioned {safe_get(row, 'NumMentions', 'an unknown number of')} times across {safe_get(row, 'NumSources', 'an unknown number of')} sources in {safe_get(row, 'NumArticles', 'an unknown number of')} articles. "
+    #         f"Involved persons: {row['processed_persons'] or 'None mentioned'}. "
+    #         f"Involved organizations: {row['processed_organizations'] or 'None mentioned'}. "
+    #         f"Locations: {row['processed_locations'] or 'None mentioned'}. "
+    #         f"Themes associated: {row['processed_themes'] or 'None mentioned'}."
+    #     ),
+    #     axis=1
+    # )
+
     df['combined'] = df.apply(
         lambda row: (
-            f"On {row['SQLDATE']}, an event occurred with the following details. "
-            f"It has the CAMEO code {row['EventCode']}."
-            f"The average tone was {row['AvgTone']}, suggesting {interpret_avg_tone(row['AvgTone'])}. "
-            f"Involved persons: {row['processed_persons']}. "
-            f"Involved organizations: {row['processed_organizations']}. "
-            f"Locations: {row['processed_locations']}. "
-            f"Themes associated: {row['processed_themes']}."
+            f"On {safe_get(row, 'SQLDATE', 'an unknown date')}, an event occurred with the following details. "
+            f"Involved persons: {row['processed_persons'] or 'None mentioned'}. "
+            f"Involved organizations: {row['processed_organizations'] or 'None mentioned'}. "
+            f"Locations: {row['processed_locations'] or 'None mentioned'}. "
+            f"Themes associated: {row['processed_themes'] or 'None mentioned'}."
         ),
         axis=1
     )
+
     return df
 
 
@@ -79,35 +146,3 @@ def enrich_user_interest(input_sentence: str) -> str:
     # - Synonym expansion using WordNet or similar resources.
     # For now, return the input sentence as-is.
     return input_sentence
-
-
-def interpret_avg_tone(tone: str) -> str:
-
-    if tone == None:
-        return "Unknown"
-
-    if isinstance(tone, (str)):
-        tone = float(tone)
-
-    if not isinstance(tone, (int, float)):
-        return "Invalid input. Please provide a number."
-
-    if tone < -100 or tone > 100:
-        return "Invalid tone value. GDELT tone ranges from -100 to +100."
-
-    if tone == 0:
-        return "Neutral sentiment"
-    elif -2 < tone < 2:
-        return "Nearly Neutral sentiment"
-    elif -5 <= tone <= -2:
-        return "Moderately Negative sentiment"
-    elif -10 <= tone < -5:
-        return "Very Negative sentiment"
-    elif tone < -10:
-        return "Extremely Negative sentiment"
-    elif 2 <= tone < 5:
-        return "Moderately Positive sentiment"
-    elif 5 <= tone < 10:
-        return "Very Positive sentiment"
-    elif tone >= 10:
-        return "Extremely Positive sentiment"
