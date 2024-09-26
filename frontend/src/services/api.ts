@@ -89,6 +89,7 @@ export interface CountryInterests {
 interface CountryPipelineRequest {
   country: string;
   hours: number;
+  area_of_interest: string;
 }
 
 const getAuthHeaders = (): HeadersInit => {
@@ -200,14 +201,14 @@ export const api = {
     return data;
   },
 
-  async runCountryPipeline(country: string, hours: number): Promise<void> {
+  async runCountryPipeline(country: string, hours: number, area_of_interest: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/run-country-pipeline`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ country, hours } as CountryPipelineRequest),
+      body: JSON.stringify({ country, hours, area_of_interest } as CountryPipelineRequest),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {

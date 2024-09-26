@@ -32,7 +32,7 @@ class Event(BaseModel):
     relevant_for_financial_analysis: bool = Field(
         description="Whether the event could be of interest to an investor.")
     relevance_score: int = Field(
-        description="The relevance score of the event from 1 to 5. 1 means the event is unrelated to financial markets. 3 means the event will have minor or negligible impacts to financial markets. 5 means the event is highly likely move markets.", default=0)
+        description="The relevance score of the event from 0 to 5. 0 means the event is unrelated to financial markets. 3 means the event could have minor or negligible impacts to financial markets. 5 means the event is highly likely to impact markets.", default=0)
 
 
 def combined_summary(summaries_list: List[str], objective: str, model: int = 4, retry_attempts: int = 3) -> str:
@@ -50,9 +50,9 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 4, 
     summaries = "\n\n".join(summaries_list)
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    summaries_prompt = f"These are the summaries\n<Summaries>\n\n{summaries}</Summaries>.\n\nToday's date is {current_date}."
+    summaries_prompt = f"{objective}\n\nThese are the summaries\n<Summaries>\n\n{summaries}</Summaries>.\n\nToday's date is {current_date}."
 
-    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor. If the event is relevant to investors, assign it a score from 0 to 5, where 0 represents no significant market movement and 5 represents a major trading opportunity. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys. If all the articles say inaccessible, return an event with title 'INACCESSIBLE' and summary 'INACCESSIBLE'."
+    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor focused on a specific country. Assign the event a score from 0 to 5, where 0 represents no significant market movement and 5 represents a major trading opportunity. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys. If all the articles say inaccessible, return an event with title 'INACCESSIBLE' and summary 'INACCESSIBLE'."
 
     if model == 3:
         open_ai_llm = ChatOpenAI(
