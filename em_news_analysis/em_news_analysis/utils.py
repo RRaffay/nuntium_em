@@ -79,7 +79,7 @@ def sample_articles_mmr(
     urls: List[str],
     cluster_embeddings: np.ndarray,
     max_articles: int,
-    lambda_param: float = 0.5
+    lambda_param: float = 0.9
 ) -> List[str]:
     """
     Sample articles using Maximal Marginal Relevance to balance relevance and diversity.
