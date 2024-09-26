@@ -105,8 +105,6 @@ async def delete_country_data(country: str, user_id: str):
 
 
 async def update_country_data(country: str, user_id: str, hours: int, area_of_interest: str):
-    # Delete the old data
-    await delete_country_data(country, user_id)
 
     # Run the pipeline with new parameters
     pipeline_input = PipelineInput(
@@ -117,4 +115,9 @@ async def update_country_data(country: str, user_id: str, hours: int, area_of_in
         user_area_of_interest=area_of_interest
     )
 
-    return await run_pipeline(pipeline_input)
+    msg = await run_pipeline(pipeline_input)
+
+    # Delete the old data
+    await delete_country_data(country, user_id)
+
+    return msg

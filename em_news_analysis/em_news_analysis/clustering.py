@@ -196,18 +196,18 @@ def optimize_clustering(
                 centroids = np.array(centroids)
 
                 # Compute similarities to input embedding
-                similarities = cosine_similarity(
-                    input_embedding_reduced, centroids)[0]
-                relevance_score = np.max(similarities)
-                scores['relevance'] = relevance_score
+                # similarities = cosine_similarity(
+                #     input_embedding_reduced, centroids)[0]
+                # relevance_score = np.max(similarities)
+                # scores['relevance'] = relevance_score
 
                 # Combine scores into a composite score
                 # You can adjust the weights as needed
                 composite_score = (
-                    scores['silhouette'] * 0.4 +
-                    scores['davies_bouldin'] * 0.3 +
-                    scores['stability'] * 0.2 +
-                    scores['relevance'] * 0.1
+                    scores['silhouette'] * 0.9
+                    + scores['davies_bouldin'] * 0.1
+                    # + scores['stability'] * 0.3
+                    # + scores['relevance'] * 0.1
                 )
 
                 return (composite_score, labels, params)

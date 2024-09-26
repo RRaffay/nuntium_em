@@ -96,15 +96,32 @@ class GDELTNewsPipeline:
                 sampled_data, max_workers=max_workers_embeddings)
 
             self.logger.info(f"Generated embeddings shape: {embeddings.shape}")
+            self.logger.info(f"Number of valid indices: {len(valid_indices)}")
 
             if embeddings.size == 0:
                 self.logger.warning(
                     "No embeddings generated. Returning empty result.")
                 return []
 
-            # Filter sampled_data to match valid embeddings
-            sampled_data = sampled_data.iloc[valid_indices].reset_index(
-                drop=True)
+            # Check if valid_indices matches the number of rows in sampled_data
+            if len(valid_indices) != len(sampled_data):
+                self.logger.warning(
+                    f"Mismatch between valid indices ({len(valid_indices)}) and sampled data rows ({len(sampled_data)}). Adjusting sampled data.")
+
+                # Create a boolean mask for valid indices
+                mask = pd.Series(False, index=range(len(sampled_data)))
+                mask.iloc[valid_indices] = True
+
+                # Apply the mask to sampled_data
+                sampled_data = sampled_data[mask].reset_index(drop=True)
+
+                self.logger.info(
+                    f"Adjusted sampled data shape: {sampled_data.shape}")
+
+            if len(sampled_data) == 0:
+                self.logger.warning(
+                    "No valid data after filtering. Returning empty result.")
+                return []
 
             self.logger.info("Generating input embedding...")
             input_embedding = self.get_embedding(input_sentence)
@@ -113,9 +130,9 @@ class GDELTNewsPipeline:
             self.logger.info("Optimizing clustering parameters...")
             # Simplified parameter grid focusing on key hyperparameters
             param_grid = {
-                'n_components': [20, 50, 70],
-                'min_cluster_size': [5, 10, 15],
-                'min_samples': [3, 5, 7],
+                'n_components': [5, 20, 50, 70],
+                'min_cluster_size': [3, 5, 10],
+                'min_samples': [1, 3, 5],
                 # Fixed parameters
                 'reduce_dimensionality': [True],
                 'reducer_algorithm': ['umap'],
@@ -211,10 +228,24 @@ class GDELTNewsPipeline:
                 article_summaries = generate_summaries(
                     sampled_urls, article_summarizer_objective
                 )
+
+                # Filter out articles with summaries marked as "NOT_RELEVANT"
+                filtered_summaries = [
+                    summary for summary in article_summaries if "NOT_RELEVANT" not in summary
+                ]
+                filtered_urls = [
+                    url for summary, url in zip(article_summaries, sampled_urls) if "NOT_RELEVANT" not in summary
+                ]
+
+                if not filtered_summaries:
+                    self.logger.info(
+                        f"No relevant articles in cluster {cluster}")
+                    return None
+
                 event_obj = generate_cluster_summary(
-                    article_summaries, cluster_summarizer_objective
+                    filtered_summaries, cluster_summarizer_objective
                 )
-                return cluster, event_obj, article_summaries, sampled_urls
+                return cluster, event_obj, filtered_summaries, filtered_urls
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers_summaries) as executor:
                 future_to_cluster = {executor.submit(

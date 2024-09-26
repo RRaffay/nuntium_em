@@ -122,7 +122,7 @@ def article_summarizer(url: str, objective: str, model: int = 3, max_words: int 
 
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. Specifically, with the objective of {objective}.\n Note that the current date is {current_date}. If the article is inaccessible, return 'INACCESSIBLE'. The summary should be in English."
+    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it with the following objective:\n\n{objective}.\n\nNote that the current date is {current_date}. \nIf the article is inaccessible, return 'INACCESSIBLE'.\n If the article is not related at all to the objective, return 'NOT_RELEVANT'.\n The summary should be in English."
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),

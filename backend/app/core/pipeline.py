@@ -36,6 +36,10 @@ class PipelineInput(BaseModel):
         if self.user_area_of_interest:
             self.cluster_summarizer_objective += f"Specifically, focusing on {self.user_area_of_interest}."
 
+        self.article_summarizer_objective = f"Analyze for someone interested in events about {self.country}. "
+        if self.user_area_of_interest:
+            self.article_summarizer_objective += f"Specifically, focusing on {self.user_area_of_interest}."
+
         self.input_sentence = f"Event about {self.country}. "
         if self.user_area_of_interest:
             self.input_sentence += f"Specifically, focusing on {self.user_area_of_interest}."

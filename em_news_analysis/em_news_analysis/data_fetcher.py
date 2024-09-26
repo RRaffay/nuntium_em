@@ -6,6 +6,7 @@ from google.cloud import bigquery
 from .config import Config
 # Set up logging
 import logging
+from itertools import combinations
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: 
     """
     Fetch GDELT data from BigQuery for a specific country and time range, using both Events and GKG tables.
     Performs a LEFT JOIN to ensure all events are included, even if there is no matching GKG data.
+    Removes duplicates and logs the number of duplicates removed.
     """
     if use_cache:
         cache_file = os.path.join(config.gdelt_cache_dir,
@@ -112,7 +114,28 @@ def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: 
             merged_df['SQLDATE'], format='%Y%m%d')
         merged_df['GKG_DATE'] = pd.to_datetime(
             merged_df['GKG_DATE'], format='%Y%m%d%H%M%S')
-        logging.info(f"Fetched {len(merged_df)} rows of data.")
+        merged_df['DATEADDED'] = pd.to_datetime(
+            merged_df['DATEADDED'], format='%Y%m%d%H%M%S')
+
+        # Log the number of rows before removing duplicates
+        rows_before = len(merged_df)
+        logger.info(f"Fetched {rows_before} rows of data.")
+
+        # Log all columns
+        logger.info(f"Columns in the dataframe: {merged_df.columns.tolist()}")
+
+        # Remove duplicates based on the chosen subset
+        # You can change this based on the results
+        chosen_subset = ['SOURCEURL', 'EventCode']
+        merged_df.drop_duplicates(
+            subset=chosen_subset, keep='first', inplace=True)
+
+        # Log the number of duplicates removed
+        rows_after = len(merged_df)
+        duplicates_removed = rows_before - rows_after
+        logger.info(
+            f"Removed {duplicates_removed} duplicate rows based on {chosen_subset}.")
+        logger.info(f"Final dataset contains {rows_after} rows.")
 
         if use_cache:
             with open(cache_file, 'wb') as f:
