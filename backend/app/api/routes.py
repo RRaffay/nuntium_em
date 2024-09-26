@@ -37,6 +37,7 @@ async def read_root():
 class CountryPipelineRequest(BaseModel):
     country: str
     hours: int = Field(ge=2, le=24, default=3)
+    area_of_interest: str = Field(default="")
 
 
 @router.post("/run-country-pipeline")
@@ -61,8 +62,13 @@ async def run_country_pipeline(request: Request, input_data: CountryPipelineRequ
                 status_code=400, detail="Country not in addable countries list")
 
         # Use country-specific interest if available, otherwise use general interest
-        area_of_interest = user.country_interests.get(
-            input_data.country, user.area_of_interest)
+        area_of_interest = input_data.area_of_interest
+
+        if area_of_interest == "":
+            area_of_interest = user.country_interests.get(
+                input_data.country, user.area_of_interest)
+            logger.warning(
+                f"No area of interest provided, using general interest for user: {area_of_interest}")
 
         pipeline_input = PipelineInput(
             country=input_data.country,
@@ -280,6 +286,10 @@ async def delete_country(country: str, user: User = Depends(current_active_user)
             # Remove the country from the user's list
             if country in user.countries:
                 user.countries.remove(country)
+                await user.save()
+            # Remove the country from the user's country_interests
+            if country in user.country_interests:
+                del user.country_interests[country]
                 await user.save()
             return {"message": f"Country data for {country} has been deleted"}
         else:

@@ -78,7 +78,7 @@ const Dashboard: React.FC = React.memo(() => {
     }, 100);
 
     try {
-      await api.runCountryPipeline(selectedCountry, timePeriod);
+      await api.runCountryPipeline(selectedCountry, timePeriod, countryInterest);
       // Update user's country interests
       await api.updateUserInterests({ [selectedCountry]: countryInterest });
       clearInterval(interval);
