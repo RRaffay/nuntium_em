@@ -176,10 +176,10 @@ def optimize_clustering(
                 scores['silhouette'] = silhouette_avg
 
                 # Davies-Bouldin Index (Lower is better)
-                davies_bouldin = davies_bouldin_score(
-                    embeddings_valid, labels_valid) if len(set(labels_valid)) > 1 else np.inf
+                # davies_bouldin = davies_bouldin_score(
+                #    embeddings_valid, labels_valid) if len(set(labels_valid)) > 1 else np.inf
                 # Invert Davies-Bouldin Index so that higher is better
-                scores['davies_bouldin'] = -davies_bouldin
+                # scores['davies_bouldin'] = -davies_bouldin
 
                 # Cluster Stability (Higher is better)
                 cluster_stabilities = clusterer.probabilities_[valid_indices]
@@ -196,18 +196,18 @@ def optimize_clustering(
                 centroids = np.array(centroids)
 
                 # Compute similarities to input embedding
-                # similarities = cosine_similarity(
-                #     input_embedding_reduced, centroids)[0]
-                # relevance_score = np.max(similarities)
-                # scores['relevance'] = relevance_score
+                similarities = cosine_similarity(
+                    input_embedding_reduced, centroids)[0]
+                relevance_score = np.max(similarities)
+                scores['relevance'] = relevance_score
 
                 # Combine scores into a composite score
                 # You can adjust the weights as needed
                 composite_score = (
                     scores['silhouette'] * 0.9
-                    + scores['davies_bouldin'] * 0.1
-                    # + scores['stability'] * 0.3
-                    # + scores['relevance'] * 0.1
+                    # + scores['davies_bouldin'] * 0.1
+                    + scores['stability'] * 0.05
+                    + scores['relevance'] * 0.05
                 )
 
                 return (composite_score, labels, params)

@@ -39,14 +39,14 @@ class Event(BaseModel):
     )
     summary: str = Field(default="", description="The summary of the event")
     relevant_for_financial_analysis: bool = Field(
-        description="Whether the event could be of interest to an investor."
+        description="Whether the event could be of interest to an investor based on their objective."
     )
     relevance_score: int = Field(
         default=0,
         description=(
             "The relevance score of the event from 0 to 5. "
-            "0 means the event is unrelated to financial markets. "
-            "3 means the event could have minor or negligible impacts to financial markets. "
-            "5 means the event is highly likely to impact markets."
+            "0 means the event is unrelated to objective. "
+            "3 means the event could have minor or relation to objective. "
+            "5 means the event is highly likely to be related to the objective."
         ),
     )

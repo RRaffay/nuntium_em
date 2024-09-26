@@ -131,7 +131,7 @@ class GDELTNewsPipeline:
             self.logger.info("Optimizing clustering parameters...")
             # Simplified parameter grid focusing on key hyperparameters
             param_grid = {
-                'n_components': [5, 20, 50],
+                'n_components': [50, 100, 200],
                 'min_cluster_size': [3, 5, 7],
                 'min_samples': [1, 2, 3],
                 # Fixed parameters
@@ -231,12 +231,12 @@ class GDELTNewsPipeline:
                     sampled_urls, article_summarizer_objective
                 )
 
-                # Filter out articles with summaries marked as "NOT_RELEVANT"
+                # Filter out articles with summaries marked as "NOT_RELEVANT" or "INACCESSIBLE"
                 filtered_summaries = [
-                    summary for summary in article_summaries if "NOT_RELEVANT" not in summary
+                    summary for summary in article_summaries if "NOT_RELEVANT" not in summary and "INACCESSIBLE" not in summary
                 ]
                 filtered_urls = [
-                    url for summary, url in zip(article_summaries, sampled_urls) if "NOT_RELEVANT" not in summary
+                    url for summary, url in zip(article_summaries, sampled_urls) if "NOT_RELEVANT" not in summary and "INACCESSIBLE" not in summary
                 ]
 
                 if not filtered_summaries:
