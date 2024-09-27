@@ -11,7 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import HDBSCAN
 from sklearn.decomposition import PCA
 import umap
-from .config import Config
+from .config import BaseConfig
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def cluster_embeddings(
     embeddings: np.ndarray,
-    config: Config,
+    config: BaseConfig,
     clustering_algorithm=None,
     reduce_dimensionality: bool = True,
     **kwargs
@@ -30,7 +30,7 @@ def cluster_embeddings(
 
     Args:
         embeddings (np.ndarray): Numpy array of embeddings.
-        config (Config): Configuration object.
+        config (BaseConfig): Configuration object.
         clustering_algorithm: Clustering algorithm to use. If None, defaults to HDBSCAN.
         reduce_dimensionality (bool): Whether to reduce dimensionality before clustering.
         reducer_algorithm (str): Algorithm for dimensionality reduction ('umap' or 'pca').

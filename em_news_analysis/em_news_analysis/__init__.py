@@ -1,4 +1,4 @@
-from .config import Config
+from .config import DevelopmentConfig, ProductionConfig
 from .pipeline import GDELTNewsPipeline
 
-__all__ = ['Config', 'GDELTNewsPipeline']
+__all__ = ['DevelopmentConfig', 'ProductionConfig', 'GDELTNewsPipeline']

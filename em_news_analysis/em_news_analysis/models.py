@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict
+from typing import List, Dict, Any
+import json
 
 
 class Metadata(BaseModel):
@@ -12,6 +13,19 @@ class Metadata(BaseModel):
     no_matched_clusters: int
     no_articles: int
     no_financially_relevant_events: int = 0
+
+    # New fields for optimal clustering parameters
+    optimal_clustering_params: Dict[str, Any] = Field(default_factory=dict)
+
+    # New fields for config values
+    config_values: Dict[str, Any] = Field(default_factory=dict)
+
+    # Additional useful data points
+    total_embeddings_generated: int = 0
+    embedding_model: str = ""
+    reducer_algorithm: str = ""
+    sampling_method: str = ""
+    execution_time: float = 0.0
 
 
 class ClusterSummary(BaseModel):
@@ -51,3 +65,10 @@ class Event(BaseModel):
         ),
         ge=0, le=5
     )
+
+
+class PydanticEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+        return super().default(obj)

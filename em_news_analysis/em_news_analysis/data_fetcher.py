@@ -3,7 +3,7 @@ import pickle
 from datetime import datetime
 import pandas as pd
 from google.cloud import bigquery
-from .config import Config
+from .config import BaseConfig
 # Set up logging
 import logging
 from itertools import combinations
@@ -11,13 +11,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: Config, use_cache: bool = False) -> pd.DataFrame:
+def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: BaseConfig) -> pd.DataFrame:
     """
     Fetch GDELT data from BigQuery for a specific country and time range, using both Events and GKG tables.
     Performs a LEFT JOIN to ensure all events are included, even if there is no matching GKG data.
     Removes duplicates and logs the number of duplicates removed.
     """
-    if use_cache:
+    if config.use_cache:
         cache_file = os.path.join(config.gdelt_cache_dir,
                                   f"{country}_{hours}hours.pkl")
 
@@ -126,7 +126,7 @@ def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: 
 
         # Remove duplicates based on the chosen subset
         # You can change this based on the results
-        chosen_subset = ['SOURCEURL', 'EventCode']
+        chosen_subset = ['SOURCEURL']
         merged_df.drop_duplicates(
             subset=chosen_subset, keep='first', inplace=True)
 
@@ -137,7 +137,7 @@ def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: 
             f"Removed {duplicates_removed} duplicate rows based on {chosen_subset}.")
         logger.info(f"Final dataset contains {rows_after} rows.")
 
-        if use_cache:
+        if config.use_cache:
             with open(cache_file, 'wb') as f:
                 pickle.dump((datetime.now(), merged_df), f)
 

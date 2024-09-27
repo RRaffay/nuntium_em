@@ -13,7 +13,7 @@ import concurrent.futures
 from pymongo import MongoClient
 
 
-from .config import Config
+from .config import BaseConfig
 from .data_fetcher import fetch_gdelt_data
 from .preprocessor import preprocess_data_summary
 from .embeddings import get_embedding, generate_embeddings
@@ -23,11 +23,11 @@ from .cluster_summarizer import generate_cluster_summary
 from .article_summarizer import generate_summaries
 from .utils import get_country_name
 from .sampling import sample_data, sample_articles
-from .models import Metadata, ClusterSummary, ClusterArticleSummaries
+from .models import Metadata, ClusterSummary, ClusterArticleSummaries, PydanticEncoder
 
 
 class GDELTNewsPipeline:
-    def __init__(self, config: Config):
+    def __init__(self, config: BaseConfig):
         # Load environment variables
         load_dotenv()
 
@@ -74,7 +74,11 @@ class GDELTNewsPipeline:
         try:
             self.logger.info("Fetching GDELT data...")
             raw_data = fetch_gdelt_data(
-                self.bigquery_client, country, hours, self.config)
+                client=self.bigquery_client,
+                country=country,
+                hours=hours,
+                config=self.config,
+            )
             self.logger.info(f"Fetched {len(raw_data)} rows of data.")
 
             if raw_data.empty:
@@ -200,7 +204,21 @@ class GDELTNewsPipeline:
                 no_clusters=no_clusters,
                 no_matched_clusters=no_matched_clusters,
                 no_articles=no_articles,
-                no_financially_relevant_events=0
+                no_financially_relevant_events=0,
+                optimal_clustering_params=best_params,
+                config_values={
+                    "embedding_model": self.config.embedding_model,
+                    "max_articles_per_cluster": self.config.max_articles_per_cluster,
+                    "mmr_lambda_param": self.config.mmr_lambda_param,
+                    "top_n_clusters": self.config.top_n_clusters,
+                    "similarity_threshold": self.config.similarity_threshold,
+                    "diversity_weight": self.config.diversity_weight,
+                },
+                total_embeddings_generated=len(embeddings),
+                embedding_model=self.config.embedding_model,
+                reducer_algorithm=best_params.get('reducer_algorithm', 'none'),
+                sampling_method="MMR-based sampling",
+                execution_time=time.time() - start_time
             )
 
             # Initialize ClusterArticleSummaries
@@ -322,7 +340,7 @@ class GDELTNewsPipeline:
     def get_embedding(self, text: str) -> List[float]:
         return get_embedding(text=text, model=self.config.embedding_model)
 
-    def export_data_local(self, df: pd.DataFrame, summaries: Dict, input_sentence: str, country: str, hours: int) -> Tuple[str, str]:
+    def export_data_local(self, df: pd.DataFrame, summaries: ClusterArticleSummaries, input_sentence: str, country: str, hours: int) -> Tuple[str, str]:
         """
         Export the processed DataFrame to a CSV file and summaries to a JSON file locally.
         """
@@ -336,7 +354,8 @@ class GDELTNewsPipeline:
         df.to_csv(csv_filepath, index=False)
 
         with open(json_filepath, 'w', encoding='utf-8') as f:
-            json.dump(summaries, f, ensure_ascii=False, indent=4)
+            json.dump(summaries.model_dump(), f, cls=PydanticEncoder,
+                      ensure_ascii=False, indent=4)
 
         return csv_filepath, json_filepath
 
