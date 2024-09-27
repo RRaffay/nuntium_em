@@ -215,7 +215,7 @@ def optimize_clustering(
                 # Return a very low score if clustering is not meaningful
                 return (-np.inf, None, params)
         except Exception as e:
-            print(f"Failed for parameters {params}: {e}")
+            logger.error(f"Failed for parameters {params}: {str(e)}")
             return (-np.inf, None, params)
 
     # Run the parameter evaluations in parallel
