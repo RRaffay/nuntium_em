@@ -29,7 +29,7 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 4, 
 
     summaries_prompt = f"{objective}\n\nThese are the summaries\n<Summaries>\n\n{summaries}</Summaries>.\n\nToday's date is {current_date}."
 
-    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a financial markets investor focused on a specific country. Assign the event a score from 0 to 5, where 0 represents no relevance and 5 represents high relevance. Respond in JSON with title, summary, relevant_for_financial_analysis, and relevance_score as keys. If all the articles say inaccessible, return an event with title 'INACCESSIBLE' and summary 'INACCESSIBLE'."
+    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given articles summaries about an event. For each event, summarize the main points, generate a title, and determine whether the event might be of interest to a investor focused on a specific country.\n Assign the event a score from 0 to 5, where 0 represents no relevance and 5 represents high relevance. Respond in JSON with title, summary, relevance_score and relevance_rationale as keys.\n If all the articles say inaccessible, return an event with title 'INACCESSIBLE' and summary 'INACCESSIBLE'. If the summaries don't seem about the same event, keep the summary about the most relevant event."
 
     if model == 3:
         open_ai_llm = ChatOpenAI(
@@ -75,10 +75,10 @@ def generate_cluster_summary(summaries: List[str], objective: str) -> Event:
         if "INACCESSIBLE" in event.title or "INACCESSIBLE" in event.summary:
             logger.error(
                 f"Error generating cluster summary: {event.title} {event.summary}")
-            return Event(title="Error", summary="Error generating cluster summary", relevant_for_financial_analysis=False)
+            return Event(title="Error", summary="Error generating cluster summary", relevance_rationale="N/A")
 
         else:
             return event
     except Exception as e:
         logger.error(f"Error generating cluster summary: {str(e)}")
-        return Event(title="Error", summary="Error generating cluster summary", relevant_for_financial_analysis=False)
+        return Event(title="Error", summary="Error generating cluster summary", relevance_rationale="N/A")

@@ -17,6 +17,8 @@ class Config:
     n_components: int = 50
     reducer_algorithm: str = "umap"
     top_n_clusters: int = 20
+    similarity_threshold: float = 0.3
+    diversity_weight: float = 0.3
 
     def __hash__(self):
         return hash((self.embedding_model, self.cache_size, self.min_cluster_size,

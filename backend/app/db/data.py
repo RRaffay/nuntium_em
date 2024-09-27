@@ -67,7 +67,7 @@ async def fetch_country_data(user_id: str) -> Dict[str, CountryData]:
                 cluster_summary = ClusterSummary(**cluster_data)
 
             # Check if the event is relevant for financial analysis
-            if cluster_summary.event_relevant_for_financial_analysis:
+            if cluster_summary.event_relevance_score > 0:
                 # Create ArticleInfo objects
                 articles = [
                     ArticleInfo(summary=summary, url=url)
@@ -77,7 +77,7 @@ async def fetch_country_data(user_id: str) -> Dict[str, CountryData]:
                 event = Event(
                     id=cluster_id,
                     title=cluster_summary.event_title,
-                    relevant_for_financial_analysis=cluster_summary.event_relevant_for_financial_analysis,
+                    relevance_rationale=cluster_summary.event_relevance_rationale,
                     relevance_score=cluster_summary.event_relevance_score,
                     event_summary=cluster_summary.event_summary,
                     articles=articles

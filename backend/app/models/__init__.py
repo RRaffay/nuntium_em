@@ -18,7 +18,7 @@ class Metadata(BaseModel):
 
 class ClusterSummary(BaseModel):
     event_title: str
-    event_relevant_for_financial_analysis: bool
+    event_relevance_rationale: str
     event_relevance_score: int
     event_summary: str
     article_summaries: List[str]
@@ -38,7 +38,7 @@ class ArticleInfo(BaseModel):
 class Event(BaseModel):
     id: str
     title: str
-    relevant_for_financial_analysis: bool
+    relevance_rationale: str
     relevance_score: int
     event_summary: str
     articles: List[ArticleInfo]

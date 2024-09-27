@@ -132,13 +132,14 @@ class GDELTNewsPipeline:
             # Simplified parameter grid focusing on key hyperparameters
             param_grid = {
                 'n_components': [50, 100, 200],
-                'min_cluster_size': [3, 5, 7],
-                'min_samples': [1, 2, 3],
+                'min_cluster_size': [5, 7, 10],
+                'min_samples': [1, 3, 5],
                 # Fixed parameters
+                'cluster_selection_epsilon': [0.1],
                 'reduce_dimensionality': [True],
                 'reducer_algorithm': ['umap'],
                 'metric': ['euclidean'],
-                'cluster_selection_epsilon': [0.0],
+
             }
 
             clusters, best_params = optimize_clustering(
@@ -162,7 +163,13 @@ class GDELTNewsPipeline:
 
             self.logger.info("Matching clusters...")
             matched_clusters = match_clusters(
-                input_embedding, embeddings, clusters, self.config.top_n_clusters)
+                input_embedding=input_embedding,
+                embeddings=embeddings,
+                clusters=clusters,
+                top_n=self.config.top_n_clusters,
+                similarity_threshold=self.config.similarity_threshold,
+                diversity_weight=self.config.diversity_weight
+            )
             self.logger.info(f"Matched {len(matched_clusters)} clusters.")
 
             # Create a dictionary mapping cluster to rank
@@ -263,7 +270,7 @@ class GDELTNewsPipeline:
                             # Create ClusterSummary object
                             cluster_summary = ClusterSummary(
                                 event_title=event_obj.title,
-                                event_relevant_for_financial_analysis=event_obj.relevant_for_financial_analysis,
+                                event_relevance_rationale=event_obj.relevance_rationale,
                                 event_relevance_score=event_obj.relevance_score,
                                 event_summary=event_obj.summary,
                                 article_summaries=article_summaries,
