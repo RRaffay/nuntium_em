@@ -75,11 +75,11 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
             }
             response = requests.get(url, headers=headers)
             response.raise_for_status()  # This will raise an exception for HTTP errors
+            loader = PyPDFLoader(url, headers=headers)
+            docs = loader.load()
         except Exception as e:
             logger.error(f"Error accessing URL: {e}")
             return "Error accessing URL"
-
-        loader = PyPDFLoader(url, headers=headers)
 
     else:
         custom_headers = {
