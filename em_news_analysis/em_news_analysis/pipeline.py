@@ -11,6 +11,7 @@ import json
 from tqdm import tqdm
 import concurrent.futures
 from pymongo import MongoClient
+import time
 
 
 from .config import BaseConfig
@@ -71,6 +72,7 @@ class GDELTNewsPipeline:
         export_to_local: bool = False,
         user_id: str = None
     ) -> List[str]:
+        start_time = time.time()
         try:
             self.logger.info("Fetching GDELT data...")
             raw_data = fetch_gdelt_data(
@@ -133,17 +135,14 @@ class GDELTNewsPipeline:
             input_embedding = np.array(input_embedding)
 
             self.logger.info("Optimizing clustering parameters...")
-            # Simplified parameter grid focusing on key hyperparameters
             param_grid = {
-                'n_components': [50, 100, 200],
+                'reduce_dimensionality': [True, False],
+                'reducer_algorithm': ['umap', 'pca', 'none'],
+                'n_components': [50, 100],
                 'min_cluster_size': [5, 7, 10],
-                'min_samples': [1, 3, 5],
-                # Fixed parameters
-                'cluster_selection_epsilon': [0.1],
-                'reduce_dimensionality': [True],
-                'reducer_algorithm': ['umap'],
+                'min_samples': [1, 2, 3],
+                'cluster_selection_epsilon': [0.0, 0.1, 0.2],
                 'metric': ['euclidean'],
-
             }
 
             clusters, best_params = optimize_clustering(
@@ -226,10 +225,10 @@ class GDELTNewsPipeline:
                 metadata=metadata)
 
             def process_cluster(cluster):
-                cluster_indices = np.where(
-                    sampled_data['cluster'] == cluster)[0]
-                cluster_data = sampled_data.loc[sampled_data['cluster'] == cluster]
+                cluster_data = sampled_data.loc[sampled_data['cluster'] == cluster].copy(
+                )
                 cluster_urls = cluster_data['SOURCEURL'].tolist()
+                cluster_indices = cluster_data.index
                 cluster_embeddings = embeddings[cluster_indices]
 
                 if not cluster_urls:
@@ -248,6 +247,10 @@ class GDELTNewsPipeline:
                     lambda_param=self.config.mmr_lambda_param
                 )
 
+                # Mark sampled articles in the cluster data
+                cluster_data['sampled'] = cluster_data['SOURCEURL'].isin(
+                    sampled_urls)
+
                 self.logger.info(
                     f"Generating summaries for {len(sampled_urls)} articles in cluster {cluster}..."
                 )
@@ -263,6 +266,14 @@ class GDELTNewsPipeline:
                 filtered_urls = [
                     url for summary, url in zip(article_summaries, sampled_urls) if "NOT_RELEVANT" not in summary and "INACCESSIBLE" not in summary
                 ]
+
+                # Mark read articles in the cluster data
+                cluster_data['read'] = cluster_data['SOURCEURL'].isin(
+                    filtered_urls)
+
+                # Update the main sampled_data DataFrame
+                sampled_data.loc[cluster_indices, ['sampled',
+                                                   'read']] = cluster_data[['sampled', 'read']]
 
                 if not filtered_summaries:
                     self.logger.info(
@@ -304,6 +315,12 @@ class GDELTNewsPipeline:
 
             self.logger.info(
                 f"Generated {len(cluster_summaries)} cluster summaries.")
+
+            # Before exporting, ensure 'sampled' and 'read' columns exist
+            if 'sampled' not in sampled_data.columns:
+                sampled_data['sampled'] = False
+            if 'read' not in sampled_data.columns:
+                sampled_data['read'] = False
 
             # Export the DataFrame and summaries
             if export_to_local:

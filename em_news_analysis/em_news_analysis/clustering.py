@@ -92,6 +92,7 @@ def optimize_clustering(
     """
     Optimize clustering and dimensionality reduction hyperparameters using parallel grid search.
     Uses an ensemble of scoring functions to evaluate clustering performance.
+    Now includes options for clustering without dimensionality reduction.
 
     Args:
         embeddings (np.ndarray): Embeddings to cluster.
@@ -116,7 +117,9 @@ def optimize_clustering(
 
     if reducer_algorithms is None:
         reducer_algorithms = {
-            'umap': umap.UMAP
+            'umap': umap.UMAP,
+            'pca': PCA,
+            'none': lambda **kwargs: None  # No reduction
         }
 
     param_list = list(ParameterGrid(param_grid))
@@ -138,18 +141,13 @@ def optimize_clustering(
             clustering_params.pop('n_components', None)
 
             # Dimensionality Reduction
-            if reduce_dimensionality:
+            if reduce_dimensionality and reducer_algorithm_name != 'none':
                 if reducer_algorithm_name not in reducer_algorithms:
                     raise ValueError(
                         f"Unsupported reducer_algorithm: {reducer_algorithm_name}")
                 reducer_class = reducer_algorithms[reducer_algorithm_name]
-                if reducer_algorithm_name == 'umap':
-                    reducer = reducer_class(n_components=n_components)
-                else:
-                    reducer = reducer_class(n_components=n_components)
+                reducer = reducer_class(n_components=n_components)
                 embeddings_reduced = reducer.fit_transform(embeddings)
-
-                # Transform the input embedding
                 input_embedding_reduced = reducer.transform(
                     input_embedding.reshape(1, -1))
             else:
