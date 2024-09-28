@@ -20,7 +20,7 @@ class DataChatRequest(BaseModel):
     proMode: bool = False
     country: str = ""
     debug: Optional[bool] = DEBUG
-    max_data_points: int = 1000
+    max_data_points: int = 500
 
     def format_data(self) -> str:
         if isinstance(self.data, str):
@@ -41,7 +41,8 @@ class DataChatRequest(BaseModel):
 
                     # Format data points more concisely
                     formatted_data.extend([
-                        f"  {item['date']}: {item['value']:.3f if isinstance(item['value'], float) else item['value']}"
+                        f"  {item['date']}: {item['value']:.3f}" if isinstance(
+                            item['value'], float) else f"  {item['date']}: {item['value']}"
                         for item in data_points
                     ])
 
