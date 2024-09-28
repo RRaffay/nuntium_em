@@ -24,7 +24,7 @@ from .cluster_summarizer import generate_cluster_summary
 from .article_summarizer import generate_summaries
 from .utils import get_country_name
 from .sampling import sample_data, sample_articles
-from .models import Metadata, ClusterSummary, ClusterArticleSummaries, PydanticEncoder
+from .models import Metadata, ClusterSummary, ClusterArticleSummaries, PydanticEncoder, ClusteringScores
 
 
 class GDELTNewsPipeline:
@@ -41,6 +41,7 @@ class GDELTNewsPipeline:
         self.config = config
         self.bigquery_client = bigquery.Client()
         os.makedirs(self.config.gdelt_cache_dir, exist_ok=True)
+        os.makedirs(self.config.embeddings_dir, exist_ok=True)
 
         # Add a directory for exporting CSV files
         self.export_dir = os.path.join(os.getcwd(), 'exported_data')
@@ -97,11 +98,39 @@ class GDELTNewsPipeline:
             sampled_data = self.sample_data(
                 preprocessed_data, process_all, sample_size)
             self.logger.info(f"Sampled data shape: {sampled_data.shape}")
+            sampled_data.reset_index(drop=True, inplace=True)
+
+            # Define paths to save embeddings
+            embeddings_filename = f"embeddings_{country}_{hours}h.npy"
+            embeddings_filepath = os.path.join(
+                self.config.embeddings_dir, embeddings_filename)
+
+            indices_filename = f"embedding_indices_{country}_{hours}h.npy"
+            indices_filepath = os.path.join(
+                self.config.embeddings_dir, indices_filename)
+
+            # Define path to save input embedding
+            input_embedding_filename = f"input_embedding_{country}_{hours}h.npy"
+            input_embedding_filepath = os.path.join(
+                self.config.embeddings_dir, input_embedding_filename)
+
+            self.logger.info("Generating input embedding...")
+            input_embedding = self.get_embedding(input_sentence)
+            input_embedding = np.array(input_embedding)
+
+            # Save input embedding
+            if self.config.save_embeddings:
+                np.save(input_embedding_filepath, input_embedding)
+                self.logger.info(
+                    f"Input embedding saved to {input_embedding_filepath}")
 
             self.logger.info("Generating embeddings...")
             embeddings, valid_indices = generate_embeddings(
-                sampled_data, max_workers=max_workers_embeddings)
-
+                sampled_data,
+                max_workers=max_workers_embeddings,
+                save_embeddings_path=embeddings_filepath if self.config.save_embeddings else None,
+                save_indices_path=indices_filepath if self.config.save_embeddings else None
+            )
             self.logger.info(f"Generated embeddings shape: {embeddings.shape}")
             self.logger.info(f"Number of valid indices: {len(valid_indices)}")
 
@@ -110,50 +139,35 @@ class GDELTNewsPipeline:
                     "No embeddings generated. Returning empty result.")
                 return []
 
-            # Check if valid_indices matches the number of rows in sampled_data
-            if len(valid_indices) != len(sampled_data):
-                self.logger.warning(
-                    f"Mismatch between valid indices ({len(valid_indices)}) and sampled data rows ({len(sampled_data)}). Adjusting sampled data.")
-
-                # Create a boolean mask for valid indices
-                mask = pd.Series(False, index=range(len(sampled_data)))
-                mask.iloc[valid_indices] = True
-
-                # Apply the mask to sampled_data
-                sampled_data = sampled_data[mask].reset_index(drop=True)
-
-                self.logger.info(
-                    f"Adjusted sampled data shape: {sampled_data.shape}")
-
-            if len(sampled_data) == 0:
-                self.logger.warning(
-                    "No valid data after filtering. Returning empty result.")
-                return []
-
-            self.logger.info("Generating input embedding...")
-            input_embedding = self.get_embedding(input_sentence)
-            input_embedding = np.array(input_embedding)
+            # Filter sampled_data to keep only rows with valid embeddings
+            sampled_data = sampled_data.loc[valid_indices].reset_index(
+                drop=True)
+            self.logger.info(
+                f"Filtered sampled data shape: {sampled_data.shape}")
 
             self.logger.info("Optimizing clustering parameters...")
             param_grid = {
                 'reduce_dimensionality': [True, False],
                 'reducer_algorithm': ['umap', 'pca', 'none'],
                 'n_components': [50, 100],
-                'min_cluster_size': [5, 7, 10],
+                'min_cluster_size': [3, 4, 5],
                 'min_samples': [1, 2, 3],
                 'cluster_selection_epsilon': [0.0, 0.1, 0.2],
                 'metric': ['euclidean'],
             }
 
-            clusters, best_params = optimize_clustering(
+            clusters, best_params, best_scores, noise_count = optimize_clustering(
                 embeddings=embeddings,
                 param_grid=param_grid,
                 input_embedding=input_embedding
             )
 
             self.logger.info(f"Best clustering parameters: {best_params}")
+            self.logger.info(f"Best scores by component: {best_scores}")
             num_clusters = len(set(clusters)) - (1 if -1 in clusters else 0)
             self.logger.info(f"Generated {num_clusters} clusters.")
+            self.logger.info(
+                f"Number of articles in noise cluster: {noise_count}")
 
             sampled_data['cluster'] = clusters
 
@@ -205,6 +219,7 @@ class GDELTNewsPipeline:
                 no_articles=no_articles,
                 no_financially_relevant_events=0,
                 optimal_clustering_params=best_params,
+                clustering_scores=ClusteringScores(**best_scores),
                 config_values={
                     "embedding_model": self.config.embedding_model,
                     "max_articles_per_cluster": self.config.max_articles_per_cluster,
@@ -217,7 +232,8 @@ class GDELTNewsPipeline:
                 embedding_model=self.config.embedding_model,
                 reducer_algorithm=best_params.get('reducer_algorithm', 'none'),
                 sampling_method="MMR-based sampling",
-                execution_time=time.time() - start_time
+                execution_time=time.time() - start_time,
+                no_articles_in_noise_cluster=noise_count
             )
 
             # Initialize ClusterArticleSummaries
@@ -225,7 +241,7 @@ class GDELTNewsPipeline:
                 metadata=metadata)
 
             def process_cluster(cluster):
-                cluster_data = sampled_data.loc[sampled_data['cluster'] == cluster].copy(
+                cluster_data = sampled_data[sampled_data['cluster'] == cluster].copy(
                 )
                 cluster_urls = cluster_data['SOURCEURL'].tolist()
                 cluster_indices = cluster_data.index

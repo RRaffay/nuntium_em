@@ -3,6 +3,13 @@ from typing import List, Dict, Any
 import json
 
 
+class ClusteringScores(BaseModel):
+    silhouette: float = 0.0
+    davies_bouldin: float = 0.0
+    stability: float = 0.0
+    relevance: float = 0.0
+
+
 class Metadata(BaseModel):
     input_sentence: str
     country: str
@@ -16,6 +23,8 @@ class Metadata(BaseModel):
 
     # New fields for optimal clustering parameters
     optimal_clustering_params: Dict[str, Any] = Field(default_factory=dict)
+    clustering_scores: ClusteringScores = Field(
+        default_factory=ClusteringScores)
 
     # New fields for config values
     config_values: Dict[str, Any] = Field(default_factory=dict)
@@ -26,6 +35,7 @@ class Metadata(BaseModel):
     reducer_algorithm: str = ""
     sampling_method: str = ""
     execution_time: float = 0.0
+    no_articles_in_noise_cluster: int = 0
 
 
 class ClusterSummary(BaseModel):
