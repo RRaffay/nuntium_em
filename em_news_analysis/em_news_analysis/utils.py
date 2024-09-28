@@ -25,7 +25,10 @@ FIPS_TO_COUNTRY = {
     "UK": "United Kingdom",
     "VM": "Vietnam",
     "BO": "Belarus",
-    # Add more countries as needed
+    "RS": "Russia",
+    "SA": "Saudi Arabia",
+    "ET": "Ethiopia",
+    "CG": "Democratic Republic of the Congo"
 }
 
 

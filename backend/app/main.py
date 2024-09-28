@@ -42,11 +42,14 @@ async def lifespan(app: FastAPI):
         ],
     )
     app.state.limiter = limiter
-    
+
     # Set up Redis cache
-    redis = aioredis.from_url(f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}", encoding="utf8", decode_responses=True)
+    redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}"
+    logger.info(f"Connecting to Redis at: {redis_url}")
+    redis = aioredis.from_url(
+        redis_url, encoding="utf8", decode_responses=True)
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
-    
+
     yield
 
 
