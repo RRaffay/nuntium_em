@@ -6,6 +6,10 @@ import logging.config
 
 
 class BaseConfig(BaseSettings):
+    """
+    Base configuration class for the application.
+    Contains common settings and methods used across different environments.
+    """
     MONGO_URI: str = "mongodb://mongodb:27017"
     MONGO_EVENT_DB_NAME: str = 'gdelt_news'
     MONGO_EVENT_COLLECTION_NAME: str = 'news_summaries'
@@ -34,6 +38,12 @@ class BaseConfig(BaseSettings):
 
     @property
     def LOGGING_CONFIG(self):
+        """
+        Generate the logging configuration dictionary.
+
+        Returns:
+            dict: Logging configuration dictionary.
+        """
         return {
             "version": 1,
             "disable_existing_loggers": False,
@@ -65,6 +75,9 @@ class BaseConfig(BaseSettings):
         }
 
     def setup_logging(self):
+        """
+        Set up logging using the LOGGING_CONFIG.
+        """
         logging.config.dictConfig(self.LOGGING_CONFIG)
 
     class Config:
@@ -72,6 +85,10 @@ class BaseConfig(BaseSettings):
 
 
 class DevelopmentConfig(BaseConfig):
+    """
+    Configuration class for the development environment.
+    Inherits from BaseConfig and overrides some settings for development use.
+    """
     DEBUG: bool = True
     RATE_LIMITS: Dict[str, str] = {
         "run_country_pipeline": "20/hour",
@@ -96,6 +113,10 @@ class DevelopmentConfig(BaseConfig):
 
 
 class ProductionConfig(BaseConfig):
+    """
+    Configuration class for the production environment.
+    Inherits from BaseConfig and overrides some settings for production use.
+    """
     DEBUG: bool = False
     RATE_LIMITS: Dict[str, str] = {
         "run_country_pipeline": "5/hour",
@@ -120,6 +141,12 @@ class ProductionConfig(BaseConfig):
 
 
 def get_settings():
+    """
+    Get the appropriate settings based on the current environment.
+
+    Returns:
+        BaseConfig: An instance of either ProductionConfig or DevelopmentConfig.
+    """
     env = os.getenv("APP_ENV", "development")
     config_class = ProductionConfig if env == "production" else DevelopmentConfig
     return config_class()

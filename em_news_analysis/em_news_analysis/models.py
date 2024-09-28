@@ -4,6 +4,9 @@ import json
 
 
 class ClusteringScores(BaseModel):
+    """
+    Model representing the scores for clustering evaluation.
+    """
     silhouette: float = 0.0
     davies_bouldin: float = 0.0
     stability: float = 0.0
@@ -11,6 +14,9 @@ class ClusteringScores(BaseModel):
 
 
 class Metadata(BaseModel):
+    """
+    Model representing metadata for the news analysis pipeline.
+    """
     input_sentence: str
     country: str
     country_name: str
@@ -39,6 +45,9 @@ class Metadata(BaseModel):
 
 
 class ClusterSummary(BaseModel):
+    """
+    Model representing a summary of a cluster of articles.
+    """
     event_title: str
     event_relevance_rationale: str
     event_relevance_score: int
@@ -48,16 +57,29 @@ class ClusterSummary(BaseModel):
 
 
 class ClusterArticleSummaries(BaseModel):
+    """
+    Model representing summaries of multiple clusters and their articles.
+    """
     metadata: Metadata
     clusters: Dict[str, ClusterSummary] = {}
 
     def add_cluster_summary(self, cluster_id: int, cluster_summary: ClusterSummary):
+        """
+        Add a cluster summary to the collection and update the count of financially relevant events.
+
+        Args:
+            cluster_id (int): The ID of the cluster.
+            cluster_summary (ClusterSummary): The summary of the cluster.
+        """
         self.clusters[str(cluster_id)] = cluster_summary
         if cluster_summary.event_relevance_score > 2:
             self.metadata.no_financially_relevant_events += 1
 
 
 class Event(BaseModel):
+    """
+    Model representing an event extracted from news articles.
+    """
     title: str = Field(
         default="", description="The title of the event (5-10 words)"
     )
@@ -78,7 +100,20 @@ class Event(BaseModel):
 
 
 class PydanticEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder for Pydantic models.
+    """
+
     def default(self, obj):
+        """
+        Encode Pydantic models to JSON.
+
+        Args:
+            obj: The object to encode.
+
+        Returns:
+            dict: The JSON-serializable representation of the object.
+        """
         if isinstance(obj, BaseModel):
             return obj.model_dump()
         return super().default(obj)

@@ -3,7 +3,17 @@ import numpy as np
 
 
 def safe_get(row, key, default=""):
-    """Safely get a value from a pandas Series, returning a default if it's empty or null."""
+    """
+    Safely get a value from a pandas Series, returning a default if it's empty or null.
+
+    Args:
+        row (pandas.Series): The row to get the value from.
+        key (str): The key to look up in the row.
+        default (Any, optional): The default value to return if the key is not found or the value is empty/null. Defaults to "".
+
+    Returns:
+        Any: The value associated with the key, or the default value if not found or empty/null.
+    """
     value = row.get(key, default)
     if pd.isna(value) or value == "":
         return default
@@ -11,6 +21,15 @@ def safe_get(row, key, default=""):
 
 
 def interpret_avg_tone(avg_tone: float) -> str:
+    """
+    Interpret the average tone of an event and return a descriptive string.
+
+    Args:
+        avg_tone (float): The average tone value to interpret.
+
+    Returns:
+        str: A string describing the tone of the event based on the avg_tone value.
+    """
     if pd.isna(avg_tone):
         return "an unknown tone"
     if avg_tone > 5:
@@ -26,6 +45,15 @@ def interpret_avg_tone(avg_tone: float) -> str:
 
 
 def interpret_goldstein_scale(scale: float) -> str:
+    """
+    Interpret the Goldstein scale value of an event and return a descriptive string.
+
+    Args:
+        scale (float): The Goldstein scale value to interpret.
+
+    Returns:
+        str: A string describing the impact of the event based on the Goldstein scale value.
+    """
     if pd.isna(scale):
         return "an event with unknown impact"
     if scale > 7:
@@ -41,6 +69,15 @@ def interpret_goldstein_scale(scale: float) -> str:
 
 
 def interpret_quad_class(quad_class: int) -> str:
+    """
+    Interpret the quad class of an event and return a descriptive string.
+
+    Args:
+        quad_class (int): The quad class value to interpret.
+
+    Returns:
+        str: A string describing the classification of the event based on the quad class value.
+    """
     quad_class_dict = {
         1: "Verbal Cooperation",
         2: "Material Cooperation",
@@ -134,11 +171,23 @@ def preprocess_data_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 def enrich_user_interest(input_sentence: str) -> str:
     """
-    Placeholder method to enrich the user's area of interest.
+    Enrich the user's area of interest by analyzing and expanding the input sentence.
+
     This function should:
     - Analyze the input sentence to extract key topics and entities.
     - Expand the query using synonyms, related terms, or domain-specific knowledge.
     - Return an enriched query or set of keywords to improve cluster matching.
+
+    Args:
+        input_sentence (str): The user's input sentence describing their area of interest.
+
+    Returns:
+        str: An enriched query or set of keywords based on the input sentence.
+
+    Note:
+        This is currently a placeholder method. The actual implementation should include
+        NLP methods, query expansion techniques, and possibly integration with external
+        knowledge bases or thesauri.
     """
     # TODO: Implement query enrichment using techniques like:
     # - NLP methods to extract entities and keywords.

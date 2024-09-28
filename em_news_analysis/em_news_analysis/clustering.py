@@ -33,8 +33,6 @@ def cluster_embeddings(
         config (BaseConfig): Configuration object.
         clustering_algorithm: Clustering algorithm to use. If None, defaults to HDBSCAN.
         reduce_dimensionality (bool): Whether to reduce dimensionality before clustering.
-        reducer_algorithm (str): Algorithm for dimensionality reduction ('umap' or 'pca').
-        n_components (int): Number of dimensions to reduce to.
         **kwargs: Additional keyword arguments for the clustering algorithm.
 
     Returns:
@@ -98,13 +96,13 @@ def optimize_clustering(
         embeddings (np.ndarray): Embeddings to cluster.
         param_grid (Dict[str, List[Any]]): Grid of hyperparameters to search.
         input_embedding (np.ndarray): Embedding of the input sentence for relevance scoring.
-        scoring_functions (Dict[str, Callable]): Dictionary of scoring functions to use.
-        clustering_algorithm (Callable): Clustering algorithm to use.
-        reducer_algorithms (Dict[str, Callable]): Mapping from reducer_algorithm name to the reducer class.
-        n_jobs (int): Number of jobs to run in parallel. -1 means using all processors.
+        scoring_functions (Dict[str, Callable], optional): Dictionary of scoring functions to use.
+        clustering_algorithm (Callable, optional): Clustering algorithm to use.
+        reducer_algorithms (Dict[str, Callable], optional): Mapping from reducer_algorithm name to the reducer class.
+        n_jobs (int, optional): Number of jobs to run in parallel. -1 means using all processors.
 
     Returns:
-        Tuple[np.ndarray, Dict[str, Any], Dict[str, float], int]: Best cluster labels, best hyperparameters, and best scores by component.
+        Tuple[np.ndarray, Dict[str, Any], Dict[str, float], int]: Best cluster labels, best hyperparameters, best scores by component, and number of noise points.
     """
     if scoring_functions is None:
         scoring_functions = {

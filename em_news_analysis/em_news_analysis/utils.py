@@ -45,6 +45,13 @@ def get_country_name(country_code: str) -> str:
 def sample_articles(urls: List[str], max_articles: int) -> List[str]:
     """
     Sample representative articles from the given URLs, ensuring no duplicates.
+
+    Args:
+        urls (List[str]): List of URLs to sample from.
+        max_articles (int): Maximum number of articles to sample.
+
+    Returns:
+        List[str]: List of sampled unique URLs.
     """
     unique_urls = list(dict.fromkeys(
         urls))  # Remove duplicates while maintaining order

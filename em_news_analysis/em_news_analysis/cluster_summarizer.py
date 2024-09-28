@@ -16,12 +16,14 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 4, 
     """
     Combine multiple summaries into a final summary.
 
-    summaries_list List[str]: The summaries to combine.
-    objective(str): This provides an objective for the summary of the article, including the relevant meta-data
-    model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 4.
+    Args:
+        summaries_list (List[str]): The summaries to combine.
+        objective (str): Provides an objective for the summary of the article, including the relevant meta-data.
+        model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 4.
+        retry_attempts (int, optional): Number of retry attempts for the API call. Defaults to 3.
 
     Returns:
-    str: The combined summary.
+        str: The combined summary.
     """
 
     summaries = "\n\n".join(summaries_list)
@@ -69,6 +71,13 @@ def combined_summary(summaries_list: List[str], objective: str, model: int = 4, 
 def generate_cluster_summary(summaries: List[str], objective: str) -> Event:
     """
     Generate a combined summary for a cluster using the combined_summary function.
+
+    Args:
+        summaries (List[str]): List of summaries to combine.
+        objective (str): Objective for the summary generation.
+
+    Returns:
+        Event: An Event object containing the generated summary, title, and relevance information.
     """
     try:
         event = combined_summary(summaries, objective)

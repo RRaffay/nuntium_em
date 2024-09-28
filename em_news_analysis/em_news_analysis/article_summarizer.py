@@ -25,7 +25,23 @@ open_ai_llm = ChatOpenAI(
 
 
 def clean_text(text: str, level: int = 1, max_words: int = 50000) -> str:
-    """Clean the text with different levels of aggressiveness and truncate if necessary."""
+    """
+    Clean the input text with different levels of aggressiveness and truncate if necessary.
+
+    Args:
+        text (str): The input text to be cleaned.
+        level (int, optional): The level of cleaning aggressiveness. Defaults to 1.
+            1: Basic cleaning (remove HTML, whitespace, non-printable characters)
+            2: Level 1 + remove common web elements and URLs
+            3: Level 2 + remove email addresses and special characters
+        max_words (int, optional): Maximum number of words to keep. Defaults to 50000.
+
+    Returns:
+        str: The cleaned and potentially truncated text.
+
+    Raises:
+        None, but logs a warning if the text is truncated.
+    """
     # Level 1: Basic cleaning
     text = BeautifulSoup(text, "html.parser").get_text()
     text = re.sub(r'\s+', ' ', text).strip()

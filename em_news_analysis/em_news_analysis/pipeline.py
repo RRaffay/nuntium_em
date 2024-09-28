@@ -29,6 +29,12 @@ from .models import Metadata, ClusterSummary, ClusterArticleSummaries, PydanticE
 
 class GDELTNewsPipeline:
     def __init__(self, config: BaseConfig):
+        """
+        Initialize the GDELTNewsPipeline.
+
+        Args:
+            config (BaseConfig): Configuration object containing pipeline settings.
+        """
         # Load environment variables
         load_dotenv()
 
@@ -57,6 +63,17 @@ class GDELTNewsPipeline:
         self.logger = logging.getLogger(__name__)
 
     def sample_data(self, df: pd.DataFrame, process_all: bool, sample_size: int) -> pd.DataFrame:
+        """
+        Sample data from the input DataFrame.
+
+        Args:
+            df (pd.DataFrame): Input DataFrame to sample from.
+            process_all (bool): If True, process all data. If False, sample the data.
+            sample_size (int): Number of samples to take if not processing all data.
+
+        Returns:
+            pd.DataFrame: Sampled DataFrame.
+        """
         return sample_data(df, process_all, sample_size)
 
     def run_pipeline(
@@ -73,6 +90,25 @@ class GDELTNewsPipeline:
         export_to_local: bool = False,
         user_id: str = None
     ) -> List[str]:
+        """
+        Run the GDELT news analysis pipeline.
+
+        Args:
+            input_sentence (str): User's input sentence for analysis.
+            country (str): Country code for news filtering.
+            hours (int): Number of hours to look back for news articles.
+            article_summarizer_objective (str): Objective for summarizing individual articles.
+            cluster_summarizer_objective (str): Objective for summarizing clusters.
+            process_all (bool, optional): If True, process all data. Defaults to False.
+            sample_size (int, optional): Number of samples to take if not processing all data. Defaults to 1500.
+            max_workers_embeddings (int, optional): Maximum number of workers for generating embeddings. Defaults to 5.
+            max_workers_summaries (int, optional): Maximum number of workers for generating summaries. Defaults to 3.
+            export_to_local (bool, optional): If True, export data locally. Defaults to False.
+            user_id (str, optional): User ID for data association. Defaults to None.
+
+        Returns:
+            List[str]: Information about the pipeline run.
+        """
         start_time = time.time()
         try:
             self.logger.info("Fetching GDELT data...")
@@ -371,11 +407,30 @@ class GDELTNewsPipeline:
             raise ValueError("Pipeline execution failed") from e
 
     def get_embedding(self, text: str) -> List[float]:
+        """
+        Get the embedding for a given text.
+
+        Args:
+            text (str): Input text to embed.
+
+        Returns:
+            List[float]: Embedding vector.
+        """
         return get_embedding(text=text, model=self.config.embedding_model)
 
     def export_data_local(self, df: pd.DataFrame, summaries: ClusterArticleSummaries, input_sentence: str, country: str, hours: int) -> Tuple[str, str]:
         """
         Export the processed DataFrame to a CSV file and summaries to a JSON file locally.
+
+        Args:
+            df (pd.DataFrame): Processed DataFrame to export.
+            summaries (ClusterArticleSummaries): Summaries to export.
+            input_sentence (str): User's input sentence.
+            country (str): Country code.
+            hours (int): Number of hours looked back.
+
+        Returns:
+            Tuple[str, str]: Paths to the exported CSV and JSON files.
         """
         timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
         csv_filename = f"gdelt_data_{country}_{hours}h_{timestamp}.csv"
@@ -403,6 +458,17 @@ class GDELTNewsPipeline:
     ) -> str:
         """
         Export the processed DataFrame and summaries to MongoDB.
+
+        Args:
+            df (pd.DataFrame): Processed DataFrame to export.
+            cluster_article_summaries (ClusterArticleSummaries): Summaries to export.
+            input_sentence (str): User's input sentence.
+            country (str): Country code.
+            hours (int): Number of hours looked back.
+            user_id (str): User ID for data association.
+
+        Returns:
+            str: ID of the inserted MongoDB document.
         """
         try:
             mongo_collection = self.mongo_db['news_summaries']

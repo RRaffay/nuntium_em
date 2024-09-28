@@ -16,6 +16,20 @@ def match_clusters(
     Match input embedding to clusters based on cosine similarity.
     Uses an enhanced method that computes average similarity per cluster.
     Selects diverse clusters to avoid repetition.
+
+    Args:
+        input_embedding (List[float]): The embedding of the input text.
+        embeddings (np.ndarray): The embeddings of all articles.
+        clusters (np.ndarray): The cluster labels for each article.
+        top_n (int, optional): The number of top clusters to return. Defaults to 20.
+        similarity_threshold (float, optional): The minimum similarity threshold for considering a cluster. Defaults to 0.3.
+        diversity_weight (float, optional): The weight given to diversity when selecting clusters. Defaults to 0.3.
+
+    Returns:
+        List[int]: A list of selected cluster labels, ordered by relevance and diversity.
+
+    Raises:
+        ValueError: If there's an error in matching clusters.
     """
     try:
         # Compute similarities between input embedding and all embeddings
