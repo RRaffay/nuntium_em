@@ -79,10 +79,11 @@ services:
       - /mnt/volume_nyc1_01/mongodb:/data/db
     command: ["mongod", "--bind_ip", "localhost,mongodb"]
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo mongodb:27017/test --quiet
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: mongosh --eval 'db.runCommand("ping").ok' --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     restart: unless-stopped
 
   research_chat:
