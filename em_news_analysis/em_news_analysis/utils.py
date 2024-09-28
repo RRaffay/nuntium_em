@@ -45,6 +45,13 @@ def get_country_name(country_code: str) -> str:
 def sample_articles(urls: List[str], max_articles: int) -> List[str]:
     """
     Sample representative articles from the given URLs, ensuring no duplicates.
+
+    Args:
+        urls (List[str]): List of URLs to sample from.
+        max_articles (int): Maximum number of articles to sample.
+
+    Returns:
+        List[str]: List of sampled unique URLs.
     """
     unique_urls = list(dict.fromkeys(
         urls))  # Remove duplicates while maintaining order
@@ -79,7 +86,7 @@ def sample_articles_mmr(
     urls: List[str],
     cluster_embeddings: np.ndarray,
     max_articles: int,
-    lambda_param: float = 0.5
+    lambda_param: float = 0.9
 ) -> List[str]:
     """
     Sample articles using Maximal Marginal Relevance to balance relevance and diversity.

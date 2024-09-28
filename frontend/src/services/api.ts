@@ -12,6 +12,7 @@ export interface Event {
   title: string;  
   event_summary: string;
   relevance_score: number;
+  relevance_rationale: string;
   articles: ArticleInfo[];
 }
 
@@ -39,6 +40,7 @@ export interface UserProfile {
   first_name: string;
   last_name: string;
   area_of_interest: string;
+  country_interests: CountryInterests;
   email: string;
   is_verified: boolean;
 }
@@ -46,6 +48,49 @@ export interface UserProfile {
 export interface ChatMessage {
   content: string;
   sender: 'user' | 'model';
+}
+
+export interface IndicatorDataPoint {
+  date: string;
+  value: number;
+}
+
+export interface MetricDataPoint {
+  date: string;
+  value: number;
+}
+
+export interface MetricInfo {
+  data: MetricDataPoint[];
+  label: string;
+  unit: string;
+  source: string;
+  description: string;
+}
+
+export interface CountryMetrics {
+  [key: string]: MetricInfo;
+}
+
+export interface ClarifyingQuestion {
+  question: string;
+}
+
+export interface OpenResearchReportInput {
+  country: string;
+  task: string;
+  questions: string[];
+  answers: string[];
+}
+
+export interface CountryInterests {
+  [country: string]: string;
+}
+
+interface CountryPipelineRequest {
+  country: string;
+  hours: number;
+  area_of_interest: string;
 }
 
 const getAuthHeaders = (): HeadersInit => {
@@ -140,18 +185,35 @@ export const api = {
     return handledResponse.json();
   },
 
-  async runCountryPipeline(country: string, hours: number): Promise<void> {
+  async createOpenResearchReport(input: OpenResearchReportInput): Promise<Report> {
+    const response = await fetch(`${API_BASE_URL}/open-research-report`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to create open research report');
+    }
+    const data = await handledResponse.json();
+    return data;
+  },
+
+  async runCountryPipeline(country: string, hours: number, area_of_interest: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/run-country-pipeline`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ country, hours }),
+      body: JSON.stringify({ country, hours, area_of_interest } as CountryPipelineRequest),
     });
     const handledResponse = await handleResponse(response);
     if (!handledResponse.ok) {
-      throw new Error('Failed to fetch countries');
+      throw new Error('Failed to run country pipeline');
     }
     return handledResponse.json();
   },
@@ -194,7 +256,7 @@ export const api = {
     }
   },
 
-  async sendChatMessage(message: string, encodedReport: string, messages: ChatMessage[]): Promise<string> {
+  async sendChatMessage(message: string, encodedReport: string, messages: ChatMessage[], proMode: boolean): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/research-chat`, {
       method: 'POST',
       headers: {
@@ -204,7 +266,8 @@ export const api = {
       body: JSON.stringify({ 
         message, 
         encodedReport, 
-        messages: messages.map(m => [m.content, m.sender] as [string, string])
+        messages: messages.map(m => [m.content, m.sender] as [string, string]),
+        proMode
       }),
     });
     const handledResponse = await handleResponse(response);
@@ -272,4 +335,96 @@ export const api = {
     }
   },
 
+  async getCountryMetrics(country: string): Promise<CountryMetrics> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}/metrics`, {
+      headers: getAuthHeaders(),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      console.error('Failed to fetch country metrics');
+      throw new Error('Failed to fetch country metrics');
+    }
+    return handledResponse.json();
+  },
+
+  async submitDataQuestion(country: string, data: CountryMetrics, question: string, messages: ChatMessage[], proMode: boolean): Promise<{ answer: string }> {
+    const response = await fetch(`${API_BASE_URL}/countries/${country}/data-question`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        country,
+        data, 
+        question,
+        messages: messages.map(m => ({ content: m.content, sender: m.sender })),
+        proMode
+      }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to submit question');
+    }
+    return handledResponse.json();
+  },
+
+  async generateClarifyingQuestions(task: string): Promise<ClarifyingQuestion[]> {
+    const response = await fetch(`${API_BASE_URL}/generate-clarifying-questions`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ task }),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to generate clarifying questions');
+    }
+    const data = await handledResponse.json();
+
+    if (Array.isArray(data.questions)) {
+      return data.questions.map((q: string) => ({ question: q }));
+    } else if (typeof data.questions === 'string') {
+      // If the response is a single string, split it into an array
+      return data.questions.split('\n')
+        .filter((q: string) => q.trim())
+        .map((q: string) => ({ question: q.trim() }));
+    } else {
+      console.error('Unexpected response format for clarifying questions:', data);
+      throw new Error('Unexpected response format for clarifying questions');
+    }
+  },
+
+  async updateCountry(country: string, hours: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/update-country/${country}`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ country, hours } as CountryPipelineRequest),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to update country');
+    }
+    return handledResponse.json();
+  },
+
+  async updateUserInterests(interests: CountryInterests): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/update-user-interests`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(interests),
+    });
+    const handledResponse = await handleResponse(response);
+    if (!handledResponse.ok) {
+      throw new Error('Failed to update user interests');
+    }
+  }
 };

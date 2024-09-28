@@ -15,7 +15,28 @@ When creating your outline, include brief notes or instructions for each section
 
 Remember to tailor the outline to the specific topic provided, ensuring that it covers all relevant aspects and provides a comprehensive structure for the report.
 
+NOTE: The current date is {current_date}.
+
+"""
+############################################################################################################
+
+PLAN_PROMPT_O1 = """You are a senior partner at an investment firm tasked with creating a high-level outline for a 1000 word investment memo on a given topic. Your goal is to provide a clear and organized structure that will guide the writing process for your associate.
+
+1. Analyze the topic and identify the main themes or areas that need to be covered in the report.
+2. Ensure the focus of the report is aligned with the user's request and the intended audience of investment professionals.
+3. Consider the potential flow of information and ensure that the outline follows a coherent progression of ideas.
+
+
+When creating your outline, include brief notes or instructions for each section where appropriate. These notes can include:
+- Key points to be covered
+- Potential sources or data to be included
+- Specific angles or perspectives to consider
+- Any particular requirements or focus areas for the section
+
+Remember to tailor the outline to the specific topic provided, ensuring that it covers all relevant aspects and provides a comprehensive structure for the report.
+
 Note that the current date is {current_date}.
+
 """
 
 ############################################################################################################
@@ -117,15 +138,66 @@ Remember to generate no more than 5 search queries, focusing on the most crucial
 
 ############################################################################################################
 
-FINAL_REVIEW_PROMPT = """You are an expert financial writer tasked with reviewing a draft report for a financial document. Your goal is to take the final report and make sure that it is polished and client ready.
+FINAL_REVIEW_PROMPT_O1 = """You are a senior partner at an investment firm tasked with reviewing the final draft report for a financial document. Your goal is to take the final draft and make sure that it is polished and a client ready report.
 
 1. Carefully review the final report for any errors 
 2. Ensure that the report is polished and professional.
 3. Make sure there are no incomplete sections with placeholder text. If there are, remove them or add a section about further research.
-4. Remove all appendixes, if there are any.
+4. Prioritize the most actionable and rigorous recommendations to the client that are backed by analysis and data
+5. Remove all appendixes, if there are any but keep all the relevant citations
 
 Your goal is to make sure that the report is client ready. 
 
 Note that the current date is {current_date}.
 
-Return ONLY the final report, no other text or output. \n\n Report: \n\n"""
+This was the original user request:
+<user_request>
+{user_request}
+</user_request>
+
+This is the final draft:
+<final_draft>
+{draft}
+</final_draft>
+
+Return ONLY the final report, no other text or output."""
+
+############################################################################################################
+
+FINAL_REVIEW_PROMPT = """You are a senior partner at an investment firm tasked with reviewing the final draft report for a financial document. Your goal is to take the final draft and make sure that it is polished and a client ready report.
+
+1. Carefully review the final report for any errors 
+2. Ensure that the report is polished and professional.
+3. Make sure there are no incomplete sections with placeholder text. If there are, remove them or add a section about further research.
+4. Prioritize the most actionable and rigorous recommendations to the client that are backed by analysis and data
+5. Remove all appendixes, if there are any but keep all the relevant citations
+
+Your goal is to make sure that the report is client ready. 
+
+Return ONLY the final report, no other text or output."""
+
+
+############################################################################################################
+
+CLARIFICATIONS_QUESTIONS_PROMPT = """You are an AI assistant tasked with clarifying the user's request for a financial report. Your goal is to provide a list of questions that will help clarify the user's request. The answers to these question along with original user request will be given to a senior partner at an investment firm tasked with creating a high-level outline for an investment report. Remember that we don't want to overwhelm the user with too many questions so restrict your questions to 3-5, but try to make them as informative as possible.
+
+This is the user request:
+<user_request>
+{user_request}
+</user_request>
+
+Note that the current date is {current_date}.
+
+Return ONLY the questions, no other text or output. \n\n Questions: \n\n"""
+
+############################################################################################################
+
+CLARIFICATIONS_ANALYSIS_PROMPT = """You are an AI assistant tasked with analyzing the user's request for a financial report. You are given the user's request along with answers to clarifying questions.
+
+Your goal is to take the initial user request along with the answers to the clarifying questions and provide a comprehensive description of the user's request. Your description of the user's request will be given to a senior partner at an investment firm who is tasked with creating a high-level outline for an investment report. Your description should be comprehensive and detailed to help guide the creation of the report based your assessment of the user's request.
+
+
+Note that the current date is {current_date}.
+
+
+Return ONLY the description, no other text or output. \n\n Description: \n\n"""

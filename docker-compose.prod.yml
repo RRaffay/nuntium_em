@@ -17,6 +17,7 @@ services:
       - news_pipeline_server
       - redis
       - research_chat
+      - data_chat 
     env_file:
       - .env
     restart: unless-stopped
@@ -103,6 +104,7 @@ services:
       - report_server
       - news_pipeline_server
       - research_chat
+      - data_chat  
 
   certbot:
     image: certbot/certbot
@@ -110,6 +112,21 @@ services:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
     command: certonly --webroot -w /var/www/certbot --force-renewal --email ranaraffay@gmail.com -d nuntiumai.xyz -d www.nuntiumai.xyz --agree-tos --no-eff-email
+
+  data_chat:
+    build:
+      context: ./em_data_chat
+      dockerfile: Dockerfile
+    depends_on:
+      - mongodb
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 900s
+      timeout: 450s
+      retries: 2
 
 volumes:
   certbot_data:

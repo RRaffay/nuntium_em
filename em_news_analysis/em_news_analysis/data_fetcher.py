@@ -3,19 +3,21 @@ import pickle
 from datetime import datetime
 import pandas as pd
 from google.cloud import bigquery
-from .config import Config
+from .config import BaseConfig
 # Set up logging
 import logging
+from itertools import combinations
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: Config, use_cache: bool = False) -> pd.DataFrame:
+def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: BaseConfig) -> pd.DataFrame:
     """
     Fetch GDELT data from BigQuery for a specific country and time range, using both Events and GKG tables.
-    Performs the join in BigQuery.
+    Performs a LEFT JOIN to ensure all events are included, even if there is no matching GKG data.
+    Removes duplicates and logs the number of duplicates removed.
     """
-    if use_cache:
+    if config.use_cache:
         cache_file = os.path.join(config.gdelt_cache_dir,
                                   f"{country}_{hours}hours.pkl")
 
@@ -30,77 +32,77 @@ def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: 
     try:
         query = f"""
             WITH events AS (
-        SELECT
-            GlobalEventID,
-            DATEADDED,
-            SQLDATE,
-            Actor1Name,
-            Actor2Name,
-            IsRootEvent,
-            EventCode,
-            EventBaseCode,
-            EventRootCode,
-            QuadClass,
-            GoldsteinScale,
-            NumMentions,
-            NumSources,
-            NumArticles,
-            AvgTone,
-            Actor1Geo_CountryCode,
-            Actor2Geo_CountryCode,
-            ActionGeo_CountryCode,
-            SOURCEURL
-        FROM
-            `gdelt-bq.gdeltv2.events_partitioned`
-        WHERE
-            _PARTITIONTIME >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 25 HOUR)
-            AND DATEADDED >= CAST(FORMAT_TIMESTAMP('%Y%m%d%H%M%S', TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {hours} HOUR)) AS INT64)
-            AND (Actor1Geo_CountryCode = '{country}' OR Actor2Geo_CountryCode = '{country}' OR ActionGeo_CountryCode = '{country}')
-    ),
-    gkg AS (
-        SELECT
-            GKGRECORDID,
-            DATE,
-            SourceCommonName,
-            DocumentIdentifier,
-            V2Themes,
-            V2Locations,
-            V2Persons,
-            V2Organizations,
-            V2Tone,
-            GCAM,
-            AllNames,
-            Amounts,
-            TranslationInfo,
-            Extras
-        FROM
-            `gdelt-bq.gdeltv2.gkg_partitioned`
-        WHERE
-            _PARTITIONTIME >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 25 HOUR)
-            AND DATE >= CAST(FORMAT_TIMESTAMP('%Y%m%d%H%M%S', TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {hours} HOUR)) AS INT64)
-    )
-    SELECT
-        e.*,
-        g.GKGRECORDID,
-        g.DATE AS GKG_DATE,
-        g.SourceCommonName,
-        g.V2Themes,
-        g.V2Locations,
-        g.V2Persons,
-        g.V2Organizations,
-        g.V2Tone,
-        g.GCAM,
-        g.AllNames,
-        g.Amounts,
-        g.TranslationInfo,
-        g.Extras
-    FROM
-        events e
-    INNER JOIN
-        gkg g
-                ON
-                    e.SOURCEURL = g.DocumentIdentifier
-                """
+                SELECT
+                    GlobalEventID,
+                    DATEADDED,
+                    SQLDATE,
+                    Actor1Name,
+                    Actor2Name,
+                    IsRootEvent,
+                    EventCode,
+                    EventBaseCode,
+                    EventRootCode,
+                    QuadClass,
+                    GoldsteinScale,
+                    NumMentions,
+                    NumSources,
+                    NumArticles,
+                    AvgTone,
+                    Actor1Geo_CountryCode,
+                    Actor2Geo_CountryCode,
+                    ActionGeo_CountryCode,
+                    SOURCEURL
+                FROM
+                    `gdelt-bq.gdeltv2.events_partitioned`
+                WHERE
+                    _PARTITIONTIME >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {hours + 24} HOUR)
+                    AND DATEADDED >= CAST(FORMAT_TIMESTAMP('%Y%m%d%H%M%S', TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {hours} HOUR)) AS INT64)
+                    AND (Actor1Geo_CountryCode = '{country}' OR Actor2Geo_CountryCode = '{country}' OR ActionGeo_CountryCode = '{country}')
+            ),
+            gkg AS (
+                SELECT
+                    GKGRECORDID,
+                    DATE,
+                    SourceCommonName,
+                    DocumentIdentifier,
+                    V2Themes,
+                    V2Locations,
+                    V2Persons,
+                    V2Organizations,
+                    V2Tone,
+                    GCAM,
+                    AllNames,
+                    Amounts,
+                    TranslationInfo,
+                    Extras
+                FROM
+                    `gdelt-bq.gdeltv2.gkg_partitioned`
+                WHERE
+                    _PARTITIONTIME >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {hours + 24} HOUR)
+                    AND DATE >= CAST(FORMAT_TIMESTAMP('%Y%m%d%H%M%S', TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {hours} HOUR)) AS INT64)
+            )
+            SELECT
+                e.*,
+                g.GKGRECORDID,
+                g.DATE AS GKG_DATE,
+                g.SourceCommonName,
+                g.V2Themes,
+                g.V2Locations,
+                g.V2Persons,
+                g.V2Organizations,
+                g.V2Tone,
+                g.GCAM,
+                g.AllNames,
+                g.Amounts,
+                g.TranslationInfo,
+                g.Extras
+            FROM
+                events e
+            LEFT JOIN
+                gkg g
+            ON
+                e.SOURCEURL = g.DocumentIdentifier
+        """
 
         # Run the query
         job_config = bigquery.QueryJobConfig(use_query_cache=True)
@@ -112,9 +114,30 @@ def fetch_gdelt_data(client: bigquery.Client, country: str, hours: int, config: 
             merged_df['SQLDATE'], format='%Y%m%d')
         merged_df['GKG_DATE'] = pd.to_datetime(
             merged_df['GKG_DATE'], format='%Y%m%d%H%M%S')
-        logging.info(f"Fetched {len(merged_df)} rows of data.")
+        merged_df['DATEADDED'] = pd.to_datetime(
+            merged_df['DATEADDED'], format='%Y%m%d%H%M%S')
 
-        if use_cache:
+        # Log the number of rows before removing duplicates
+        rows_before = len(merged_df)
+        logger.info(f"Fetched {rows_before} rows of data.")
+
+        # Log all columns
+        logger.info(f"Columns in the dataframe: {merged_df.columns.tolist()}")
+
+        # Remove duplicates based on the chosen subset
+        # You can change this based on the results
+        chosen_subset = ['SOURCEURL']
+        merged_df.drop_duplicates(
+            subset=chosen_subset, keep='first', inplace=True)
+
+        # Log the number of duplicates removed
+        rows_after = len(merged_df)
+        duplicates_removed = rows_before - rows_after
+        logger.info(
+            f"Removed {duplicates_removed} duplicate rows based on {chosen_subset}.")
+        logger.info(f"Final dataset contains {rows_after} rows.")
+
+        if config.use_cache:
             with open(cache_file, 'wb') as f:
                 pickle.dump((datetime.now(), merged_df), f)
 
