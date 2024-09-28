@@ -257,7 +257,8 @@ async def open_research_report_route(request: Request, input_data: Dict[str, Any
         )
 
         report_content = await open_research_report(report_input)
-        logger.info(f"Generated open research report: {report_content}")
+        logger.info(
+            f"Generated open research report: {report_content[:100]}...{report_content[-100:]}")
         return Report(content=report_content, generated_at=datetime.now().isoformat())
     except Exception as e:
         logger.error(
