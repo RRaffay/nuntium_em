@@ -90,6 +90,11 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
         }
         try:
             loader = WebBaseLoader(url, header_template=custom_headers)
+
+            # Add this block to handle XML files
+            if url.endswith('.xml'):
+                loader.default_parser = 'lxml'
+
             docs = loader.load()
         except Exception as e:
             logger.error(f"Error in loading doc {str(e)}")
