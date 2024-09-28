@@ -3,5 +3,6 @@ em_news_analysis/exported_data/
 exported_data/
 em_news_analysis/gdelt_cache/
 gdelt_cache/
+embeddings_cache/
 .venv/
 __pycache__

@@ -6,7 +6,7 @@ from langchain_core.pydantic_v1 import BaseModel
 from langgraph.graph import END
 from typing import List
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
-from em_research_agentic.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT, REFLECTION_PROMPT, RESEARCH_CRITIQUE_PROMPT, FINAL_REVIEW_PROMPT_O1, PLAN_PROMPT, CLARIFICATIONS_QUESTIONS_PROMPT, CLARIFICATIONS_ANALYSIS_PROMPT
+from em_research_agentic.utils.prompts import RESEARCH_PLAN_PROMPT, WRITER_PROMPT, REFLECTION_PROMPT, RESEARCH_CRITIQUE_PROMPT, FINAL_REVIEW_PROMPT_O1, PLAN_PROMPT, CLARIFICATIONS_QUESTIONS_PROMPT, CLARIFICATIONS_ANALYSIS_PROMPT, PLAN_PROMPT_O1
 from em_research_agentic.utils.tools import tavily_client
 from em_research_agentic.utils.article_summarizer import generate_summaries
 import concurrent.futures
@@ -86,11 +86,11 @@ def clarifications_node(state: AgentState, config):
 
 def plan_node(state: AgentState, config):
 
-    input_message = f"The topic is:\n{state['task']}\n. These are the clarifications:\n{state['clarifications']}\n"
+    input_message = f"The task is:\n{state['task']}\n. These are the clarifications:\n{state['clarifications']}\n"
 
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    input_message_with_system = PLAN_PROMPT.format(
+    input_message_with_system = PLAN_PROMPT_O1.format(
         current_date=current_date) + input_message
     messages = [HumanMessage(content=input_message_with_system)]
     model = ChatOpenAI(temperature=1, model_name="o1-preview")
@@ -240,7 +240,7 @@ def final_review_node(state: AgentState, config):
         current_date=current_date, user_request=user_request, draft=draft)
 
     messages = [HumanMessage(content=input_message_with_system)]
-    model = ChatOpenAI(temperature=1, model_name="o1-preview")
+    model = ChatOpenAI(temperature=1, model_name="o1-mini")
     response = model.invoke(messages)
     return {"final_report": response.content}
 

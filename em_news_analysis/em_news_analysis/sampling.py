@@ -31,7 +31,7 @@ def sample_articles(
     cluster_embeddings: np.ndarray,
     articles_metadata: pd.DataFrame,
     max_articles: int,
-    lambda_param: float = 0.5
+    lambda_param: float = 0.9
 ) -> List[str]:
     """
     Sample articles using Maximal Marginal Relevance to balance relevance, diversity, and article quality.

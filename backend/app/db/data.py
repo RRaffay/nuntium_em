@@ -1,71 +1,17 @@
+# data.py
 from typing import Dict
-from models import CountryData, Event, ArticleInfo
+from models import CountryData, Event, ArticleInfo, ClusterArticleSummaries, ClusterSummary, Metadata
 from pymongo import MongoClient
-import os
 from datetime import datetime
 from config import settings
 from core.pipeline import run_pipeline, PipelineInput
 from auth.auth_db import User
 from fastapi import HTTPException
 
-
-country_data: Dict[str, CountryData] = {}
-
 # MongoDB connection setup
 mongo_client = MongoClient(settings.MONGO_URI)
 mongo_db = mongo_client[settings.MONGO_EVENT_DB_NAME]
 mongo_collection = mongo_db[settings.MONGO_EVENT_COLLECTION_NAME]
-
-
-async def fetch_country_data(user_id: str):
-    """
-    Fetch country data from the MongoDB database.
-
-    Returns:
-        dict: A dictionary where keys are country names and values are CountryData objects.
-    """
-    country_data = {}
-    for document in mongo_collection.find({"user_id": user_id}):
-        data = document['summaries']
-        country = data["metadata"]["country_name"]
-        events = []
-        for event_id, event_data in data.items():
-            if event_id != "metadata" and event_data.get("event_relevant_for_financial_analysis", False):
-                articles = [
-                    ArticleInfo(summary=summary, url=url)
-                    for summary, url in zip(event_data["article_summaries"], event_data["article_urls"])
-                ]
-                events.append(Event(
-                    id=event_id,
-                    title=event_data.get("event_title", "N/A"),
-                    relevant_for_financial_analysis=event_data.get(
-                        "event_relevant_for_financial_analysis", False),
-                    relevance_score=event_data.get("event_relevance_score", 0),
-                    event_summary=event_data.get("event_summary", ""),
-                    articles=articles
-                ))
-
-        # Extract timestamp from the document
-        timestamp = document.get('timestamp', datetime.utcnow())
-        if isinstance(timestamp, str):
-            timestamp = datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
-
-        relevant_events_count = data["metadata"].get(
-            "no_financially_relevant_events")
-        if relevant_events_count is None:
-            relevant_events_count = data["metadata"].get(
-                "no_matched_clusters", 0)
-
-        country_data[country] = CountryData(
-            country=country,
-            events=events,
-            timestamp=timestamp,
-            hours=data["metadata"].get("hours", 0),
-            no_relevant_events=relevant_events_count,
-            user_id=user_id
-        )
-    return country_data
-
 
 # Dictionary with names of emerging market country names and FIPS 10-4 country codes
 addable_countries = {
@@ -96,18 +42,71 @@ addable_countries = {
 }
 
 
-async def delete_country_data(country: str, user_id: str):
+async def fetch_country_data(user_id: str) -> Dict[str, CountryData]:
+    """
+    Fetch country data from the MongoDB database.
+
+    Returns:
+        dict: A dictionary where keys are country names and values are CountryData objects.
+    """
+    country_data = {}
+    for document in mongo_collection.find({"user_id": user_id}):
+        data = document['summaries']
+        cluster_article_summaries = ClusterArticleSummaries(**data)
+        metadata = cluster_article_summaries.metadata
+        clusters = cluster_article_summaries.clusters
+
+        country = metadata.country_name
+        events = []
+
+        for cluster_id, cluster_data in clusters.items():
+            # Check if cluster_data is already a ClusterSummary object
+            if isinstance(cluster_data, ClusterSummary):
+                cluster_summary = cluster_data
+            else:
+                cluster_summary = ClusterSummary(**cluster_data)
+
+            # Check if the event is relevant for financial analysis
+            if cluster_summary.event_relevance_score > 0:
+                # Create ArticleInfo objects
+                articles = [
+                    ArticleInfo(summary=summary, url=url)
+                    for summary, url in zip(cluster_summary.article_summaries, cluster_summary.article_urls)
+                ]
+                # Create Event object
+                event = Event(
+                    id=cluster_id,
+                    title=cluster_summary.event_title,
+                    relevance_rationale=cluster_summary.event_relevance_rationale,
+                    relevance_score=cluster_summary.event_relevance_score,
+                    event_summary=cluster_summary.event_summary,
+                    articles=articles
+                )
+                events.append(event)
+
+        # Extract timestamp from the document
+        timestamp = document.get('timestamp', datetime.utcnow())
+        if isinstance(timestamp, str):
+            timestamp = datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+
+        country_data[country] = CountryData(
+            country=country,
+            events=events,
+            timestamp=timestamp,
+            hours=metadata.hours,
+            no_relevant_events=metadata.no_financially_relevant_events,
+            user_id=user_id
+        )
+    return country_data
+
+
+async def delete_country_data(country: str, user_id: str) -> bool:
     result = mongo_collection.delete_one(
         {"summaries.metadata.country_name": country, "user_id": user_id})
-    if result.deleted_count == 0:
-        return False
-    return True
+    return result.deleted_count > 0
 
 
 async def update_country_data(country: str, user_id: str, hours: int, area_of_interest: str):
-    # Delete the old data
-    await delete_country_data(country, user_id)
-
     # Run the pipeline with new parameters
     pipeline_input = PipelineInput(
         country=country,
@@ -117,4 +116,9 @@ async def update_country_data(country: str, user_id: str, hours: int, area_of_in
         user_area_of_interest=area_of_interest
     )
 
-    return await run_pipeline(pipeline_input)
+    msg = await run_pipeline(pipeline_input)
+
+    # Delete the old data
+    await delete_country_data(country, user_id)
+
+    return msg

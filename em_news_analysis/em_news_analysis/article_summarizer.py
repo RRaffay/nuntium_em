@@ -4,7 +4,7 @@ import logging
 
 from langchain_openai import ChatOpenAI
 
-from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
+from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader, PlaywrightURLLoader
 from tenacity import retry, stop_after_attempt, wait_fixed
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -25,7 +25,23 @@ open_ai_llm = ChatOpenAI(
 
 
 def clean_text(text: str, level: int = 1, max_words: int = 50000) -> str:
-    """Clean the text with different levels of aggressiveness and truncate if necessary."""
+    """
+    Clean the input text with different levels of aggressiveness and truncate if necessary.
+
+    Args:
+        text (str): The input text to be cleaned.
+        level (int, optional): The level of cleaning aggressiveness. Defaults to 1.
+            1: Basic cleaning (remove HTML, whitespace, non-printable characters)
+            2: Level 1 + remove common web elements and URLs
+            3: Level 2 + remove email addresses and special characters
+        max_words (int, optional): Maximum number of words to keep. Defaults to 50000.
+
+    Returns:
+        str: The cleaned and potentially truncated text.
+
+    Raises:
+        None, but logs a warning if the text is truncated.
+    """
     # Level 1: Basic cleaning
     text = BeautifulSoup(text, "html.parser").get_text()
     text = re.sub(r'\s+', ' ', text).strip()
@@ -83,7 +99,7 @@ def article_summarizer(url: str, objective: str, model: int = 3, max_words: int 
             response.raise_for_status()  # This will raise an exception for HTTP errors
         except Exception as e:
             logger.error(f"Error accessing URL: {e}")
-            return "Error accessing URL"
+            return "INACCESSIBLE"
 
         loader = PyPDFLoader(url, headers=headers)
 
@@ -94,8 +110,32 @@ def article_summarizer(url: str, objective: str, model: int = 3, max_words: int 
             "Accept-Language": "en-US,en;q=0.5",
             "Referer": "https://www.google.com/",
         }
-        loader = WebBaseLoader(url, header_template=custom_headers)
-    docs = loader.load()
+        try:
+            loader = WebBaseLoader(url, header_template=custom_headers)
+            docs = loader.load()
+
+            article_content = ' '.join([doc.page_content for doc in docs])
+
+            if "Enable JavaScript and cookies to continue" in article_content:
+                try:
+                    logger.info(
+                        f"Article requires consent: {url}. Trying to load with PlaywrightURLLoader")
+                    loader = PlaywrightURLLoader(
+                        urls=[url],
+                        remove_selectors=["header", "footer", "nav"],
+                        headless=True
+                    )
+                    docs = loader.load()
+                    article_content = ' '.join(
+                        [doc.page_content for doc in docs])
+                except Exception as e:
+                    logger.error(
+                        f"Error loading article with PlaywrightURLLoader: {e}")
+                    return "INACCESSIBLE"
+
+        except Exception as e:
+            logger.error(f"Error accessing URL: {e}")
+            return "INACCESSIBLE"
 
     # Clean and check the word count of the article content
     article_content = ' '.join([doc.page_content for doc in docs])
@@ -122,7 +162,7 @@ def article_summarizer(url: str, objective: str, model: int = 3, max_words: int 
 
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. Specifically, with the objective of {objective}.\n Note that the current date is {current_date}. If the article is inaccessible, return 'INACCESSIBLE'. The summary should be in English."
+    system_prompt = f"You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it with the following objective:\n\n{objective}.\n\nNote that the current date is {current_date}. \nIf the article is inaccessible, return 'INACCESSIBLE'.\n If the article is not related at all to the objective, return 'NOT_RELEVANT'.\n The summary should be in English."
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -134,13 +174,27 @@ def article_summarizer(url: str, objective: str, model: int = 3, max_words: int 
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
     def invoke_with_retry():
-        return chain.invoke({"input": input_prompt})
+        try:
+            response_value = chain.invoke({"input": input_prompt})
+        except Exception as e:
+            logger.error(f"Error in generating article summary: {str(e)}")
+            raise e
+        if "INACCESSIBLE" in response_value:
+            logger.error(
+                f"Article is inaccessible: {url}. Content: {article_content}")
+            return response_value
+        elif "NOT_RELEVANT" in response_value:
+            logger.error(
+                f"Article is not relevant: {url}.")
+            return response_value
+        else:
+            return response_value
 
     try:
         return invoke_with_retry()
     except Exception as e:
-        logger.error(f"Error in generating summary: {str(e)}")
-        raise Exception(f"Error in generating summary: {str(e)}")
+        logger.error(f"Error in generating article summary: {str(e)}")
+        raise Exception(f"Error in generating article summary: {str(e)}")
 
 
 def generate_summaries(article_urls: List[str], objective: str, max_workers: int = 3) -> List[str]:
@@ -166,10 +220,10 @@ def generate_summaries(article_urls: List[str], objective: str, max_workers: int
             try:
                 summary = future.result()
                 if "INACCESSIBLE" in summary:
-                    summaries[index] = f"Article summarization not allowed. Please read article directly."
+                    summaries[index] = f"INACCESSIBLE"
                 else:
                     summaries[index] = summary
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
-                summaries[index] = f"Article summarization not possible. Please read article directly."
+                summaries[index] = f"INACCESSIBLE"
     return summaries

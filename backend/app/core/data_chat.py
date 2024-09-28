@@ -4,6 +4,7 @@ import logging
 from pydantic import BaseModel
 from config import settings
 from typing import List, Tuple, Optional, Dict, Any
+import random
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,30 +20,43 @@ class DataChatRequest(BaseModel):
     proMode: bool = False
     country: str = ""
     debug: Optional[bool] = DEBUG
+    max_data_points: int = 500
 
     def format_data(self) -> str:
         if isinstance(self.data, str):
-            return f"The data is for {self.country}.\nData:\n{self.data}"
+            return f"Data for {self.country}: {self.data}"
         elif isinstance(self.data, dict):
-            formatted_data = []
+            formatted_data = [f"Data for {self.country}:"]
             for key, value in self.data.items():
                 if isinstance(value, dict) and 'data' in value:
                     formatted_data.append(f"{value.get('label', key)}:")
-                    for item in value['data']:
-                        formatted_value = item['value']
-                        if isinstance(formatted_value, float):
-                            formatted_value = f"{formatted_value:.3f}"
+
+                    # Sample data points if there are too many
+                    data_points = value['data']
+                    if len(data_points) > self.max_data_points:
+                        data_points = random.sample(
+                            data_points, self.max_data_points)
                         formatted_data.append(
-                            f"  {item['date']}: {formatted_value} {value.get('unit', '')}")
-                    formatted_data.append(
-                        f"Source: {value.get('source', 'Unknown')}")
-                    formatted_data.append(
-                        f"Description: {value.get('description', 'No description provided')}")
+                            f"  (Sampled {self.max_data_points}/{len(value['data'])} points)")
+
+                    # Format data points more concisely
+                    formatted_data.extend([
+                        f"  {item['date']}: {item['value']:.3f}" if isinstance(
+                            item['value'], float) else f"  {item['date']}: {item['value']}"
+                        for item in data_points
+                    ])
+
+                    # Include source and description only if they're not empty or default
+                    if value.get('source') and value['source'] != 'Unknown':
+                        formatted_data.append(f"  Source: {value['source']}")
+                    if value.get('description') and value['description'] != 'No description provided':
+                        formatted_data.append(
+                            f"  Description: {value['description']}")
                 else:
                     formatted_data.append(f"{key}: {value}")
-            return f"The data is for {self.country}.\nData:\n" + "\n".join(formatted_data)
+            return "\n".join(formatted_data)
         else:
-            return f"The data is for {self.country}.\nData format not recognized."
+            return f"Data format not recognized for {self.country}."
 
     def generate_payload(self) -> dict:
         logger.info(

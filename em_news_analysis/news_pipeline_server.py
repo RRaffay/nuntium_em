@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, Field
-from em_news_analysis import Config, GDELTNewsPipeline
+from em_news_analysis import ProductionConfig, GDELTNewsPipeline
 import logging
 
 
@@ -30,7 +30,7 @@ class PipelineInput(BaseModel):
 
 @app.post("/run_pipeline")
 async def run_pipeline(input_data: PipelineInput):
-    config = Config()
+    config = ProductionConfig()
     pipeline = GDELTNewsPipeline(config)
 
     try:

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { MarkdownContent } from '@/components/MarkdownContent';
 import { ArticleDialog } from '@/components/ArticleDialog';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Progress } from '@/components/ui/progress';
 import { Event as ApiEvent, Report } from '@/services/api';
+import { Label } from '@/components/ui/label';
+import { ChartNoAxesColumnIncreasing, Text, Target } from 'lucide-react'; // Add this import
 
 interface EventListProps {
   events: ApiEvent[];
@@ -36,28 +37,53 @@ export const EventList: React.FC<EventListProps> = ({
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <span className="text-sm text-gray-500">Relevance Score: {event.relevance_score}</span>
-          <MarkdownContent content={event.event_summary} />
-          <div className="flex space-x-2 mt-4 items-center">
-            <ArticleDialog event={event} />
-            <div className="relative inline-block">
-              <ReportDialog
-                report={eventReports[event.id]}
-                isLoading={isGeneratingEventReport[event.id] || false}
-                onGenerate={() => onGenerateEventReport(event.id)}
-                error={eventReportErrors[event.id] || null}
-                title={`Event Report`}
-                onClose={() => { }}
-                progress={eventReportProgress[event.id] || 0}
-                autoGenerateOnOpen={false}
-                buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
-                canOpen={!isAnyReportGenerating}
-              />
-              {isGeneratingEventReport[event.id] && (
-                <div className="w-full sm:w-auto mt-2">
-                  <Progress className="w-full" value={eventReportProgress[event.id] || 0} />
-                </div>
-              )}
+          <div className="space-y-6">
+            {/* Relevance Score */}
+            <div>
+              <Label className="font-semibold block mb-2 flex items-center">
+                <ChartNoAxesColumnIncreasing className="w-5 h-5 mr-2" /> Relevance Score:
+              </Label>
+              <p className="bg-white p-3 rounded-md border border-gray-200">{event.relevance_score} / 5</p>
+            </div>
+
+            {/* Event Summary */}
+            <div>
+              <Label className="font-semibold block mb-2 flex items-center">
+                <Text className="w-5 h-5 mr-2" /> Event Summary:
+              </Label>
+              <p className="bg-white p-3 rounded-md border border-gray-200">{event.event_summary}</p>
+            </div>
+
+            {/* Relevance Rationale */}
+            <div>
+              <Label className="font-semibold block mb-2 flex items-center">
+                <Target className="w-5 h-5 mr-2" /> Relevance Rationale:
+              </Label>
+              <p className="bg-white p-3 rounded-md border border-gray-200">{event.relevance_rationale}</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-4 mt-6">
+              <ArticleDialog event={event} />
+              <div className="relative flex-grow">
+                <ReportDialog
+                  report={eventReports[event.id]}
+                  isLoading={isGeneratingEventReport[event.id] || false}
+                  onGenerate={() => onGenerateEventReport(event.id)}
+                  error={eventReportErrors[event.id] || null}
+                  title={`Event Report`}
+                  onClose={() => { }}
+                  progress={eventReportProgress[event.id] || 0}
+                  autoGenerateOnOpen={false}
+                  buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
+                  canOpen={!isAnyReportGenerating}
+                />
+                {isGeneratingEventReport[event.id] && (
+                  <div className="mt-2">
+                    <Progress className="w-full" value={eventReportProgress[event.id] || 0} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </AccordionContent>

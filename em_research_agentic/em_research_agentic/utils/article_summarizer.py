@@ -75,11 +75,11 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
             }
             response = requests.get(url, headers=headers)
             response.raise_for_status()  # This will raise an exception for HTTP errors
+            loader = PyPDFLoader(url, headers=headers)
+            docs = loader.load()
         except Exception as e:
             logger.error(f"Error accessing URL: {e}")
             return "Error accessing URL"
-
-        loader = PyPDFLoader(url, headers=headers)
 
     else:
         custom_headers = {
@@ -88,13 +88,17 @@ def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
             "Accept-Language": "en-US,en;q=0.5",
             "Referer": "https://www.google.com/"
         }
-        loader = WebBaseLoader(url, header_template=custom_headers)
-    docs = loader.load()
-    try:
-        docs = loader.load()
-    except Exception as e:
-        logger.error(f"Error in loading doc {str(e)}")
-        return f"Error in loading doc {str(e)}"
+        try:
+            loader = WebBaseLoader(url, header_template=custom_headers)
+
+            # Add this block to handle XML files
+            if url.endswith('.xml'):
+                loader.default_parser = 'lxml'
+
+            docs = loader.load()
+        except Exception as e:
+            logger.error(f"Error in loading doc {str(e)}")
+            return f"Error in loading doc {str(e)}"
 
     # Clean and check the word count of the article content
     article_content = ' '.join([doc.page_content for doc in docs])
