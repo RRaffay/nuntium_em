@@ -1,8 +1,10 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, ConfigDict
 import os
 from typing import List, Dict
 import logging.config
+
+logger = logging.getLogger(__name__)
 
 
 class BaseConfig(BaseSettings):
@@ -30,11 +32,14 @@ class BaseConfig(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
     RATE_LIMITS: Dict[str, str]
     ECONDB_API_KEY: str
+    TESTING: bool = False
 
     # Logging configuration
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     LOG_FILE: str = "app.log"
+
+    model_config = ConfigDict(env_file=".env", extra="ignore")
 
     @property
     def LOGGING_CONFIG(self):
@@ -80,9 +85,6 @@ class BaseConfig(BaseSettings):
         """
         logging.config.dictConfig(self.LOGGING_CONFIG)
 
-    class Config:
-        env_file = ".env"
-
 
 class DevelopmentConfig(BaseConfig):
     """
@@ -90,6 +92,7 @@ class DevelopmentConfig(BaseConfig):
     Inherits from BaseConfig and overrides some settings for development use.
     """
     DEBUG: bool = True
+    TESTING: bool = False
     RATE_LIMITS: Dict[str, str] = {
         "run_country_pipeline": "20/hour",
         "generate_country_report": "30/hour",
@@ -118,6 +121,7 @@ class ProductionConfig(BaseConfig):
     Inherits from BaseConfig and overrides some settings for production use.
     """
     DEBUG: bool = False
+    TESTING: bool = False
     RATE_LIMITS: Dict[str, str] = {
         "run_country_pipeline": "5/hour",
         "generate_country_report": "10/hour",
@@ -140,16 +144,59 @@ class ProductionConfig(BaseConfig):
     METRIC_CACHE_TIMEOUT: int = 14400  # 4 hours
 
 
+class TestingConfig(BaseConfig):
+    """
+    Configuration class for the testing environment.
+    Inherits from BaseConfig and overrides some settings for testing use.
+    """
+    DEBUG: bool = True
+    TESTING: bool = True
+    MONGO_URI: str = "mongodb://localhost:27017"
+    MONGO_EVENT_DB_NAME: str = 'gdelt_news'
+    MONGO_EVENT_COLLECTION_NAME: str = 'news_summaries'
+    MONGO_AUTH_DB_NAME: str = 'nuntium_users'
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    RATE_LIMITS: Dict[str, str] = {
+        "run_country_pipeline": "100/hour",
+        "generate_country_report": "100/hour",
+        "generate_event_report": "100/hour",
+        "research_chat": "100/hour",
+        "get_country_metrics": "100/hour",
+        "data_question": "100/minute",
+        "data_chat": "100/minute",
+        "generate_clarifying_questions": "100/minute",
+        "open_research_report": "100/minute",
+        "update_country": "100/day",
+    }
+    MAX_REVISIONS_REPORT: int = 5
+    REVISION_NUMBER_REPORT: int = 1
+    EVENT_REPORT_TIMEOUT: int = 60
+    COUNTRY_REPORT_TIMEOUT: int = 60
+    REPORT_CHAT_TIMEOUT: int = 60
+    DATA_CHAT_TIMEOUT: int = 60
+    REPORT_CACHE_TIMEOUT: int = 60
+    METRIC_CACHE_TIMEOUT: int = 60
+
+
 def get_settings():
     """
     Get the appropriate settings based on the current environment.
 
     Returns:
-        BaseConfig: An instance of either ProductionConfig or DevelopmentConfig.
+        BaseConfig: An instance of ProductionConfig, DevelopmentConfig, or TestingConfig.
     """
-    env = os.getenv("APP_ENV", "development")
-    config_class = ProductionConfig if env == "production" else DevelopmentConfig
-    return config_class()
+    env = os.getenv("APP_ENV", "testing")
+    logger.info(f"Environment: {env}")
+    if env == "production":
+        logger.info("Using production config")
+        return ProductionConfig()
+    elif env == "testing":
+        logger.info("Using testing config")
+        return TestingConfig()
+    else:
+        logger.info("Using development config")
+        return DevelopmentConfig()
 
 
 settings = get_settings()

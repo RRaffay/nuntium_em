@@ -21,6 +21,8 @@ from core.data_chat import data_chat, DataChatRequest
 from cache.cache import cached_with_logging, DateTimeEncoder
 import json
 from pydantic import BaseModel, Field
+from fastapi_cache import FastAPICache
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -296,6 +298,8 @@ async def delete_country(country: str, user: User = Depends(current_active_user)
         else:
             raise HTTPException(
                 status_code=500, detail="Failed to delete country data")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in delete_country: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
