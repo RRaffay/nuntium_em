@@ -243,8 +243,8 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
   }
 
   return (
-    <Card className="mt-4 relative h-[calc(90vh)]">
-      <CardContent className="p-0 h-full flex flex-col">
+    <Card className="mt-4 relative h-[calc(90vh)]" data-testid="economic-indicators-chart">
+      <CardContent className="p-0 h-full flex flex-col" >
         <div className="p-4 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Visualization Settings</h2>
           {enableChat && !isSmallScreen && (

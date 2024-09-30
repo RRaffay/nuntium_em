@@ -230,6 +230,7 @@ const Dashboard: React.FC = React.memo(() => {
                     size="icon"
                     onClick={(e) => handleDeleteCountry(country.name, e)}
                     className="absolute top-2 right-2"
+                    aria-label={`Delete ${country.name}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

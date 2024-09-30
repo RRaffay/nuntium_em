@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Report } from '@/services/api';
 import { MarkdownContent } from '@/components/MarkdownContent';
@@ -18,6 +19,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import { MessageCircle } from "lucide-react";
+import { forwardRef, useImperativeHandle } from 'react';
 
 const downloadReport = (content: string, filename: string) => {
   const blob = new Blob([content], { type: 'text/markdown' });
@@ -45,7 +47,11 @@ interface ReportDialogProps {
   autoOpen?: boolean;
 }
 
-export const ReportDialog: React.FC<ReportDialogProps> = ({
+export interface ReportDialogRef {
+  openDialog: () => void;
+}
+
+export const ReportDialog = forwardRef<ReportDialogRef, ReportDialogProps>(({
   report,
   isLoading,
   onGenerate,
@@ -57,7 +63,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
   buttonText,
   canOpen,
   autoOpen = false,
-}) => {
+}, ref) => {
   const [isOpen, setIsOpen] = useState(autoOpen);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatSize, setChatSize] = useState(50);
@@ -95,17 +101,25 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
     }
   };
 
+  useImperativeHandle(ref, () => ({
+    openDialog: () => setIsOpen(true),
+  }));
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           disabled={isLoading}
           onClick={handleButtonClick}
+          data-testid="report-dialog-trigger"
         >
           {isLoading ? "Generating..." : buttonText}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[95vw] h-[95vh] flex flex-col">
+      <DialogContent className="sm:max-w-[95vw] h-[95vh] flex flex-col" data-testid="report-dialog-content">
+        <DialogDescription className="sr-only">
+          Report details and chat interface
+        </DialogDescription>
         <DialogHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
           <DialogTitle>{title}</DialogTitle>
           <div className="flex flex-wrap gap-2 items-center mt-2 sm:mt-0">
@@ -186,4 +200,4 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+});
