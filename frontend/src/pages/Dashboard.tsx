@@ -59,6 +59,12 @@ const Dashboard: React.FC = React.memo(() => {
 
   const easeOutQuad = (t: number) => t * (2 - t);
 
+  useEffect(() => {
+    // Add this effect to trigger the tutorial
+    const event = new CustomEvent('startTutorial', { detail: { component: 'Dashboard' } });
+    window.dispatchEvent(event);
+  }, []);
+
   const handleAddCountry = useCallback(async () => {
     setIsAddingCountry(true);
     setAddProgress(0);
@@ -132,7 +138,7 @@ const Dashboard: React.FC = React.memo(() => {
       <div className="flex justify-between items-center mb-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button disabled={!isVerified}>
+            <Button disabled={!isVerified} data-testid="add-country-button">
               {isVerified ? 'Add Country' : 'Verify Email to Add Country'}
             </Button>
           </DialogTrigger>
@@ -220,7 +226,7 @@ const Dashboard: React.FC = React.memo(() => {
 
       <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
         {countries.map((country) => (
-          <Link key={country.name} to={`/country/${country.name}`}>
+          <Link key={country.name} to={`/country/${country.name}`} data-testid="country-card">
             <Card className="hover:shadow-lg transition-shadow duration-300 relative">
               <CardHeader>
                 <CardTitle className="flex justify-between items-center">

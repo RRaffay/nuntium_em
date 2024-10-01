@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCountryData } from '@/hooks/useCountryData';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { useTour } from '@/contexts/TourContext';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -63,6 +64,35 @@ const CountryPage: React.FC = () => {
     }
   }, [country, newInterest, updateCountryInterest]);
 
+  const { startTour, currentStep, isWaitingForCharts, setIsWaitingForCharts } = useTour();
+
+  useEffect(() => {
+    if (countryData) {
+      // Delay starting the tour to ensure components are mounted
+      setTimeout(() => {
+        startTour('CountryPage');
+      }, 500);
+    }
+  }, [countryData, startTour]);
+
+  useEffect(() => {
+    // Switch to charts view when reaching the appropriate step
+    if (currentStep === 9) { // Adjust this index based on when you want to switch to charts view
+      setViewMode("charts");
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (viewMode === "charts" && isWaitingForCharts) {
+      // Wait for a short delay to ensure the charts are rendered
+      const timer = setTimeout(() => {
+        setIsWaitingForCharts(false);
+      }, 5000); // Adjust this delay as needed
+
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode, isWaitingForCharts, setIsWaitingForCharts]);
+
   if (error) {
     return <div className="text-red-500">{error}</div>;
   }
@@ -75,12 +105,12 @@ const CountryPage: React.FC = () => {
 
   const renderEventsSection = () => {
     return (
-      <div className="w-full">
+      <div className="w-full" data-testid="events-section">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Events</h2>
           <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>Fetch New Events</Button>
+              <Button data-testid="fetch-new-events-button">Fetch New Events</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -178,7 +208,13 @@ const CountryPage: React.FC = () => {
         onChangeInterest={(e) => setNewInterest(e.target.value)}
       />
       <Separator className="my-4" />
-      <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)} className="justify-center">
+      <ToggleGroup
+        type="single"
+        value={viewMode}
+        onValueChange={(value) => value && setViewMode(value)}
+        className="justify-center"
+        data-testid="toggle-view-mode"
+      >
         <ToggleGroupItem
           value="events"
           aria-label="Toggle events view"
