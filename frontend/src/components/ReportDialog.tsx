@@ -45,6 +45,7 @@ interface ReportDialogProps {
   buttonText: string;
   canOpen: boolean;
   autoOpen?: boolean;
+  testId?: string;
 }
 
 export interface ReportDialogRef {
@@ -63,6 +64,7 @@ export const ReportDialog = forwardRef<ReportDialogRef, ReportDialogProps>(({
   buttonText,
   canOpen,
   autoOpen = false,
+  testId,
 }, ref) => {
   const [isOpen, setIsOpen] = useState(autoOpen);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -108,13 +110,14 @@ export const ReportDialog = forwardRef<ReportDialogRef, ReportDialogProps>(({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          disabled={isLoading}
-          onClick={handleButtonClick}
-          data-testid="report-dialog-trigger"
-        >
-          {isLoading ? "Generating..." : buttonText}
-        </Button>
+        <div data-testid={testId}>
+          <Button
+            disabled={isLoading}
+            onClick={handleButtonClick}
+          >
+            {isLoading ? "Generating..." : buttonText}
+          </Button>
+        </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[95vw] h-[95vh] flex flex-col" data-testid="report-dialog-content">
         <DialogDescription className="sr-only">

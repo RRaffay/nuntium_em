@@ -36,6 +36,21 @@ jest.mock('@/services/auth', () => ({
   },
 }));
 
+// Mock the TourContext
+jest.mock('@/contexts/TourContext', () => ({
+  ...jest.requireActual('@/contexts/TourContext'),
+  useTour: () => ({
+    startTour: jest.fn(),
+    currentStep: 0,
+    isWaitingForCharts: false,
+    setIsWaitingForCharts: jest.fn(),
+    setSteps: jest.fn(),
+    // Add any other tour-related properties or functions you need for testing
+  }),
+  TourProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+
 describe('App', () => {
   beforeEach(() => {
     (useLocation as jest.Mock).mockReturnValue({ pathname: '/' });

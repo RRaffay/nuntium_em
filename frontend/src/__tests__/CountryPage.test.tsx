@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import CountryPage from '../pages/CountryPage';
 import { AuthProvider } from '@/contexts/AuthContext';
 import userEvent from '@testing-library/user-event';
+import { TourProvider } from '@/contexts/TourContext';
 
 // Mock the hooks
 jest.mock('@/hooks/useCountryData', () => ({
@@ -15,6 +16,20 @@ jest.mock('@/hooks/useMetricsData', () => ({
 }));
 jest.mock('@/hooks/useReportGeneration', () => ({
     useReportGeneration: jest.fn(),
+}));
+
+// Mock the TourContext
+jest.mock('@/contexts/TourContext', () => ({
+    ...jest.requireActual('@/contexts/TourContext'),
+    useTour: () => ({
+        startTour: jest.fn(),
+        currentStep: 0,
+        isWaitingForCharts: false,
+        setIsWaitingForCharts: jest.fn(),
+        setSteps: jest.fn(),
+        // Add any other tour-related properties or functions you need for testing
+    }),
+    TourProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 // Mock the api module
@@ -65,8 +80,8 @@ Object.defineProperty(window, 'matchMedia', {
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(), // Deprecated
-        removeListener: jest.fn(), // Deprecated
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
         addEventListener: jest.fn(),
         removeEventListener: jest.fn(),
         dispatchEvent: jest.fn(),

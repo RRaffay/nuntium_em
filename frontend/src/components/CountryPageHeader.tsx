@@ -32,15 +32,17 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
   const isSmallScreen = useMediaQuery('(max-width: 640px)');
 
   return (
-    <div>
+    <div data-testid="country-page-header">
       <div className={`${isSmallScreen ? 'flex flex-col' : 'flex justify-between items-center'} mb-6`}>
         <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">{countryData.country}</h2>
-        <Button
-          onClick={() => setIsOpenResearchDialogOpen(true)}
-          className={isSmallScreen ? 'w-full' : ''}
-        >
-          Generate Open Research Report
-        </Button>
+        <div data-testid="generate-open-research-report-button">
+          <Button
+            onClick={() => setIsOpenResearchDialogOpen(true)}
+            className={isSmallScreen ? 'w-full' : ''}
+          >
+            Generate Open Research Report
+          </Button>
+        </div>
       </div>
       <div className={`grid ${isSmallScreen ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5'} gap-4`}>
         <InfoItem
@@ -71,9 +73,10 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
           <InfoItem
             icon={<User className="w-5 h-5 text-gray-500" />}
             label="Your Area of Interest"
+            testId="edit-area-of-interest-input"
             value={
               isEditingInterest ? (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2" >
                   <Input
                     value={newInterest}
                     onChange={onChangeInterest}
@@ -107,7 +110,7 @@ export const CountryPageHeader: React.FC<CountryPageHeaderProps> = ({
         onClose={() => setIsOpenResearchDialogOpen(false)}
         country={countryData.country}
       />
-    </div>
+    </div >
   );
 };
 
@@ -116,13 +119,14 @@ interface InfoItemProps {
   label: string;
   value: React.ReactNode;
   tooltip: string;
+  testId?: string;
 }
 
-const InfoItem: React.FC<InfoItemProps> = ({ icon, label, value, tooltip }) => (
+const InfoItem: React.FC<InfoItemProps> = ({ icon, label, value, tooltip, testId }) => (
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex items-start space-x-3 p-3 bg-white rounded-md">
+        <div className="flex items-start space-x-3 p-3 bg-white rounded-md" data-testid={testId}>
           <div className="mt-1">{icon}</div>
           <div>
             <p className="text-sm font-medium text-gray-500">{label}</p>
