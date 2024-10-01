@@ -7,10 +7,10 @@ import { HelpCircle } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
-  const { currentTourType, setCurrentTourType } = useTour();
+  const { startTour, currentTourType, setAutoStartTour } = useTour();
   const location = useLocation();
 
-  const startTutorial = () => {
+  const handleStartTour = () => {
     let component: 'All' | 'Dashboard' | 'CountryPage';
 
     if (location.pathname === '/') {
@@ -21,9 +21,8 @@ const Header: React.FC = () => {
       component = 'All';
     }
 
-    setCurrentTourType(component);
-    const event = new CustomEvent('startTutorial', { detail: { component } });
-    window.dispatchEvent(event);
+    setAutoStartTour(true);
+    startTour(component);
   };
 
   if (!isAuthenticated) {
@@ -37,7 +36,7 @@ const Header: React.FC = () => {
           Nuntium
         </Link>
         <div className="flex items-center">
-          <Button onClick={startTutorial} variant="ghost" className="mr-4" data-testid="start-tour-button">
+          <Button onClick={handleStartTour} variant="ghost" className="mr-4" data-testid="start-tour-button">
             <HelpCircle className="mr-2 h-4 w-4" />
             Start {currentTourType === 'CountryPage' ? 'Country' : 'Dashboard'} Tour
           </Button>

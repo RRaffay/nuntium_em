@@ -12,6 +12,8 @@ import { Progress } from '@/components/ui/progress';
 import { Trash2 } from 'lucide-react';
 import { FileText, Clock, AlertTriangle } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useTour } from '@/contexts/TourContext';
+import { useTourSteps } from '@/hooks/useTourSteps';
 
 const Dashboard: React.FC = React.memo(() => {
   const [countries, setCountries] = useState<CountryInfo[]>([]);
@@ -28,6 +30,9 @@ const Dashboard: React.FC = React.memo(() => {
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<string>("grid");
   const [countryInterest, setCountryInterest] = useState<string>('');
+
+  const { startTour } = useTour();
+  useTourSteps('Dashboard');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,10 +65,8 @@ const Dashboard: React.FC = React.memo(() => {
   const easeOutQuad = (t: number) => t * (2 - t);
 
   useEffect(() => {
-    // Add this effect to trigger the tutorial
-    const event = new CustomEvent('startTutorial', { detail: { component: 'Dashboard' } });
-    window.dispatchEvent(event);
-  }, []);
+    startTour('Dashboard');
+  }, [startTour]);
 
   const handleAddCountry = useCallback(async () => {
     setIsAddingCountry(true);

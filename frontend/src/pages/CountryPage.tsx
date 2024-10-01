@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useTour } from '@/contexts/TourContext';
+import { useTourSteps } from '@/hooks/useTourSteps';
 
 const CountryPage: React.FC = () => {
   const { country } = useParams<{ country: string }>();
@@ -65,10 +66,10 @@ const CountryPage: React.FC = () => {
   }, [country, newInterest, updateCountryInterest]);
 
   const { startTour, currentStep, isWaitingForCharts, setIsWaitingForCharts } = useTour();
+  useTourSteps('CountryPage');
 
   useEffect(() => {
     if (countryData) {
-      // Delay starting the tour to ensure components are mounted
       setTimeout(() => {
         startTour('CountryPage');
       }, 500);
@@ -76,18 +77,16 @@ const CountryPage: React.FC = () => {
   }, [countryData, startTour]);
 
   useEffect(() => {
-    // Switch to charts view when reaching the appropriate step
-    if (currentStep === 9) { // Adjust this index based on when you want to switch to charts view
+    if (currentStep === 9) {
       setViewMode("charts");
     }
   }, [currentStep]);
 
   useEffect(() => {
     if (viewMode === "charts" && isWaitingForCharts) {
-      // Wait for a short delay to ensure the charts are rendered
       const timer = setTimeout(() => {
         setIsWaitingForCharts(false);
-      }, 5000); // Adjust this delay as needed
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
