@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import Dashboard from '../pages/Dashboard';
 import { api } from '@/services/api';
+import { TourProvider } from '@/contexts/TourContext';
 
 jest.mock('@/services/api', () => ({
     api: {
@@ -23,6 +24,20 @@ jest.mock('@/contexts/AuthContext', () => ({
     }),
 }));
 
+// Mock the TourContext
+jest.mock('@/contexts/TourContext', () => ({
+    ...jest.requireActual('@/contexts/TourContext'),
+    useTour: () => ({
+        startTour: jest.fn(),
+        currentStep: 0,
+        isWaitingForCharts: false,
+        setIsWaitingForCharts: jest.fn(),
+        setSteps: jest.fn(),
+        // Add any other tour-related properties or functions you need for testing
+    }),
+    TourProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 describe('Dashboard', () => {
     beforeEach(() => {
         (api.getCountries as jest.Mock).mockResolvedValue([
@@ -34,9 +49,11 @@ describe('Dashboard', () => {
     it('renders dashboard with country list', async () => {
         render(
             <AuthProvider>
-                <MemoryRouter>
-                    <Dashboard />
-                </MemoryRouter>
+                <TourProvider>
+                    <MemoryRouter>
+                        <Dashboard />
+                    </MemoryRouter>
+                </TourProvider>
             </AuthProvider>
         );
 
@@ -49,9 +66,11 @@ describe('Dashboard', () => {
     it('opens add country dialog', async () => {
         render(
             <AuthProvider>
-                <MemoryRouter>
-                    <Dashboard />
-                </MemoryRouter>
+                <TourProvider>
+                    <MemoryRouter>
+                        <Dashboard />
+                    </MemoryRouter>
+                </TourProvider>
             </AuthProvider>
         );
 
@@ -67,9 +86,11 @@ describe('Dashboard', () => {
 
         render(
             <AuthProvider>
-                <MemoryRouter>
-                    <Dashboard />
-                </MemoryRouter>
+                <TourProvider>
+                    <MemoryRouter>
+                        <Dashboard />
+                    </MemoryRouter>
+                </TourProvider>
             </AuthProvider>
         );
 

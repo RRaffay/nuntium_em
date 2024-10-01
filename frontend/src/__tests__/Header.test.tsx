@@ -12,6 +12,21 @@ jest.mock('@/contexts/AuthContext', () => ({
     }),
 }));
 
+// Mock the TourContext
+jest.mock('@/contexts/TourContext', () => ({
+    ...jest.requireActual('@/contexts/TourContext'),
+    useTour: () => ({
+        startTour: jest.fn(),
+        currentStep: 0,
+        isWaitingForCharts: false,
+        setIsWaitingForCharts: jest.fn(),
+        setSteps: jest.fn(),
+        // Add any other tour-related properties or functions you need for testing
+    }),
+    TourProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+
 describe('Header', () => {
     it('renders header when authenticated', () => {
         render(
