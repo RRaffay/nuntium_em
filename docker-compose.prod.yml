@@ -6,18 +6,26 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    depends_on:
+      - backend
 
   backend:
     build:
       context: ./backend
       dockerfile: DockerFile
     depends_on:
-      - mongodb
-      - report_server
-      - news_pipeline_server
-      - redis
-      - research_chat
-      - data_chat 
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      report_server:
+        condition: service_started
+      news_pipeline_server:
+        condition: service_started
+      research_chat:
+        condition: service_started
+      data_chat:
+        condition: service_started
     env_file:
       - .env
     restart: unless-stopped
@@ -32,7 +40,8 @@ services:
       context: ./em_research_agentic
       dockerfile: Dockerfile
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     env_file:
       - .env
     restart: unless-stopped
@@ -47,7 +56,8 @@ services:
       context: ./em_news_analysis
       dockerfile: Dockerfile
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -68,13 +78,21 @@ services:
     volumes:
       - /mnt/volume_nyc1_01/mongodb:/data/db
     command: ["mongod", "--bind_ip", "localhost,mongodb"]
+    healthcheck:
+      test: mongosh --eval 'db.runCommand("ping").ok' --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
 
   research_chat:
     build:
       context: ./em_research_chat
       dockerfile: Dockerfile
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     env_file:
       - .env
     restart: unless-stopped
@@ -88,6 +106,11 @@ services:
     image: redis:latest
     volumes:
       - /mnt/volume_nyc1_01/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   nginx:
     image: nginx:latest
@@ -118,7 +141,8 @@ services:
       context: ./em_data_chat
       dockerfile: Dockerfile
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     env_file:
       - .env
     restart: unless-stopped

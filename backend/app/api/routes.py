@@ -21,6 +21,8 @@ from core.data_chat import data_chat, DataChatRequest
 from cache.cache import cached_with_logging, DateTimeEncoder
 import json
 from pydantic import BaseModel, Field
+from fastapi_cache import FastAPICache
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +259,8 @@ async def open_research_report_route(request: Request, input_data: Dict[str, Any
         )
 
         report_content = await open_research_report(report_input)
-        logger.info(f"Generated open research report: {report_content}")
+        logger.info(
+            f"Generated open research report: {report_content[:100]}...{report_content[-100:]}")
         return Report(content=report_content, generated_at=datetime.now().isoformat())
     except Exception as e:
         logger.error(
@@ -295,6 +298,8 @@ async def delete_country(country: str, user: User = Depends(current_active_user)
         else:
             raise HTTPException(
                 status_code=500, detail="Failed to delete country data")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in delete_country: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

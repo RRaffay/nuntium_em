@@ -4,7 +4,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import PrivateRoute from '@/components/PrivateRoute';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
-
+import Joyride from 'react-joyride';
+import { useTour } from '@/contexts/TourContext';
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const CountryPage = lazy(() => import('@/pages/CountryPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
@@ -55,9 +56,35 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const {
+    steps,
+    runTour,
+    handleJoyrideCallback,
+    isWaitingForCharts,
+    autoStartTour,
+  } = useTour();
+
   return (
     <AuthProvider>
       <Router>
+        <Joyride
+          steps={steps}
+          run={runTour && !isWaitingForCharts && autoStartTour}
+          continuous
+          showSkipButton
+          showProgress
+          callback={handleJoyrideCallback}
+          disableOverlayClose
+          disableCloseOnEsc
+          styles={{
+            options: {
+              primaryColor: '#000000',
+            },
+          }}
+          locale={{
+            last: 'Finish',
+          }}
+        />
         <AppContent />
       </Router>
     </AuthProvider>

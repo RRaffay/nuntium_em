@@ -14,7 +14,7 @@ import numpy as np
 import yfinance as yf
 from requests.exceptions import RequestException
 from dotenv import load_dotenv
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 import time
 from requests.exceptions import RequestException, HTTPError
 
@@ -31,7 +31,7 @@ class DataPoint(BaseModel):
     date: date
     value: Optional[float]
 
-    @validator('value')
+    @field_validator('value')
     def check_value(cls, v):
         if v is not None and not math.isfinite(v):
             return None
@@ -50,7 +50,7 @@ class MetricData(BaseModel):
     source: str
     description: str
 
-    @validator('label', 'unit', 'source', 'description', pre=True, always=True)
+    @field_validator('label', 'unit', 'source', 'description', mode='before')
     def validate_string_fields(cls, v):
         if isinstance(v, str):
             return v
