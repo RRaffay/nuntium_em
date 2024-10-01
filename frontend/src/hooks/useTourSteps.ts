@@ -17,7 +17,7 @@ export const useTourSteps = (component: 'Dashboard' | 'CountryPage') => {
         },
         {
           target: '[data-testid="add-country-button"]',
-          content: 'Click here to add a new country to your dashboard.',
+          content: 'Click here to add a new country to your dashboard. This opens a form where you can specify the country of interest, the amount of hours you want to track the data for, and the area of interest you want to research.',
         },
         {
           target: '[data-testid="country-card"]',
@@ -52,11 +52,11 @@ export const useTourSteps = (component: 'Dashboard' | 'CountryPage') => {
           },
           {
             target: '[data-testid="event-accordion-item"] [data-testid="article-dialog-button"]',
-            content: 'This button opens a dialog with the full article text.',
+            content: 'This button opens all the articles related to the event, including their summary and links',
           },
           {
             target: '[data-testid="event-accordion-item"] [data-testid="report-dialog-button"]',
-            content: 'Click here to generate or view a report for this event.',
+            content: 'Click here to generate or view a report for this event. This generates a report about the event given your area of interest in the header. Note that this takes between 1-3 minutes to generate.',
           },
           {
             target: '[data-testid="fetch-new-events-button"]',
@@ -76,15 +76,15 @@ export const useTourSteps = (component: 'Dashboard' | 'CountryPage') => {
           },
           {
             target: '[data-testid="metric-selector"]',
-            content: 'Select different metrics to display on the chart.',
+            content: 'Select different indicators to display on the chart.',
           },
           {
             target: '[data-testid="chat-button"]',
-            content: 'Click here to open the chat interface.',
+            content: 'Use this button to open and interact with the chat interface.',
           },
           {
             target: '[data-testid="pro-mode-switch"]',
-            content: 'Toggle Pro Mode for more detailed responses.',
+            content: 'Toggle Pro Mode for more detailed, quantitative responses. Note this might take longer.',
           },
           {
             target: '[data-testid="chat-input"]',
@@ -92,7 +92,7 @@ export const useTourSteps = (component: 'Dashboard' | 'CountryPage') => {
           },
           {
             target: '[data-testid="send-button"]',
-            content: 'Click to send your question and get an AI-generated response.',
+            content: 'Click to send your question and get responses from Nuntium.',
           },
           {
             target: '[data-testid="clear-chat-button"]',

@@ -64,9 +64,9 @@ const Dashboard: React.FC = React.memo(() => {
 
   const easeOutQuad = (t: number) => t * (2 - t);
 
-  useEffect(() => {
-    startTour('Dashboard');
-  }, [startTour]);
+  // useEffect(() => {
+  //   startTour('Dashboard');
+  // }, [startTour]);
 
   const handleAddCountry = useCallback(async () => {
     setIsAddingCountry(true);

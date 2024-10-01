@@ -1,13 +1,11 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import PrivateRoute from '@/components/PrivateRoute';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import Joyride from 'react-joyride';
-import { TourProvider } from '@/contexts/TourContext';
 import { useTour } from '@/contexts/TourContext';
-
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const CountryPage = lazy(() => import('@/pages/CountryPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
@@ -78,6 +76,14 @@ const App: React.FC = () => {
           callback={handleJoyrideCallback}
           disableOverlayClose
           disableCloseOnEsc
+          styles={{
+            options: {
+              primaryColor: '#000000',
+            },
+          }}
+          locale={{
+            last: 'Finish',
+          }}
         />
         <AppContent />
       </Router>

@@ -68,13 +68,13 @@ const CountryPage: React.FC = () => {
   const { startTour, currentStep, isWaitingForCharts, setIsWaitingForCharts } = useTour();
   useTourSteps('CountryPage');
 
-  useEffect(() => {
-    if (countryData) {
-      setTimeout(() => {
-        startTour('CountryPage');
-      }, 500);
-    }
-  }, [countryData, startTour]);
+  // useEffect(() => {
+  //   if (countryData) {
+  //     setTimeout(() => {
+  //       startTour('CountryPage');
+  //     }, 500);
+  //   }
+  // }, [countryData, startTour]);
 
   useEffect(() => {
     if (currentStep === 9) {
