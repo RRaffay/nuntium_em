@@ -157,6 +157,11 @@ class TestingConfig(BaseConfig):
     MONGO_AUTH_DB_NAME: str = 'nuntium_users'
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
+    JWT_SECRET: str = "test_jwt_secret"
+    MAIL_USERNAME: str = "test@example.com"
+    MAIL_PASSWORD: str = "test_password"
+    MAIL_FROM: str = "test@example.com"
+    ECONDB_API_KEY: str = "test_econdb_api_key"
     RATE_LIMITS: Dict[str, str] = {
         "run_country_pipeline": "100/hour",
         "generate_country_report": "100/hour",
