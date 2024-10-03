@@ -52,7 +52,8 @@ async def create_user(email: str,
                 return user
     except UserAlreadyExists:
         print(f"User {email} already exists")
-        return None
+        existing_user = await User.find_one(User.email == email)
+        return existing_user
 
 
 # Example run

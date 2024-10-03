@@ -10,21 +10,38 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+
     steps:
     - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'  
+        python-version: '3.11'
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pypoetry/virtualenvs
+        key: ${{ runner.os }}-poetry-${{ hashFiles('backend/pyproject.toml') }}
 
     - name: Install Poetry
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: pip install poetry
 
     - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       working-directory: ./backend
       run: poetry install
 
     - name: Run tests
       working-directory: ./backend
       run: poetry run pytest
+      env:
+        MONGO_URI: mongodb://localhost:27017

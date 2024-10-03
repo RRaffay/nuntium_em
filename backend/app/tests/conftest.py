@@ -39,4 +39,5 @@ async def authenticated_client(event_loop):
         })
         token = response.json()["access_token"]
         ac.headers.update({"Authorization": f"Bearer {token}"})
+        ac.user = user  # Store the user object in the client
         yield ac

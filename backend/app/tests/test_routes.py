@@ -65,7 +65,7 @@ async def test_get_country_data(authenticated_client):
             timestamp=datetime.now(),
             hours=3,
             no_relevant_events=0,
-            user_id="66fad757a7c3aca4ca322123"
+            user_id=str(authenticated_client.user.id)
         )
     }
 
@@ -115,7 +115,7 @@ async def test_delete_country(authenticated_client):
             timestamp=datetime.now(),
             hours=3,
             no_relevant_events=0,
-            user_id="66fad757a7c3aca4ca322123"
+            user_id=str(authenticated_client.user.id)
         )
     }
 
@@ -129,9 +129,10 @@ async def test_delete_country(authenticated_client):
             assert response.status_code == 200
             assert response.json()[
                 "message"] == "Country data for Brazil has been deleted"
-            mock_fetch.assert_called_once_with("66fad757a7c3aca4ca322123")
+            mock_fetch.assert_called_once_with(
+                str(authenticated_client.user.id))
             mock_delete.assert_called_once_with(
-                "Brazil", "66fad757a7c3aca4ca322123")
+                "Brazil", str(authenticated_client.user.id))
 
 
 @pytest.mark.asyncio
@@ -201,7 +202,7 @@ async def test_generate_event_report(authenticated_client):
             timestamp=datetime.now(),
             hours=3,
             no_relevant_events=1,
-            user_id="66fad757a7c3aca4ca322123"
+            user_id=str(authenticated_client.user.id)
         )
     }
     mock_report_content = "This is a mock event report for Brazil."
@@ -215,7 +216,8 @@ async def test_generate_event_report(authenticated_client):
 
             assert response.status_code == 200
             assert response.json()["content"] == mock_report_content
-            mock_fetch.assert_called_once_with("66fad757a7c3aca4ca322123")
+            mock_fetch.assert_called_once_with(
+                str(authenticated_client.user.id))
             mock_report.assert_called_once()
 
 
@@ -230,4 +232,4 @@ async def test_delete_country_not_found(authenticated_client):
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Country not found"
-        mock_fetch.assert_called_once_with("66fad757a7c3aca4ca322123")
+        mock_fetch.assert_called_once_with(str(authenticated_client.user.id))
