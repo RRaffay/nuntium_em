@@ -38,7 +38,7 @@ const Header: React.FC = () => {
         <div className="flex items-center">
           <Button onClick={handleStartTour} variant="ghost" className="mr-4" data-testid="start-tour-button">
             <HelpCircle className="mr-2 h-4 w-4" />
-            Start {currentTourType === 'CountryPage' ? 'Country Page' : 'Dashboard'} Tour
+            Explore Page
           </Button>
           <Link to="/profile" className="mr-4">
             <Button variant="default">Profile</Button>
