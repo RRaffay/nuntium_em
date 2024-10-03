@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,17 +13,36 @@ const RegisterPage: React.FC = () => {
   const [areaOfInterest, setAreaOfInterest] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { register } = useAuth();
-  const navigate = useNavigate();
+  const [isRegistered, setIsRegistered] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await register(firstName, lastName, email, password, areaOfInterest);
-      navigate('/login');
+      setIsRegistered(true);
     } catch (err) {
       setError('Registration failed. Please try again.');
     }
   };
+
+  if (isRegistered) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Registration Successful</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Your account has been created successfully.</p>
+          <p>To access all features, please verify your email address. We've sent a verification link to your email.</p>
+          <div className="mt-4">
+            <Link to="/login" className="text-blue-500 hover:underline">
+              Proceed to Login
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">

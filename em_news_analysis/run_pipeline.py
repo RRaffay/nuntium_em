@@ -1,23 +1,30 @@
+import os
 import logging
-from em_news_analysis import Config, GDELTNewsPipeline
-
+from em_news_analysis import DevelopmentConfig, GDELTNewsPipeline
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'config/em-news-gdelt.json'
+
+
 def main():
-    config = Config()
+    config = DevelopmentConfig()
     pipeline = GDELTNewsPipeline(config)
 
     try:
         results = pipeline.run_pipeline(
-            input_sentence="Political Changes",
-            country="AF",  # 3166-1 alpha-2 codes for country names
-            hours=3,
-            article_summarizer_objective="",
-            # article_summarizer_objective="Analyze the impact of the event being discussed on the financial markets",
-            cluster_summarizer_objective="Below are article summaries for a particular event."
-            # cluster_summarizer_objective="Below are article summaries for a particular event. Summarize the main points and potential impacts for someone interested in financial markets"
+            input_sentence="Event about Mexico. Specifically, focusing on MacroEconomics .",
+            country="MX",  # FIPS 10-4 country code for Mexico,
+            user_id='66e37d739f82246a180b4dff',
+            hours=2,
+            article_summarizer_objective="Analyze for someone interested in events about Mexico. ",
+            cluster_summarizer_objective="Analyze for someone interested in events about Mexico. Specifically, focusing on MacroEconomics .",
+            process_all=False,
+            sample_size=1500,
+            max_workers_embeddings=5,
+            max_workers_summaries=3,
+            export_to_local=True
         )
         if results:
             print("Pipeline results:")

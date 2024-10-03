@@ -1,5 +1,13 @@
 import { api } from '@/services/api';
 
+export interface UserProfile {
+  first_name: string;
+  last_name: string;
+  email: string;
+  is_verified: boolean;
+  area_of_interest: string;
+}
+
 interface LoginCredentials {
   username: string;
   password: string;
@@ -50,11 +58,14 @@ export const auth = {
         },
         body: JSON.stringify(credentials),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Registration failed');
       }
+
+      // Request verification token after successful registration
+      await api.requestVerifyToken(credentials.email);
     },
 
     async getDashboardHeader(): Promise<string> {
@@ -93,17 +104,41 @@ export const auth = {
       localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
     },
 
-  logout(): void {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-  },
+    async verifyEmail(token: string): Promise<void> {
+      await api.verifyEmail(token);
+    },
 
-  getToken(): string | null {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
-  },
+    async getUserProfile(): Promise<UserProfile> {
+      const response = await fetch(`${api.API_BASE_URL}/user/profile`, {
+        headers: {
+          Authorization: `Bearer ${this.getToken()}`,
+        },
+      });
 
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  },
-  
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
 
+      return response.json();
+    },
+
+    logout(): void {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    },
+
+    getToken(): string | null {
+      return localStorage.getItem(AUTH_TOKEN_KEY);
+    },
+
+    isAuthenticated(): boolean {
+      return !!this.getToken();
+    },
+
+    async requestPasswordReset(email: string): Promise<void> {
+      await api.requestPasswordReset(email);
+    },
+
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+      await api.resetPassword(token, newPassword);
+    },
 };

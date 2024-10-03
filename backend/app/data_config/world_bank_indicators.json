@@ -1,0 +1,57 @@
+{
+    "gdp_per_capita": {
+        "code": "NY.GDP.PCAP.CD",
+        "label": "GDP per Capita",
+        "unit": "USD"
+    },
+    "gdp_growth": {
+        "code": "NY.GDP.MKTP.KD.ZG",
+        "label": "GDP Growth",
+        "unit": "%"
+    },
+    "inflation": {
+        "code": "FP.CPI.TOTL.ZG",
+        "label": "Inflation Rate",
+        "unit": "%"
+    },
+    "unemployment": {
+        "code": "SL.UEM.TOTL.ZS",
+        "label": "Unemployment Rate",
+        "unit": "%"
+    },
+    "current_account_balance": {
+        "code": "BN.CAB.XOKA.CD",
+        "label": "Current Account Balance",
+        "unit": "USD"
+    },
+    "foreign_exchange_reserves": {
+        "code": "FI.RES.TOTL.CD",
+        "label": "Foreign Exchange Reserves",
+        "unit": "USD"
+    },
+    "debt_to_gdp": {
+        "code": "GC.DOD.TOTL.GD.ZS",
+        "label": "Debt to GDP Ratio",
+        "unit": "%"
+    },
+    "population": {
+        "code": "SP.POP.TOTL",
+        "label": "Population",
+        "unit": "People"
+    },
+    "exports_of_goods_and_services": {
+        "code": "NE.EXP.GNFS.ZS",
+        "label": "Exports of Goods and Services",
+        "unit": "%"
+    },
+    "imports_of_goods_and_services": {
+        "code": "NE.IMP.GNFS.ZS",
+        "label": "Imports of Goods and Services",
+        "unit": "%"
+    },
+    "manufacturing_value_added": {
+        "code": "NV.IND.MANF.ZS",
+        "label": "Manufacturing Value Added",
+        "unit": "%"
+    }
+}

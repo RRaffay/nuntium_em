@@ -41,9 +41,24 @@ def _get_model(model_name: str):
 
 def _search_and_summarize(query, max_results):
     response = tavily_client.search(query=query, max_results=max_results)
-    article_urls = [r['url'] for r in response['results']][:1]
+    article_urls = [r['url'] for r in response['results']]
     summaries = generate_summaries(article_urls)
     return [(r, summary) for r, summary in zip(response['results'], summaries)]
+
+
+# With o-1 preview
+# def plan_node(state: AgentState, config):
+
+#     input_message = f"The topic is:\n{state['task']}\n"
+
+#     current_date = datetime.now().strftime("%Y-%m-%d")
+
+#     input_message_with_system = PLAN_PROMPT.format(
+#         current_date=current_date) + input_message
+#     messages = [HumanMessage(content=input_message_with_system)]
+#     model = ChatOpenAI(temperature=1, model_name="o1-preview")
+#     response = model.invoke(messages)
+#     return {"plan": response.content}
 
 
 def plan_node(state: AgentState, config):
@@ -60,6 +75,7 @@ def plan_node(state: AgentState, config):
     model = _get_model(model_name)
     response = model.invoke(messages)
     return {"plan": response.content}
+
 
 # Node for Research Planning
 
@@ -78,9 +94,9 @@ def research_plan_node(state: AgentState, config):
     ])
 
     content = state.get('content') or []
-    max_results = config.get('configurable', {}).get('max_results_tavily', 1)
+    max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = [executor.submit(
             _search_and_summarize, q, max_results) for q in queries.queries]
         for future in concurrent.futures.as_completed(futures):
@@ -147,9 +163,9 @@ def research_critique_node(state: AgentState, config):
     ])
     content = state['content'] or []
 
-    max_results = config.get('configurable', {}).get('max_results_tavily', 1)
+    max_results = config.get('configurable', {}).get('max_results_tavily', 2)
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = [executor.submit(
             _search_and_summarize, q, max_results) for q in queries.queries]
         for future in concurrent.futures.as_completed(futures):

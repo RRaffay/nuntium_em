@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// components/ReportDialog.tsx
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -7,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Report } from '@/services/api';
 import { MarkdownContent } from '@/components/MarkdownContent';
@@ -16,6 +18,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import { MessageCircle } from "lucide-react";
+import { forwardRef, useImperativeHandle } from 'react';
 
 const downloadReport = (content: string, filename: string) => {
   const blob = new Blob([content], { type: 'text/markdown' });
@@ -36,104 +40,161 @@ interface ReportDialogProps {
   error: string | null;
   title: string;
   onClose: () => void;
+  progress: number;
+  autoGenerateOnOpen?: boolean;
+  buttonText: string;
+  canOpen: boolean;
+  autoOpen?: boolean;
+  testId?: string;
 }
 
-export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, onGenerate, error, title, onClose }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [progress, setProgress] = useState(0);
+export interface ReportDialogRef {
+  openDialog: () => void;
+}
+
+export const ReportDialog = forwardRef<ReportDialogRef, ReportDialogProps>(({
+  report,
+  isLoading,
+  onGenerate,
+  error,
+  title,
+  onClose,
+  progress,
+  autoGenerateOnOpen = false,
+  buttonText,
+  canOpen,
+  autoOpen = false,
+  testId,
+}, ref) => {
+  const [isOpen, setIsOpen] = useState(autoOpen);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatSize, setChatSize] = useState(50);
+  const [proMode, setProMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  const easeOutQuad = (t: number) => t * (2 - t);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
 
-  const handleGenerate = async () => {
-    setProgress(0);
-    setIsOpen(true);
-    const startTime = Date.now();
-    const duration = 210000; // 210 seconds
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progressValue = easeOutQuad(Math.min(elapsed / duration, 1)) * 100;
-      setProgress(progressValue);
-
-      if (elapsed >= duration) {
-        clearInterval(interval);
-      }
-    }, 100); // Update every 100ms
-
-    await onGenerate();
-    clearInterval(interval);
-    setProgress(100);
-  };
+  useEffect(() => {
+    if (autoOpen && report && !isLoading) {
+      setIsOpen(true);
+    }
+  }, [autoOpen, report, isLoading]);
 
   const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) {
-      // Reset state when dialog is closed
-      setProgress(0);
-      setIsChatOpen(false);
-      setChatSize(50);
-      onClose(); // Call the onClose prop
+    if (canOpen && report) {
+      setIsOpen(open);
+    } else if (!open) {
+      setIsOpen(false);
     }
   };
+
+  const handleButtonClick = () => {
+    if (report) {
+      setIsOpen(true);
+    } else {
+      onGenerate();
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    openDialog: () => setIsOpen(true),
+  }));
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button onClick={handleGenerate}>{title}</Button>
+        <div data-testid={testId}>
+          <Button
+            disabled={isLoading}
+            onClick={handleButtonClick}
+          >
+            {isLoading ? "Generating..." : buttonText}
+          </Button>
+        </div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[90vw] h-[90vh] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between">
+      <DialogContent className="sm:max-w-[95vw] h-[95vh] flex flex-col" data-testid="report-dialog-content">
+        <DialogDescription className="sr-only">
+          Report details and chat interface
+        </DialogDescription>
+        <DialogHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
           <DialogTitle>{title}</DialogTitle>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center mt-2 sm:mt-0">
             {report && (
               <>
                 <Button
-                  variant="outline"
-                  className="text-black mt-2"
+                  className="mt-2"
                   onClick={() => downloadReport(report.content, `${title}.md`)}
                 >
                   Download Report
                 </Button>
                 <Button
-                  variant="outline"
-                  className="text-black mt-2"
+                  className="mt-2"
                   onClick={() => setIsChatOpen(!isChatOpen)}
                 >
+                  <MessageCircle className="mr-2 h-4 w-4" />
                   {isChatOpen ? 'Hide Chat' : 'Show Chat'}
                 </Button>
               </>
             )}
           </div>
         </DialogHeader>
-        <ResizablePanelGroup direction="horizontal" className="flex-grow overflow-hidden">
-          <ResizablePanel defaultSize={100 - chatSize} minSize={30}>
+        <ResizablePanelGroup
+          direction={isMobile ? "vertical" : "horizontal"}
+          className="flex-grow overflow-hidden"
+        >
+          <ResizablePanel
+            defaultSize={isMobile ? 50 : (100 - chatSize)}
+            minSize={30}
+          >
             <div className="h-full overflow-y-auto p-4">
               {isLoading ? (
                 <div>
                   <p>Generating Report</p>
                   <Progress value={progress} className="mt-2" />
+                  <p>{Math.round(progress)}%</p>
                 </div>
               ) : error ? (
                 <p className="text-red-500">{error}</p>
               ) : report ? (
                 <>
-                  <MarkdownContent content={report.content} />
-                  <p className="text-sm text-gray-500 mt-4">Generated at: {new Date(report.generated_at).toLocaleString()}</p>
+                  <MarkdownContent content={report.content} useMathPlugins={false} />
+                  <p className="text-sm text-gray-500 mt-4">
+                    Generated at: {new Date(report.generated_at).toLocaleString()}
+                  </p>
                 </>
               ) : (
-                <p>No report generated. Please try again.</p>
+                !autoGenerateOnOpen && (
+                  <div>
+                    <p>No report generated. Please click the button below to generate the report.</p>
+                    <Button onClick={onGenerate} disabled={isLoading}>
+                      Generate Report
+                    </Button>
+                  </div>
+                )
               )}
             </div>
           </ResizablePanel>
           {isChatOpen && report && (
             <>
               <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={chatSize} minSize={30} onResize={(size) => setChatSize(size)}>
+              <ResizablePanel
+                defaultSize={isMobile ? 50 : chatSize}
+                minSize={30}
+                onResize={(size) => !isMobile && setChatSize(size)}
+              >
                 <ReportChatInterface
                   report={report.content}
                   onClose={() => setIsChatOpen(false)}
+                  proMode={proMode}
+                  setProMode={setProMode}
+                  isMobile={isMobile}
                 />
               </ResizablePanel>
             </>
@@ -142,4 +203,4 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ report, isLoading, o
       </DialogContent>
     </Dialog>
   );
-};
+});

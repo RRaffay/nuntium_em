@@ -2,177 +2,167 @@ from typing import List
 import concurrent.futures
 import logging
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
+# Load the environment variables
+from dotenv import load_dotenv  # noqa
+load_dotenv()  # noqa
 
-from langchain_community.document_loaders import WebBaseLoader
-from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.llm import LLMChain
-from langchain.chains import ReduceDocumentsChain, MapReduceDocumentsChain
-from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain.output_parsers.openai_functions import JsonKeyOutputFunctionsParser
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
+from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from tenacity import retry, stop_after_attempt, wait_fixed
+import re
+from bs4 import BeautifulSoup
 
 
 logger = logging.getLogger(__name__)
 
 
-def article_summarizer(url: str, model: int = 3, max_length: int = 20000, timeout: int = 7) -> str:
+open_ai_llm_mini = ChatOpenAI(
+    temperature=0,
+    model_name="gpt-4o-mini",
+)
+open_ai_llm = ChatOpenAI(
+    temperature=0,
+    model_name="gpt-4o",
+)
+
+
+def clean_text(text: str, level: int = 1, max_words: int = 50000) -> str:
+    """Clean the text with different levels of aggressiveness and truncate if necessary."""
+    # Level 1: Basic cleaning
+    text = BeautifulSoup(text, "html.parser").get_text()
+    text = re.sub(r'\s+', ' ', text).strip()
+    text = ''.join(char for char in text if char.isprintable())
+
+    if level >= 2:
+        # Level 2: Remove common web elements and URLs
+        text = re.sub(r'(Cookie Policy|Privacy Policy|Terms of Service|Copyright ©)',
+                      '', text, flags=re.IGNORECASE)
+        text = re.sub(
+            r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
+
+    if level >= 3:
+        # Level 3: Remove email addresses and special characters
+        text = re.sub(r'\S+@\S+', '', text)
+        text = re.sub(r'[^a-zA-Z0-9\s.,;:!?()"-]', '', text)
+
+    # Truncate to max_words if necessary
+    words = text.split()
+    if len(words) > max_words:
+        logger.warning(
+            f"Text exceeds the maximum of {max_words} words. Text length: {len(words)}. Truncating.")
+        text = ' '.join(words[:max_words])
+
+    return text
+
+
+def article_summarizer(url: str, model: int = 3, max_words: int = 50000) -> str:
     """
     Summarizes an online article using OpenAI's language models.
-
-    This function loads the article from the provided URL, splits it into chunks, and uses a map-reduce approach
-    to generate a summary. The map step generates summaries for each chunk, and the reduce step combines these
-    summaries into a final, consolidated summary.
 
     Parameters:
     url (str): The URL of the online article to summarize.
     model (int, optional): The model to use for summarization. If 3, uses "gpt-4o-mini". Otherwise, uses "gpt-4o". Defaults to 3.
-    max_length (int, optional): The maximum length of the article content. Defaults to 20000 characters.
-    timeout (int, optional): The timeout in seconds for generating the summary. Defaults to 7 seconds.
-
+    max_words (int, optional): The maximum number of words in the article content. Defaults to 50000 words.
     Returns:
-    str: The summary of the article. If there was an error loading the article or the article is too long, returns an appropriate message.
+    str: The summary of the article. If there was an error loading the article, returns an appropriate message.
     """
 
-    loader = WebBaseLoader(url)
-    try:
-        docs = loader.load()
-    except Exception as e:
-        return f"Error in loading doc {str(e)}"
+    # Check if the URL is a PDF
+    if url.endswith('.pdf'):
+        try:
+            import requests
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': 'https://www.google.com/'
+            }
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()  # This will raise an exception for HTTP errors
+            loader = PyPDFLoader(url, headers=headers)
+            docs = loader.load()
+        except Exception as e:
+            logger.error(f"Error accessing URL: {e}")
+            return "Error accessing URL"
 
-    # Check the length of the article content
-    article_content = ''.join([doc.page_content for doc in docs])
-    if len(article_content) > max_length:
-        return f"Article content exceeds the maximum length of {max_length} characters."
+    else:
+        try:
+            custom_headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Referer": "https://www.google.com/"
+            }
+            loader = WebBaseLoader(url, header_template=custom_headers)
+            docs = loader.load()
+        except Exception as e:
+            logger.error(f"Error in loading doc {str(e)}")
+            return f"Error in loading doc {str(e)}"
+
+    # Clean and check the word count of the article content
+    article_content = ' '.join([doc.page_content for doc in docs])
+    original_word_count = len(article_content.split())
+
+    for cleaning_level in range(1, 4):
+        article_content = clean_text(
+            article_content, level=cleaning_level, max_words=max_words)
+        if len(article_content.split()) <= max_words:
+            break
+
+    if len(article_content.split()) > max_words:
+        logger.warning(
+            f"Article content still exceeds the maximum of {max_words} words after cleaning. "
+            f"Original word count: {original_word_count}, Cleaned word count: {len(article_content.split())}. "
+            f"Truncating to {max_words} words.")
+        article_content = ' '.join(article_content.split()[:max_words])
 
     if model == 3:
-        open_ai_llm = ChatOpenAI(
-            temperature=0,
-            model_name="gpt-4o-mini",
-        )
+        llm = open_ai_llm_mini
+
     else:
-        open_ai_llm = ChatOpenAI(
-            temperature=0,
-            model_name="gpt-4o",
-        )
+        llm = open_ai_llm
 
-    llm = open_ai_llm
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an experienced hedge fund investment analyst. You will be given an article content and your job is to summarize it. If the article is inaccessible, return 'INACCESSIBLE' Return the summary in English."),
+        ("user", "{input}")
+    ])
 
-    map_question = f"""The following is a portion from an online article."""
+    chain = prompt | llm | StrOutputParser()
 
-    map_template = (
-        map_question
-        + """:
+    input_prompt = f"This is the article content:\n\n<article>\n\n{article_content}\n\n</article>"
 
-###############################################################
-
-{docs}
-
-###############################################################
-
-Based on this portion, please write a summary of the article that can be used with other summaries to create a final, consolidated summary of the article."
-
-
-
-Helpful Answer:"""
-    )
-
-    map_prompt = PromptTemplate.from_template(map_template)
-    map_chain = LLMChain(llm=llm, prompt=map_prompt)
-
-    # Reduce
-    reduce_question_start = f"The following is a set of summaries from different portions of an online article."
-
-    reduce_question_end = f"""Take these and distill it into a final, consolidated summary.
-
-Helpful Answer:
-
-"""
-
-    reduce_template = (
-        reduce_question_start
-        + """:
-
-    ###############################################################
-
-    {doc_summaries}
-
-    ###############################################################
-
-    """
-        + reduce_question_end
-    )
-
-    reduce_prompt = PromptTemplate.from_template(reduce_template)
-    # Run chain
-    reduce_chain = LLMChain(llm=llm, prompt=reduce_prompt)
-
-    # Takes a list of documents, combines them into a single string, and passes this to an LLMChain
-    combine_documents_chain = StuffDocumentsChain(
-        llm_chain=reduce_chain, document_variable_name="doc_summaries"
-    )
-
-    # Combines and iteravely reduces the mapped documents
-    reduce_documents_chain = ReduceDocumentsChain(
-        # This is final chain that is called.
-        combine_documents_chain=combine_documents_chain,
-        # If documents exceed context for `StuffDocumentsChain`
-        collapse_documents_chain=combine_documents_chain,
-        # The maximum number of tokens to group documents into.
-        token_max=10000,
-    )
-
-    map_reduce_chain = MapReduceDocumentsChain(
-        # Map chain
-        llm_chain=map_chain,
-        # Reduce chain
-        reduce_documents_chain=reduce_documents_chain,
-        # The variable name in the llm_chain to put the documents in
-        document_variable_name="docs",
-        # Return the results of the map steps in the output
-        return_intermediate_steps=False,
-    )
-
-    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        chunk_size=10000, chunk_overlap=0
-    )
-    split_docs = text_splitter.split_documents(docs)
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+    def invoke_with_retry():
+        return chain.invoke({"input": input_prompt})
 
     try:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(map_reduce_chain.invoke, split_docs)
-            summary = future.result(timeout=timeout)
-        return summary["output_text"]
-    except concurrent.futures.TimeoutError:
-        return f"Timeout: Summary generation for {url} took longer than {timeout} seconds."
+        return invoke_with_retry()
     except Exception as e:
-        return f"Error in generating summary: {str(e)}"
+        logger.error(f"Error in generating summary: {str(e)}")
+        raise Exception(f"Error in generating summary: {str(e)}")
 
 
-
-def generate_summaries(article_urls: List[str], max_workers: int = 10, timeout: int = 7) -> List[str]:
+def generate_summaries(article_urls: List[str], max_workers: int = 2) -> List[str]:
     """
     Generate summaries for the given article URLs using the article_summarizer function.
     """
     summaries = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_url = {executor.submit(
-            article_summarizer, url, timeout=timeout): url for url in article_urls}
+            article_summarizer, url): url for url in article_urls}
         for future in concurrent.futures.as_completed(future_to_url):
             url = future_to_url[future]
             try:
-                summary = future.result(timeout=timeout)
+                summary = future.result()
                 summaries.append(summary)
-            except concurrent.futures.TimeoutError:
-                logger.error(
-                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
-                summaries.append(
-                    f"Timeout: Summary generation for {url} took longer than {timeout} seconds.")
             except Exception as e:
                 logger.error(f"Error generating summary for {url}: {str(e)}")
                 summaries.append(f"Failed to generate summary for {url}")
     return summaries
+
+
+# if __name__ == "__main__":
+#     print(article_summarizer(
+#         "https://www.engrofertilizers.com/documents/240418_Efert_Q1_Results_and_PSX_Annoucement.pdf"))

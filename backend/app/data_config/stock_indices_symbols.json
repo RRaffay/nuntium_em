@@ -1,0 +1,16 @@
+{
+    "Argentina": "^MERV",
+    "Brazil": "^BVSP",
+    "China": "000001.SS",
+    "India": "^BSESN",
+    "South Africa": "^J203.JO",
+    "Pakistan": "^KSE",
+    "Indonesia": "^JKSE",
+    "Nigeria": "NGSEINDX",
+    "Mexico": "^MXX",
+    "Egypt": "^EGX30",
+    "Vietnam": "^VNINDEX",
+    "Philippines": "^PSEI",
+    "Russia": "IMOEX.ME",
+    "Saudi Arabia": "TASI.SR"
+}
