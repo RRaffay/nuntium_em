@@ -2,9 +2,9 @@ name: Frontend Tests
 
 on:
   push:
-    branches: [ prod_ready ]
+    branches: [ prod-ready ]
   pull_request:
-    branches: [ prod_ready ]
+    branches: [ prod-ready ]
 
 jobs:
   test:
