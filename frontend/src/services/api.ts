@@ -98,9 +98,13 @@ const getAuthHeaders = (): HeadersInit => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const handleResponse = async (response: Response) => {
-  if (response.status === 401) {
-    // Token might be expired, try to refresh
+const handleResponse = async (response: Response, retryCount = 0): Promise<Response> => {
+  if (response.ok) {
+    return response;
+  }
+
+  if (response.status === 401 && retryCount === 0) {
+    // Token might be expired, try to refresh once
     try {
       await auth.refreshToken();
       // Retry the original request
@@ -111,7 +115,7 @@ const handleResponse = async (response: Response) => {
           Authorization: `Bearer ${auth.getToken()}`,
         },
       });
-      return newResponse;
+      return handleResponse(newResponse, retryCount + 1);
     } catch (error) {
       // If refresh fails, log out the user
       auth.logout();
@@ -121,8 +125,11 @@ const handleResponse = async (response: Response) => {
     // Rate limit exceeded
     const retryAfter = response.headers.get('Retry-After');
     throw new Error(`Rate limit exceeded. Please try again ${retryAfter ? `in ${retryAfter} seconds` : 'later'}.`);
+  } else {
+    // Handle other error cases
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `API request failed with status ${response.status}`);
   }
-  return response;
 };
 
 export const api = {

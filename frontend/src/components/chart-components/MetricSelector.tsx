@@ -48,7 +48,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
     const createMetricOption = (metricKey: string) => ({
         value: metricKey,
         label: (
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center justify-between w-full" >
                 <div className="flex items-center">
                     <span>{metrics?.[metricKey]?.label || metricKey}</span>
                     <TooltipProvider>
@@ -72,7 +72,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
     return (
         <div className="mb-6">
             <Label htmlFor="metrics-select" className="block mb-2 mt-2">Select Indicators to Display (max {MAX_METRICS}):</Label>
-            <div className="flex items-start space-x-2">
+            <div className="flex items-start space-x-2" data-testid="metric-selector">
                 <div className="flex-grow">
                     <MultiSelect
                         options={sortedMetrics.map(createMetricOption)}

@@ -29,7 +29,7 @@ export const EventList: React.FC<EventListProps> = ({
   singleColumn = false,
 }) => {
   const renderEvent = (event: ApiEvent) => (
-    <Accordion key={event.id} type="single" collapsible className="w-full">
+    <Accordion key={event.id} type="single" collapsible className="w-full" data-testid="event-accordion-item">
       <AccordionItem value={event.id}>
         <AccordionTrigger className="flex justify-between items-center">
           <div className="flex-1 text-center">
@@ -64,7 +64,7 @@ export const EventList: React.FC<EventListProps> = ({
 
             {/* Action Buttons */}
             <div className="flex space-x-4 mt-6">
-              <ArticleDialog event={event} />
+              <ArticleDialog event={event} testId="article-dialog-button" />
               <div className="relative flex-grow">
                 <ReportDialog
                   report={eventReports[event.id]}
@@ -77,6 +77,7 @@ export const EventList: React.FC<EventListProps> = ({
                   autoGenerateOnOpen={false}
                   buttonText={eventReports[event.id] ? "View Report" : "Generate Report"}
                   canOpen={!isAnyReportGenerating}
+                  testId="report-dialog-button"
                 />
                 {isGeneratingEventReport[event.id] && (
                   <div className="mt-2">

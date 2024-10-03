@@ -16,6 +16,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ChatInterface, Message } from '@/components/ChatInterface';
+import { useTour } from '@/contexts/TourContext';
 
 interface EconomicIndicatorsChartProps {
   country: string;
@@ -230,6 +231,15 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
     });
   }, [handleSubmitQuestion, country, selectedMetrics, metrics, startDate, endDate, proMode, loadingAnswer]);
 
+  const { currentTourType } = useTour();
+
+  // Modify the useEffect that sets isChatOpen
+  useEffect(() => {
+    if (currentTourType === 'CountryPage' || currentTourType === 'All') {
+      setIsChatOpen(true);
+    }
+  }, [currentTourType]);
+
   if (loading) {
     return <div>Loading economic indicators...</div>;
   }
@@ -244,90 +254,118 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
 
   return (
     <Card className="mt-4 relative h-[calc(90vh)]">
-      <CardContent className="p-0 h-full flex flex-col">
-        <div className="p-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Visualization Settings</h2>
-          {enableChat && !isSmallScreen && (
-            <Button size="sm" onClick={() => setIsChatOpen(!isChatOpen)}>
-              <MessageCircle className="mr-2 h-4 w-4" />
-              {isChatOpen ? 'Close Chat' : 'Open Chat'}
-            </Button>
-          )}
-        </div>
-        <ResizablePanelGroup direction={isSmallScreen ? 'vertical' : 'horizontal'} className="flex-grow overflow-hidden">
-          <ResizablePanel defaultSize={isChatOpen && !isSmallScreen ? 70 : 100} minSize={50}>
-            <div className="p-4 h-full overflow-y-auto">
-              <div className="mb-4">
-                <Label className="mb-2 block text-sm font-medium">Display Mode</Label>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="display-mode"
-                    checked={displayMode === 'multiple'}
-                    onCheckedChange={(checked) => setDisplayMode(checked ? 'multiple' : 'single')}
-                  />
-                  <Label htmlFor="display-mode">
-                    {displayMode === 'single' ? 'Single Chart' : 'Multiple Charts'}
-                  </Label>
-                </div>
+      <div data-testid="economic-indicators-chart">
+        <CardContent className="p-0 h-full flex flex-col" >
+          <div className="p-4 flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Visualization Settings</h2>
+            {enableChat && !isSmallScreen && (
+              <div data-testid="chat-button">
+                <Button size="sm" onClick={() => setIsChatOpen(!isChatOpen)}>
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  {isChatOpen ? 'Close Chat' : 'Open Chat'}
+                </Button>
               </div>
+            )}
+          </div>
+          <ResizablePanelGroup direction={isSmallScreen ? 'vertical' : 'horizontal'} className="flex-grow overflow-hidden">
+            <ResizablePanel defaultSize={isChatOpen && !isSmallScreen ? 70 : 100} minSize={50}>
+              <div className="p-4 h-full overflow-y-auto">
+                <div className="mb-4">
+                  <Label className="mb-2 block text-sm font-medium">Display Mode</Label>
+                  <div className="flex items-center space-x-2" data-testid="display-mode-switch">
+                    <Switch
+                      id="display-mode"
+                      checked={displayMode === 'multiple'}
+                      onCheckedChange={(checked) => setDisplayMode(checked ? 'multiple' : 'single')}
+                    />
+                    <Label htmlFor="display-mode">
+                      {displayMode === 'single' ? 'Single Chart' : 'Multiple Charts'}
+                    </Label>
+                  </div>
+                </div>
 
-              <MetricSelector
-                availableMetrics={availableMetrics}
-                selectedMetrics={selectedMetrics}
-                metrics={metrics}
-                handleMetricsChange={handleMetricsChange}
-                dialogOpen={dialogOpen}
-                setDialogOpen={setDialogOpen}
-                dialogSelectedMetrics={dialogSelectedMetrics}
-                setDialogSelectedMetrics={setDialogSelectedMetrics}
-                handleDialogApply={handleDialogApply}
-                showMaxAlert={showMaxAlert}
-                latestDates={latestDates}
-              />
-
-              {displayMode === 'single' && (
-                <>
-                  <ChartOptions
-                    chartType={chartType}
-                    setChartType={setChartType}
-                    dataTransformation={dataTransformation}
-                    setDataTransformation={setDataTransformation}
-                    years={years}
-                    months={months}
-                    setStartYear={setStartYear}
-                    setStartMonth={setStartMonth}
-                    setEndYear={setEndYear}
-                    setEndMonth={setEndMonth}
-                  />
-
-                  <SingleChart
-                    chartData={chartData}
-                    chartType={chartType}
-                    selectedMetrics={selectedMetrics}
-                    metrics={metrics}
-                    formatYAxisTick={formatYAxisTick}
-                    CustomTooltip={CustomTooltip}
-                    hoveredMetric={hoveredMetric}
-                    setHoveredMetric={setHoveredMetric}
-                  />
-                </>
-              )}
-
-              {displayMode === 'multiple' && (
-                <MultipleCharts
+                <MetricSelector
+                  availableMetrics={availableMetrics}
                   selectedMetrics={selectedMetrics}
                   metrics={metrics}
-                  years={years}
-                  months={months}
+                  handleMetricsChange={handleMetricsChange}
+                  dialogOpen={dialogOpen}
+                  setDialogOpen={setDialogOpen}
+                  dialogSelectedMetrics={dialogSelectedMetrics}
+                  setDialogSelectedMetrics={setDialogSelectedMetrics}
+                  handleDialogApply={handleDialogApply}
+                  showMaxAlert={showMaxAlert}
+                  latestDates={latestDates}
                 />
-              )}
-            </div>
-          </ResizablePanel>
 
-          {isChatOpen && enableChat && !isSmallScreen && (
-            <>
-              <ResizableHandle />
-              <ResizablePanel defaultSize={30} minSize={20}>
+                {displayMode === 'single' && (
+                  <>
+                    <ChartOptions
+                      chartType={chartType}
+                      setChartType={setChartType}
+                      dataTransformation={dataTransformation}
+                      setDataTransformation={setDataTransformation}
+                      years={years}
+                      months={months}
+                      setStartYear={setStartYear}
+                      setStartMonth={setStartMonth}
+                      setEndYear={setEndYear}
+                      setEndMonth={setEndMonth}
+                    />
+
+                    <SingleChart
+                      chartData={chartData}
+                      chartType={chartType}
+                      selectedMetrics={selectedMetrics}
+                      metrics={metrics}
+                      formatYAxisTick={formatYAxisTick}
+                      CustomTooltip={CustomTooltip}
+                      hoveredMetric={hoveredMetric}
+                      setHoveredMetric={setHoveredMetric}
+                    />
+                  </>
+                )}
+
+                {displayMode === 'multiple' && (
+                  <MultipleCharts
+                    selectedMetrics={selectedMetrics}
+                    metrics={metrics}
+                    years={years}
+                    months={months}
+                  />
+                )}
+              </div>
+            </ResizablePanel>
+
+            {isChatOpen && enableChat && !isSmallScreen && (
+              <>
+                <ResizableHandle />
+                <ResizablePanel defaultSize={30} minSize={20}>
+                  <ChatInterface
+                    messages={messages}
+                    inputValue={userQuestion}
+                    setInputValue={setUserQuestion}
+                    handleSendMessage={handleSendMessage}
+                    clearChatHistory={clearChatHistory}
+                    proMode={proMode}
+                    setProMode={setProMode}
+                    isSmallScreen={isSmallScreen}
+                    isLoading={loadingAnswer}
+                  />
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
+          {isSmallScreen && enableChat && (
+            <div className="border-t">
+              <Button
+                className="w-full"
+                onClick={() => setIsChatOpen(!isChatOpen)}
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                {isChatOpen ? 'Close Chat' : 'Open Chat'}
+              </Button>
+              {isChatOpen && (
                 <ChatInterface
                   messages={messages}
                   inputValue={userQuestion}
@@ -339,35 +377,11 @@ export const EconomicIndicatorsChart: React.FC<EconomicIndicatorsChartProps> = (
                   isSmallScreen={isSmallScreen}
                   isLoading={loadingAnswer}
                 />
-              </ResizablePanel>
-            </>
+              )}
+            </div>
           )}
-        </ResizablePanelGroup>
-        {isSmallScreen && enableChat && (
-          <div className="border-t">
-            <Button
-              className="w-full"
-              onClick={() => setIsChatOpen(!isChatOpen)}
-            >
-              <MessageCircle className="mr-2 h-4 w-4" />
-              {isChatOpen ? 'Close Chat' : 'Open Chat'}
-            </Button>
-            {isChatOpen && (
-              <ChatInterface
-                messages={messages}
-                inputValue={userQuestion}
-                setInputValue={setUserQuestion}
-                handleSendMessage={handleSendMessage}
-                clearChatHistory={clearChatHistory}
-                proMode={proMode}
-                setProMode={setProMode}
-                isSmallScreen={isSmallScreen}
-                isLoading={loadingAnswer}
-              />
-            )}
-          </div>
-        )}
-      </CardContent>
+        </CardContent>
+      </div>
     </Card>
   );
 };

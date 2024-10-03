@@ -54,7 +54,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2" data-testid="pro-mode-switch">
                                     <Switch
                                         id="pro-mode"
                                         checked={proMode}
@@ -69,9 +69,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         </Tooltip>
                     </TooltipProvider>
                 </div>
-                <Button onClick={clearChatHistory} variant="outline" size="icon">
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                <div data-testid="clear-chat-button">
+                    <Button onClick={clearChatHistory} variant="outline" size="icon" >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
             <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4">
                 <ChatMessageList>
@@ -103,17 +105,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </ChatMessageList>
             </div>
             <div className="p-4 border-t">
-                <ChatInput
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onSend={handleSendMessage}
-                    placeholder="Type your message..."
-                    className="mb-2"
-                    disabled={isLoading}
-                />
-                <Button onClick={handleSendMessage} disabled={!inputValue.trim() || isLoading}>
-                    Send
-                </Button>
+                <div data-testid="chat-input">
+                    <ChatInput
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onSend={handleSendMessage}
+                        placeholder="Type your message..."
+                        className="mb-2"
+                        disabled={isLoading}
+                    />
+                </div>
+                <div data-testid="send-button">
+                    <Button onClick={handleSendMessage} disabled={!inputValue.trim() || isLoading}>
+                        Send
+                    </Button>
+                </div>
             </div>
         </div>
     );

@@ -9,7 +9,7 @@ interface AuthContextType {
   logout: () => void;
   getDashboardHeader: () => Promise<string>;
   verifyEmail: (token: string) => Promise<void>;
-  checkVerificationStatus: () => Promise<void>; 
+  checkVerificationStatus: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
 }
@@ -82,13 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      isVerified, 
-      login, 
-      register, 
-      logout, 
-      getDashboardHeader, 
+    <AuthContext.Provider value={{
+      isAuthenticated,
+      isVerified,
+      login,
+      register,
+      logout,
+      getDashboardHeader,
       verifyEmail,
       checkVerificationStatus,
       requestPasswordReset,
