@@ -33,7 +33,6 @@ asgi-lifespan = "==2.1.0"
 pytest = "^8.3.3"
 ipykernel = "^6.29.5"
 
-
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
