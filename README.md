@@ -6,11 +6,11 @@ Nuntium EM Research is a comprehensive platform for analyzing and reporting on e
 
 ## Components
 
-1. **News Analysis Pipeline**: Core engine for processing GDELT data and generating insights.
-2. **Backend API**: FastAPI server providing endpoints for data retrieval and report generation.
-3. **Frontend**: React-based user interface for interacting with the system.
-4. **Agentic Research**: AI-powered tool for generating equity reports and economic analyses.
-5. **Research Chatbot**: Interactive chat interface for equity research and analysis.
+1. **News Analysis Pipeline**: Core engine for processing GDELT data and generating insights. [Read more](em_news_analysis/README.md)
+2. **Backend API**: FastAPI server providing endpoints for data retrieval and report generation. [Read more](backend/README.md)
+3. **Frontend**: React-based user interface for interacting with the system. [Read more](frontend/README.md)
+4. **Agentic Research**: AI-powered tool for generating equity reports and economic analyses. [Read more](em_research_agentic/README.md)
+5. **Research Chatbot**: Interactive chat interface for equity research and analysis. [Read more](em_data_chat/README.md)
 
 ## Features
 
@@ -73,12 +73,16 @@ docker-compose up --build
 
 ## API Endpoints
 
-- `/countries`: List available countries
-- `/countries/{country}`: Get data for a specific country
-- `/countries/{country}/generate-report`: Generate an economic report
-- `/auth/*`: User authentication endpoints
-- `/run_graph`: Generate a report based on a given task (Agentic Research)
-- `/economic_report`: Generate an economic report for a specific country (Agentic Research)
+- **Backend API**:
+  - `/countries`: List available countries
+  - `/countries/{country}`: Get data for a specific country
+  - `/countries/{country}/generate-report`: Generate an economic report
+  - `/auth/*`: User authentication endpoints
+- **Agentic Research**:
+  - `/run_graph`: Generate a report based on a given task
+  - `/economic_report`: Generate an economic report for a specific country
+- **Research Chatbot**:
+  - `/run_data_chat`: Run the research chat
 
 Refer to individual component README files for more detailed API documentation.
 
@@ -88,7 +92,7 @@ Refer to individual component README files for more detailed API documentation.
 - `backend/`: FastAPI backend server
 - `frontend/`: React frontend application
 - `em_research_agentic/`: AI-powered research tool
-- `em_research_chat/`: Research chatbot
+- `em_data_chat/`: Research chatbot
 
 ## Configuration
 

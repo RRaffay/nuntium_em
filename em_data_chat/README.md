@@ -79,4 +79,3 @@ For a full list of dependencies, refer to the `pyproject.toml` file.
 ## License
 
 This project is licensed under the MIT License (Non-Commercial Use). See the LICENSE file for details.
-
